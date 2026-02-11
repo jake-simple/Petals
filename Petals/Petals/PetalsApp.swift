@@ -1,10 +1,3 @@
-//
-//  PetalsApp.swift
-//  Petals
-//
-//  Created by JMLee on 2/11/26.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -12,14 +5,22 @@ import SwiftData
 struct PetalsApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            YearDocument.self,
+            CanvasItem.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // CloudKit 실패 시 로컬 전용으로 폴백
+            print("CloudKit ModelContainer failed: \(error). Falling back to local-only.")
+            let localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+            do {
+                return try ModelContainer(for: schema, configurations: [localConfig])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 
@@ -28,5 +29,13 @@ struct PetalsApp: App {
             ContentView()
         }
         .modelContainer(sharedModelContainer)
+        .defaultSize(width: 1200, height: 800)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
+        }
+
+        Settings {
+            SettingsView()
+        }
     }
 }

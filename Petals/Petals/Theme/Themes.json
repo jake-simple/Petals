@@ -1,0 +1,53 @@
+[
+    {
+        "id": "minimal-light",
+        "name": "Minimal Light",
+        "backgroundColor": "#FFFFFF",
+        "gridLineColor": "#E0E0E0",
+        "todayLineColor": "#FF6B35",
+        "monthLabelColor": "#333333",
+        "dayLabelColor": "#666666",
+        "weekendColor": "#F5F5F5"
+    },
+    {
+        "id": "dark-mode",
+        "name": "Dark Mode",
+        "backgroundColor": "#1A1A2E",
+        "gridLineColor": "#2A2A4A",
+        "todayLineColor": "#00D4FF",
+        "monthLabelColor": "#E0E0E0",
+        "dayLabelColor": "#AAAAAA",
+        "weekendColor": "#222244"
+    },
+    {
+        "id": "monochrome",
+        "name": "Monochrome",
+        "backgroundColor": "#FFFFFF",
+        "gridLineColor": "#000000",
+        "todayLineColor": "#000000",
+        "monthLabelColor": "#000000",
+        "dayLabelColor": "#333333",
+        "weekendColor": "#F0F0F0"
+    },
+    {
+        "id": "pastel",
+        "name": "Pastel",
+        "backgroundColor": "#FFF5F5",
+        "gridLineColor": "#E8D5D5",
+        "todayLineColor": "#FF8FA3",
+        "monthLabelColor": "#8B6B6B",
+        "dayLabelColor": "#A08080",
+        "weekendColor": "#FFE8EC"
+    },
+    {
+        "id": "classic",
+        "name": "Classic",
+        "backgroundColor": "#F5F0E8",
+        "gridLineColor": "#C8B8A0",
+        "todayLineColor": "#8B4513",
+        "monthLabelColor": "#3C2A14",
+        "dayLabelColor": "#5C4A34",
+        "weekendColor": "#EDE4D4",
+        "fontName": "Georgia"
+    }
+]
