@@ -10,7 +10,6 @@ struct ContentView: View {
     @State private var currentDocument: YearDocument?
 
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
-    @AppStorage("eventTextSize") private var eventTextSize = AppSettings.eventTextSizeDefault
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
     @AppStorage("obfuscateEventText") private var obfuscateText = false
     @AppStorage("hideSingleDayEvents") private var hideSingleDayEvents = false
@@ -26,6 +25,10 @@ struct ContentView: View {
     @State private var showCalendarFilter = false
     @State private var editorStartDate: Date?
     @State private var editorEndDate: Date?
+
+    // Paging state
+    @State private var monthsPerPage = 12  // 12, 6, 3
+    @State private var pageIndex = 0
 
     // Canvas state
     @State private var isCanvasEditMode = false
@@ -44,47 +47,104 @@ struct ContentView: View {
         return currentDocument?.canvasItems?.first { $0.persistentModelID == id }
     }
 
+    private var startMonth: Int { pageIndex * monthsPerPage + 1 }
+    private var maxPageIndex: Int { (12 / monthsPerPage) - 1 }
+
+    private var daysPerRow: Int {
+        switch monthsPerPage {
+        case 6: return 16
+        case 3: return 8
+        default: return 31
+        }
+    }
+
+    /// Segments filtered to visible months and split at subrow boundaries.
+    private var visibleSegments: [EventSegment] {
+        let endMonth = startMonth + monthsPerPage - 1
+        let dpr = daysPerRow
+        var result: [EventSegment] = []
+        for seg in segments {
+            guard seg.month >= startMonth, seg.month <= endMonth else { continue }
+            // Split segment at subrow boundaries
+            var day = seg.startDay
+            while day <= seg.endDay {
+                let rowEnd = ((day - 1) / dpr + 1) * dpr
+                let segEnd = min(seg.endDay, rowEnd)
+                result.append(EventSegment(
+                    id: "\(seg.id)_\(day)",
+                    event: seg.event,
+                    month: seg.month,
+                    startDay: day,
+                    endDay: segEnd,
+                    lane: seg.lane
+                ))
+                day = segEnd + 1
+            }
+        }
+        return result
+    }
+
+    /// Overflows filtered to visible months.
+    private var visibleOverflows: [Int: [Int: Int]] {
+        let endMonth = startMonth + monthsPerPage - 1
+        return overflows.filter { $0.key >= startMonth && $0.key <= endMonth }
+    }
+
     var body: some View {
         ZStack {
-            // Z0: Background
             Color(hex: theme.backgroundColor)
                 .ignoresSafeArea()
 
-            // Z1: Grid + today line
-            CalendarGridView(year: currentYear, theme: theme, showTodayLine: showTodayLine)
+            ZStack {
+                // Z1: Grid + today line
+                CalendarGridView(
+                    year: currentYear, theme: theme, showTodayLine: showTodayLine,
+                    startMonth: startMonth, monthsShown: monthsPerPage
+                )
                 .allowsHitTesting(false)
 
-            // Z3: Event bars (hidden in canvas edit mode)
-            if !isCanvasEditMode {
-                EventBarLayer(
-                    segments: segments,
-                    overflows: overflows,
-                    maxEventRows: maxEventRows,
-                    eventTextSize: eventTextSize,
-                    obfuscateText: obfuscateText,
-                    onEventTap: { event in
-                        selectedEvent = event
-                        showEventDetail = true
-                    },
-                    onEmptyTap: { month, day in
-                        openEditor(month: month, startDay: day, endDay: day)
-                    },
-                    onDragCreate: { month, startDay, _, endDay in
-                        openEditor(month: month, startDay: startDay, endDay: endDay)
-                    }
-                )
-            }
+                // Z2: Event bars (hidden in canvas edit mode)
+                if !isCanvasEditMode {
+                    EventBarLayer(
+                        segments: visibleSegments,
+                        overflows: visibleOverflows,
+                        maxEventRows: maxEventRows,
+                        obfuscateText: obfuscateText,
+                        startMonth: startMonth,
+                        monthsShown: monthsPerPage,
+                        onEventTap: { event in
+                            selectedEvent = event
+                            showEventDetail = true
+                        },
+                        onEmptyTap: { month, day in
+                            openEditor(month: month, startDay: day, endDay: day)
+                        },
+                        onDragCreate: { month, startDay, _, endDay in
+                            openEditor(month: month, startDay: startDay, endDay: endDay)
+                        }
+                    )
+                }
 
-            // Z4: Canvas items
-            if isCanvasEditMode {
-                CanvasLayer(
-                    yearDocument: currentDocument,
-                    selectedItemID: $selectedCanvasItemID
-                )
-            } else {
-                // Display-only canvas items (no interaction)
-                canvasDisplayLayer
+                // Z3: Canvas items
+                if isCanvasEditMode {
+                    CanvasLayer(
+                        yearDocument: currentDocument,
+                        selectedItemID: $selectedCanvasItemID
+                    )
+                } else {
+                    canvasDisplayLayer
+                }
             }
+            .gesture(
+                MagnifyGesture()
+                    .onEnded { value in
+                        if value.magnification > 1.3 {
+                            zoomIn()
+                        } else if value.magnification < 0.7 {
+                            zoomOut()
+                        }
+                    }
+            )
         }
         .toolbar { toolbarContent }
         .popover(isPresented: $showEventDetail, attachmentAnchor: .point(.center)) {
@@ -187,6 +247,48 @@ struct ContentView: View {
                     .keyboardShortcut(.rightArrow, modifiers: .command)
                 Button("Today") { currentYear = Calendar.current.component(.year, from: Date()) }
                     .keyboardShortcut("t", modifiers: .command)
+
+                Divider().frame(height: 16)
+
+                // Zoom level (months per page)
+                Button(action: { zoomIn() }) {
+                    Image(systemName: "plus.magnifyingglass")
+                }
+                .keyboardShortcut("=", modifiers: .command)
+                .disabled(monthsPerPage <= 3)
+
+                Text("\(monthsPerPage)M")
+                    .font(.caption.monospacedDigit())
+                    .frame(minWidth: 30)
+
+                Button(action: { zoomOut() }) {
+                    Image(systemName: "minus.magnifyingglass")
+                }
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(monthsPerPage >= 12)
+
+                if monthsPerPage < 12 {
+                    // Page navigation
+                    Button(action: { pageIndex = max(0, pageIndex - 1) }) {
+                        Image(systemName: "chevron.left.2")
+                    }
+                    .disabled(pageIndex <= 0)
+
+                    Text("\(startMonth)–\(startMonth + monthsPerPage - 1)")
+                        .font(.caption.monospacedDigit())
+                        .frame(minWidth: 36)
+
+                    Button(action: { pageIndex = min(maxPageIndex, pageIndex + 1) }) {
+                        Image(systemName: "chevron.right.2")
+                    }
+                    .disabled(pageIndex >= maxPageIndex)
+
+                    Button("All") {
+                        monthsPerPage = 12
+                        pageIndex = 0
+                    }
+                    .keyboardShortcut("0", modifiers: .command)
+                }
             }
         }
 
@@ -281,6 +383,28 @@ struct ContentView: View {
     }
 
     // MARK: - Actions
+
+    private func zoomIn() {
+        let next: Int
+        switch monthsPerPage {
+        case 12: next = 6
+        case 6: next = 3
+        default: return
+        }
+        monthsPerPage = next
+        pageIndex = 0
+    }
+
+    private func zoomOut() {
+        let next: Int
+        switch monthsPerPage {
+        case 3: next = 6
+        case 6: next = 12
+        default: return
+        }
+        monthsPerPage = next
+        pageIndex = 0
+    }
 
     private func reloadEvents() {
         eventManager.fetchEvents(for: currentYear)

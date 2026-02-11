@@ -5,8 +5,9 @@ struct EventBarLayer: View {
     let segments: [EventSegment]
     let overflows: [Int: [Int: Int]]
     let maxEventRows: Int
-    let eventTextSize: Double
     let obfuscateText: Bool
+    var startMonth: Int = 1
+    var monthsShown: Int = 12
     let onEventTap: (EKEvent) -> Void
     let onEmptyTap: (Int, Int) -> Void  // (month, day)
     let onDragCreate: (Int, Int, Int, Int) -> Void  // (month, startDay, endMonth, endDay)
@@ -16,7 +17,7 @@ struct EventBarLayer: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let layout = CalendarLayout(size: proxy.size)
+            let layout = CalendarLayout(size: proxy.size, monthsShown: monthsShown, startMonth: startMonth)
 
             Canvas { context, size in
                 let barHeight = eventBarHeight(layout: layout)
@@ -30,7 +31,7 @@ struct EventBarLayer: View {
                 for (month, days) in overflows {
                     for (day, count) in days {
                         let origin = layout.cellOrigin(month: month, day: day)
-                        let badgeY = origin.y + CGFloat(maxEventRows) * barHeight
+                        let badgeY = origin.y + CGFloat(visibleEventRows) * barHeight
                         let text = context.resolve(
                             Text("+\(count)")
                                 .font(.system(size: 7, weight: .medium))
@@ -94,8 +95,16 @@ struct EventBarLayer: View {
         }
     }
 
+    private var visibleEventRows: Int {
+        switch monthsShown {
+        case 6: return 4
+        case 3: return max(maxEventRows - 4, 2)
+        default: return 6
+        }
+    }
+
     private func eventBarHeight(layout: CalendarLayout) -> CGFloat {
-        layout.cellHeight / CGFloat(maxEventRows + 1)
+        layout.cellHeight / CGFloat(visibleEventRows + 1)
     }
 
     private func barRect(for segment: EventSegment, layout: CalendarLayout, barHeight: CGFloat) -> CGRect {
@@ -118,11 +127,13 @@ struct EventBarLayer: View {
 
         // Title text (clipped to bar)
         let title = obfuscateText ? "●●●●" : (segment.event.title ?? "")
+        let fontSize = rect.height - 1
+        guard fontSize >= 3 else { return }
         context.drawLayer { ctx in
             ctx.clip(to: Path(rect))
             let text = ctx.resolve(
                 Text(title)
-                    .font(.system(size: eventTextSize))
+                    .font(.system(size: fontSize))
                     .foregroundStyle(.white)
             )
             ctx.draw(text, at: CGPoint(x: rect.minX + 2, y: rect.midY), anchor: .leading)
