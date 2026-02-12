@@ -11,7 +11,7 @@ struct CalendarLayout: Sendable {
     var daysPerRow: Int {
         switch monthsShown {
         case 6: return 16
-        case 3: return 8
+        case 1, 3: return 8
         default: return 31
         }
     }
@@ -19,7 +19,7 @@ struct CalendarLayout: Sendable {
     var rowsPerMonth: Int {
         switch monthsShown {
         case 6: return 2
-        case 3: return 4
+        case 1, 3: return 4
         default: return 1
         }
     }

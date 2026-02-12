@@ -57,7 +57,7 @@ struct ContentView: View {
     private var daysPerRow: Int {
         switch monthsPerPage {
         case 6: return 16
-        case 3: return 8
+        case 1, 3: return 8
         default: return 31
         }
     }
@@ -220,17 +220,9 @@ struct ContentView: View {
                 accumulatedScrollX += event.scrollingDeltaX
                 if event.phase == .ended {
                     if accumulatedScrollX < -50 {
-                        if monthsPerPage < 12 {
-                            pageIndex = min(maxPageIndex, pageIndex + 1)
-                        } else {
-                            currentYear += 1
-                        }
+                        navigateForward()
                     } else if accumulatedScrollX > 50 {
-                        if monthsPerPage < 12 {
-                            pageIndex = max(0, pageIndex - 1)
-                        } else {
-                            currentYear -= 1
-                        }
+                        navigateBack()
                     }
                     accumulatedScrollX = 0
                 }
@@ -256,6 +248,15 @@ struct ContentView: View {
         }
         .onChange(of: maxEventRows) {
             recomputeLayout()
+        }
+        .focusable()
+        .onKeyPress(.leftArrow) {
+            navigateBack()
+            return .handled
+        }
+        .onKeyPress(.rightArrow) {
+            navigateForward()
+            return .handled
         }
     }
 
@@ -303,7 +304,7 @@ struct ContentView: View {
                     Image(systemName: "plus.magnifyingglass")
                 }
                 .keyboardShortcut("=", modifiers: [.command, .option])
-                .disabled(monthsPerPage <= 3)
+                .disabled(monthsPerPage <= 1)
 
                 Text("\(monthsPerPage)M")
                     .frame(minWidth: 30)
@@ -321,9 +322,15 @@ struct ContentView: View {
                     }
                     .disabled(pageIndex <= 0)
 
-                    Text("\(startMonth)–\(startMonth + monthsPerPage - 1)")
-                        .font(.caption.monospacedDigit())
-                        .frame(minWidth: 36)
+                    Group {
+                        if monthsPerPage == 1 {
+                            Text(Calendar.current.shortMonthSymbols[startMonth - 1])
+                        } else {
+                            Text("\(startMonth)–\(startMonth + monthsPerPage - 1)")
+                        }
+                    }
+                    .font(.caption.monospacedDigit())
+                    .frame(minWidth: 36)
 
                     Button(action: { pageIndex = min(maxPageIndex, pageIndex + 1) }) {
                         Image(systemName: "chevron.right.2")
@@ -446,26 +453,56 @@ struct ContentView: View {
 
     // MARK: - Actions
 
+    private func navigateBack() {
+        if monthsPerPage < 12 {
+            if pageIndex > 0 {
+                pageIndex -= 1
+            } else {
+                currentYear -= 1
+                pageIndex = maxPageIndex
+            }
+        } else {
+            currentYear -= 1
+        }
+    }
+
+    private func navigateForward() {
+        if monthsPerPage < 12 {
+            if pageIndex < maxPageIndex {
+                pageIndex += 1
+            } else {
+                currentYear += 1
+                pageIndex = 0
+            }
+        } else {
+            currentYear += 1
+        }
+    }
+
     private func zoomIn() {
+        let current = startMonth
         let next: Int
         switch monthsPerPage {
         case 12: next = 6
         case 6: next = 3
+        case 3: next = 1
         default: return
         }
         monthsPerPage = next
-        pageIndex = 0
+        pageIndex = (current - 1) / next
     }
 
     private func zoomOut() {
+        let current = startMonth
         let next: Int
         switch monthsPerPage {
+        case 1: next = 3
         case 3: next = 6
         case 6: next = 12
         default: return
         }
         monthsPerPage = next
-        pageIndex = 0
+        pageIndex = (current - 1) / next
     }
 
     private func reloadEvents() {

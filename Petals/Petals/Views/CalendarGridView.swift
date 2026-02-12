@@ -91,7 +91,7 @@ struct CalendarGridView: View {
 
             // MARK: Grid lines
             let boundaryStyle: (Color, CGFloat) = (Color.primary.opacity(0.6), 0.4)
-            let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.5), 0.5)
+            let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.6), 0.5)
 
             for i in 0...totalRows {
                 if i == 0 { continue }
