@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
     " %@" : {
 
     },
@@ -63,6 +66,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "추가"
           }
         }
       }
@@ -210,17 +224,6 @@
         }
       }
     },
-    "Classic" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "클래식"
-          }
-        }
-      }
-    },
     "Color" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -239,6 +242,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "내용"
+          }
+        }
+      }
+    },
+    "Corner Radius" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모서리 반경"
           }
         }
       }
@@ -342,17 +356,6 @@
         }
       }
     },
-    "Font Size: %lldpt" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "글꼴 크기: %lldpt"
-          }
-        }
-      }
-    },
     "Events" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -386,6 +389,17 @@
         }
       }
     },
+    "Font" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "글꼴"
+          }
+        }
+      }
+    },
     "Font Size" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -393,6 +407,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "글꼴 크기"
+          }
+        }
+      }
+    },
+    "Font Size: %lldpt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "글꼴 크기: %lldpt"
           }
         }
       }
@@ -496,28 +521,6 @@
         }
       }
     },
-    "Minimal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "미니멀"
-          }
-        }
-      }
-    },
-    "Monochrome" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "모노크롬"
-          }
-        }
-      }
-    },
     "New Event" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -595,17 +598,6 @@
         }
       }
     },
-    "Pastel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "파스텔"
-          }
-        }
-      }
-    },
     "Pin" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -672,6 +664,17 @@
         }
       }
     },
+    "Select Font…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "글꼴 선택…"
+          }
+        }
+      }
+    },
     "Send to Back" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -679,6 +682,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "맨 뒤로"
+          }
+        }
+      }
+    },
+    "SF Symbol" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SF 심볼"
           }
         }
       }
@@ -737,6 +751,9 @@
           }
         }
       }
+    },
+    "star.fill" : {
+
     },
     "Start" : {
       "extractionState" : "manual",
@@ -837,6 +854,17 @@
         }
       }
     },
+    "Top Area" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "상단 영역"
+          }
+        }
+      }
+    },
     "Transform" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -866,6 +894,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "제목 없음"
+          }
+        }
+      }
+    },
+    "상단 영역 보이기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Top Area"
+          }
+        }
+      }
+    },
+    "상단 영역 숨기기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Top Area"
           }
         }
       }

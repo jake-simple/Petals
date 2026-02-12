@@ -38,6 +38,9 @@ struct ContentView: View {
     @State private var showImagePicker = false
     @State private var showInspector = false
     @State private var showThemePicker = false
+    @AppStorage("showTopArea") private var showTopArea = true
+    @State private var showStickerInput = false
+    @State private var stickerSymbolName = ""
     @State private var scrollMonitor: Any?
     @State private var accumulatedScrollX: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
@@ -109,7 +112,7 @@ struct ContentView: View {
                 ZStack {
                     // Z1: Grid + today line
                     CalendarGridView(
-                        year: currentYear, theme: theme, showTodayLine: showTodayLine,
+                        year: currentYear, theme: theme, showTodayLine: showTodayLine && !isCanvasEditMode,
                         eventFontSize: CGFloat(eventFontSize),
                         startMonth: startMonth, monthsShown: monthsPerPage
                     )
@@ -152,14 +155,14 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
-            .padding(.top, geo.size.height * 0.15)
+            .padding(.top, showTopArea ? geo.size.height * 0.15 : 16)
             .padding(.bottom, 16)
-
             // Canvas layer covers entire board
             if isCanvasEditMode {
                 CanvasLayer(
                     yearDocument: currentDocument,
-                    selectedItemID: $selectedCanvasItemID
+                    selectedItemID: $selectedCanvasItemID,
+                    showInspector: $showInspector
                 )
             } else {
                 canvasDisplayLayer
@@ -185,13 +188,6 @@ struct ContentView: View {
                         reloadEvents()
                     }
                 )
-            }
-        }
-        .popover(isPresented: $showInspector) {
-            if let item = selectedCanvasItem {
-                InspectorPanel(item: item) {
-                    deleteSelectedCanvasItem()
-                }
             }
         }
         .sheet(isPresented: $showEventEditor) {
@@ -251,6 +247,7 @@ struct ContentView: View {
             recomputeLayout()
         }
         .focusable()
+        .focusEffectDisabled()
         .onKeyPress(.leftArrow) {
             navigateBack()
             return .handled
@@ -258,6 +255,20 @@ struct ContentView: View {
         .onKeyPress(.rightArrow) {
             navigateForward()
             return .handled
+        }
+        .onKeyPress(.delete) {
+            guard isCanvasEditMode, selectedCanvasItemID != nil else { return .ignored }
+            deleteSelectedCanvasItem()
+            return .handled
+        }
+        .onKeyPress(.deleteForward) {
+            guard isCanvasEditMode, selectedCanvasItemID != nil else { return .ignored }
+            deleteSelectedCanvasItem()
+            return .handled
+        }
+        .onDeleteCommand {
+            guard isCanvasEditMode, selectedCanvasItemID != nil else { return }
+            deleteSelectedCanvasItem()
         }
     }
 
@@ -267,16 +278,18 @@ struct ContentView: View {
     private var canvasDisplayLayer: some View {
         GeometryReader { proxy in
             ForEach((currentDocument?.canvasItems ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
-                CanvasItemView(item: item)
-                    .frame(
-                        width: item.relativeWidth * proxy.size.width,
-                        height: item.relativeHeight * proxy.size.height
-                    )
+                let itemW = item.relativeWidth * proxy.size.width
+                let itemH: CGFloat = if let ar = item.aspectRatio, ar > 0 { itemW / ar } else { item.relativeHeight * proxy.size.height }
+                let pct = item.cornerRadius ?? 0
+                let radius = min(itemW, itemH) / 2 * pct / 100
+                CanvasItemView(item: item, isEditing: .constant(false))
+                    .frame(width: itemW, height: itemH)
+                    .clipShape(RoundedRectangle(cornerRadius: radius))
                     .rotationEffect(.degrees(item.rotation))
                     .opacity(item.opacity)
                     .position(
-                        x: item.relativeX * proxy.size.width + item.relativeWidth * proxy.size.width / 2,
-                        y: item.relativeY * proxy.size.height + item.relativeHeight * proxy.size.height / 2
+                        x: item.relativeX * proxy.size.width + itemW / 2,
+                        y: item.relativeY * proxy.size.height + itemH / 2
                     )
                     .allowsHitTesting(false)
             }
@@ -392,6 +405,11 @@ struct ContentView: View {
                     )
                 }
 
+                Button(action: { showTopArea.toggle() }) {
+                    Label("Top Area", systemImage: showTopArea ? "rectangle.topthird.inset.filled" : "rectangle.topthird.inset")
+                }
+                .help(showTopArea ? "상단 영역 숨기기" : "상단 영역 보이기")
+
                 // Canvas edit mode toggle
                 Toggle(isOn: $isCanvasEditMode) {
                     Label("Canvas", systemImage: "paintbrush")
@@ -419,29 +437,44 @@ struct ContentView: View {
         }) {
             Label("Text", systemImage: "textformat")
         }
-Menu {
-            Button("Star") { if let doc = currentDocument { addCanvasItem(.newSticker("star.fill", zIndex: doc.nextZIndex)) } }
-            Button("Heart") { if let doc = currentDocument { addCanvasItem(.newSticker("heart.fill", zIndex: doc.nextZIndex)) } }
-            Button("Bell") { if let doc = currentDocument { addCanvasItem(.newSticker("bell.fill", zIndex: doc.nextZIndex)) } }
-            Button("Flag") { if let doc = currentDocument { addCanvasItem(.newSticker("flag.fill", zIndex: doc.nextZIndex)) } }
-            Button("Pin") { if let doc = currentDocument { addCanvasItem(.newSticker("pin.fill", zIndex: doc.nextZIndex)) } }
-        } label: {
+        Button(action: { showStickerInput.toggle() }) {
             Label("Sticker", systemImage: "face.smiling")
+        }
+        .popover(isPresented: $showStickerInput) {
+            VStack(spacing: 12) {
+                Text("SF Symbol").font(.headline)
+                HStack(spacing: 8) {
+                    TextField("star.fill", text: $stickerSymbolName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 180)
+                        .onSubmit { addStickerFromInput() }
+                    if let _ = NSImage(systemSymbolName: stickerSymbolName, accessibilityDescription: nil) {
+                        Image(systemName: stickerSymbolName)
+                            .font(.title2)
+                    }
+                }
+                Button("Add") { addStickerFromInput() }
+                    .disabled(stickerSymbolName.isEmpty || NSImage(systemSymbolName: stickerSymbolName, accessibilityDescription: nil) == nil)
+            }
+            .padding()
         }
 
         if selectedCanvasItemID != nil {
             Button(action: { showInspector = true }) {
                 Label("Inspector", systemImage: "slider.horizontal.3")
             }
+            .help("Inspector")
             Button(action: { bringSelectedToFront() }) {
                 Label("Bring to Front", systemImage: "square.3.layers.3d.top.filled")
             }
             .keyboardShortcut("]", modifiers: .command)
+            .help("Bring to Front")
 
             Button(action: { sendSelectedToBack() }) {
                 Label("Send to Back", systemImage: "square.3.layers.3d.bottom.filled")
             }
             .keyboardShortcut("[", modifiers: .command)
+            .help("Send to Back")
         }
     }
 
@@ -552,6 +585,16 @@ Menu {
         selectedCanvasItemID = item.persistentModelID
     }
 
+    private func addStickerFromInput() {
+        let name = stickerSymbolName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty,
+              NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil,
+              let doc = currentDocument else { return }
+        addCanvasItem(.newSticker(name, zIndex: doc.nextZIndex))
+        stickerSymbolName = ""
+        showStickerInput = false
+    }
+
     private func addCanvasItem(_ item: CanvasItem) {
         guard let doc = currentDocument else { return }
         doc.appendItem(item)
@@ -571,6 +614,9 @@ Menu {
     private func deleteSelectedCanvasItem() {
         guard let id = selectedCanvasItemID,
               let item = currentDocument?.canvasItems?.first(where: { $0.persistentModelID == id }) else { return }
+        if let fileName = item.imageFileName {
+            ImageManager.deleteImage(fileName: fileName)
+        }
         currentDocument?.removeItem { $0.persistentModelID == id }
         modelContext.delete(item)
         selectedCanvasItemID = nil

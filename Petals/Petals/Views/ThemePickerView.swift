@@ -33,6 +33,12 @@ struct ThemePickerView: View {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(Color.accentColor)
                         }
+
+                        if theme.dark != nil {
+                            Image(systemName: "circle.righthalf.filled")
+                                .foregroundStyle(.secondary)
+                                .font(.caption)
+                        }
                     }
                 }
                 .buttonStyle(.plain)

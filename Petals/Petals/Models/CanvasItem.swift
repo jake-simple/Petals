@@ -12,11 +12,13 @@ final class CanvasItem {
     var rotation: Double = 0
     var zIndex: Int = 0
     var opacity: Double = 1.0
+    var aspectRatio: Double?
     var createdAt: Date = Date()
 
     // 이미지
     var imageFileName: String?
     var thumbnailData: Data?
+    var cornerRadius: Double?
 
     // 텍스트
     var text: String?
@@ -71,7 +73,7 @@ final class CanvasItem {
         let item = CanvasItem(type: .text, relativeX: 0.4, relativeY: 0.4,
                               relativeWidth: 0.15, relativeHeight: 0.05, zIndex: zIndex)
         item.text = String(localized: "New Text")
-        item.fontSize = 16
+        item.fontSize = 60
         item.textColor = "#333333"
         return item
     }

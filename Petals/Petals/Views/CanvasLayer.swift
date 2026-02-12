@@ -6,6 +6,7 @@ struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     var yearDocument: YearDocument?
     @Binding var selectedItemID: PersistentIdentifier?
+    @Binding var showInspector: Bool
 
     @State private var clipboard: CanvasItemSnapshot?
 
@@ -31,6 +32,7 @@ struct CanvasLayer: View {
                         containerSize: proxy.size,
                         isSelected: item.persistentModelID == selectedItemID,
                         onSelect: { selectedItemID = item.persistentModelID },
+                        showInspector: $showInspector,
                         onDelete: { deleteItem(item) },
                         onBringToFront: { bringToFront(item) },
                         onSendToBack: { sendToBack(item) }
@@ -57,6 +59,9 @@ struct CanvasLayer: View {
     }
 
     private func deleteItem(_ item: CanvasItem) {
+        if let fileName = item.imageFileName {
+            ImageManager.deleteImage(fileName: fileName)
+        }
         yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
         if selectedItemID == item.persistentModelID { selectedItemID = nil }

@@ -35,6 +35,11 @@ enum ImageManager {
         return (fileName, thumbData)
     }
 
+    static func deleteImage(fileName: String) {
+        let url = imagesDirectory.appendingPathComponent(fileName)
+        try? FileManager.default.removeItem(at: url)
+    }
+
     static func loadImage(fileName: String) -> NSImage? {
         let url = imagesDirectory.appendingPathComponent(fileName)
         if let image = NSImage(contentsOf: url) {

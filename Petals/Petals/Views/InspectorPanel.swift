@@ -1,4 +1,19 @@
 import SwiftUI
+import AppKit
+
+private class FontPanelTarget: NSObject {
+    var currentFont: NSFont = .systemFont(ofSize: 16)
+    var onChange: ((NSFont) -> Void)?
+
+    @objc func changeFont(_ sender: Any?) {
+        guard let manager = sender as? NSFontManager else { return }
+        let newFont = manager.convert(currentFont)
+        currentFont = newFont
+        onChange?(newFont)
+    }
+}
+
+private let fontPanelTarget = FontPanelTarget()
 
 struct InspectorPanel: View {
     @Bindable var item: CanvasItem
@@ -8,11 +23,11 @@ struct InspectorPanel: View {
         Form {
             Section("Transform") {
                 LabeledContent("Opacity") {
-                    Slider(value: $item.opacity, in: 0.1...1.0, step: 0.05)
+                    Slider(value: steppedBinding($item.opacity, step: 0.05), in: 0.1...1.0)
                 }
                 LabeledContent("Rotation") {
                     HStack {
-                        Slider(value: $item.rotation, in: -180...180, step: 1)
+                        Slider(value: steppedBinding($item.rotation, step: 1), in: -180...180)
                         Text("\(Int(item.rotation))°")
                             .monospacedDigit()
                             .frame(width: 40)
@@ -22,19 +37,31 @@ struct InspectorPanel: View {
 
             // Type-specific
             switch CanvasItemType(rawValue: item.type) {
+            case .image: imageSection
             case .text: textSection
             case .shape: shapeSection
             case .sticker: stickerSection
             default: EmptyView()
             }
 
-            Section {
-                Button("Delete Item", role: .destructive) { onDelete() }
-            }
         }
         .formStyle(.grouped)
         .frame(width: 260)
         .padding(.vertical, 8)
+    }
+
+    // MARK: - Image
+
+    @ViewBuilder
+    private var imageSection: some View {
+        Section("Image") {
+            LabeledContent("Corner Radius") {
+                Slider(value: Binding(
+                    get: { item.cornerRadius ?? 0 },
+                    set: { item.cornerRadius = $0 }
+                ), in: 0...100)
+            }
+        }
     }
 
     // MARK: - Text
@@ -47,22 +74,14 @@ struct InspectorPanel: View {
                 set: { item.text = $0 }
             ), axis: .vertical)
 
-            LabeledContent("Size") {
-                Slider(value: Binding(
-                    get: { item.fontSize ?? 16 },
-                    set: { item.fontSize = $0 }
-                ), in: 8...72, step: 1)
+            LabeledContent("Font") {
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(currentFontLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Select Font…") { openFontPanel() }
+                }
             }
-
-            Toggle("Bold", isOn: Binding(
-                get: { item.isBold ?? false },
-                set: { item.isBold = $0 }
-            ))
-
-            Toggle("Italic", isOn: Binding(
-                get: { item.isItalic ?? false },
-                set: { item.isItalic = $0 }
-            ))
 
             Picker("Alignment", selection: Binding(
                 get: { item.textAlignment ?? "leading" },
@@ -76,6 +95,33 @@ struct InspectorPanel: View {
 
             ColorPicker("Color", selection: hexColorBinding(\.textColor, default: "#333333"))
         }
+    }
+
+    private var currentFontLabel: String {
+        let name = item.fontName.flatMap { NSFont(name: $0, size: 12)?.displayName } ?? "System"
+        let size = Int(item.fontSize ?? 16)
+        return "\(name), \(size)pt"
+    }
+
+    private func openFontPanel() {
+        let currentNSFont: NSFont
+        if let name = item.fontName, let font = NSFont(name: name, size: CGFloat(item.fontSize ?? 16)) {
+            currentNSFont = font
+        } else {
+            currentNSFont = .systemFont(ofSize: CGFloat(item.fontSize ?? 16))
+        }
+        fontPanelTarget.currentFont = currentNSFont
+        fontPanelTarget.onChange = { newFont in
+            item.fontName = newFont.fontName
+            item.fontSize = Double(newFont.pointSize)
+            let traits = NSFontManager.shared.traits(of: newFont)
+            item.isBold = traits.contains(.boldFontMask)
+            item.isItalic = traits.contains(.italicFontMask)
+        }
+        NSFontManager.shared.target = fontPanelTarget
+        NSFontManager.shared.action = #selector(FontPanelTarget.changeFont(_:))
+        NSFontManager.shared.setSelectedFont(currentNSFont, isMultiple: false)
+        NSFontPanel.shared.orderFront(nil)
     }
 
     // MARK: - Shape
@@ -99,7 +145,7 @@ struct InspectorPanel: View {
                 Slider(value: Binding(
                     get: { item.strokeWidth ?? 1 },
                     set: { item.strokeWidth = $0 }
-                ), in: 0...10, step: 0.5)
+                ), in: 0...10)
             }
         }
     }
@@ -113,6 +159,17 @@ struct InspectorPanel: View {
                 get: { item.stickerName ?? "" },
                 set: { item.stickerName = $0 }
             ))
+            ColorPicker("Color", selection: hexColorBinding(\.fillColor, default: "#000000"))
+        }
+    }
+
+    // MARK: - Stepped Binding (tick mark 없이 step 동작)
+
+    private func steppedBinding(_ binding: Binding<Double>, step: Double) -> Binding<Double> {
+        Binding {
+            binding.wrappedValue
+        } set: { newValue in
+            binding.wrappedValue = (newValue / step).rounded() * step
         }
     }
 

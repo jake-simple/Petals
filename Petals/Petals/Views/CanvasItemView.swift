@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct CanvasItemView: View {
-    let item: CanvasItem
+    @Bindable var item: CanvasItem
+    @Binding var isEditing: Bool
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         switch CanvasItemType(rawValue: item.type) {
@@ -32,15 +34,43 @@ struct CanvasItemView: View {
 
     @ViewBuilder
     private var textContent: some View {
-        Text(item.text ?? String(localized: "Text"))
-            .font(.system(
-                size: item.fontSize ?? 16,
-                weight: (item.isBold ?? false) ? .bold : .regular
-            ))
-            .italic(item.isItalic ?? false)
-            .foregroundStyle(item.textColor.map { Color(hex: $0) } ?? .primary)
-            .multilineTextAlignment(textAlign)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlign)
+        GeometryReader { proxy in
+            if isEditing {
+                TextField("", text: Binding(
+                    get: { item.text ?? "" },
+                    set: { item.text = $0 }
+                ), axis: .vertical)
+                .font(textFont(containerHeight: proxy.size.height))
+                .foregroundStyle(item.textColor.map { Color(hex: $0) } ?? .primary)
+                .textFieldStyle(.plain)
+                .multilineTextAlignment(textAlign)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlign)
+                .focused($isFocused)
+                .onAppear { isFocused = true }
+                .onChange(of: isFocused) { _, focused in
+                    if !focused { isEditing = false }
+                }
+            } else {
+                Text(item.text ?? String(localized: "Text"))
+                    .font(textFont(containerHeight: proxy.size.height))
+                    .foregroundStyle(item.textColor.map { Color(hex: $0) } ?? .primary)
+                    .multilineTextAlignment(textAlign)
+                    .minimumScaleFactor(0.1)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: frameAlign)
+            }
+        }
+    }
+
+    private func textFont(containerHeight: CGFloat) -> Font {
+        let baseRatio = (item.fontSize ?? 16) / 100.0
+        let size = max(6, containerHeight * baseRatio)
+        if let fontName = item.fontName {
+            return .custom(fontName, size: size)
+        }
+        return .system(
+            size: size,
+            weight: (item.isBold ?? false) ? .bold : .regular
+        )
     }
 
     private var textAlign: TextAlignment {

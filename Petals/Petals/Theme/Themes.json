@@ -19,7 +19,7 @@
     },
     {
         "id": "dark-mode",
-        "name": "Dark Mode",
+        "name": "Midnight Blue",
         "backgroundColor": "#1A1A2E",
         "gridLineColor": "#2A2A4A",
         "todayLineColor": "#00D4FF",
@@ -45,7 +45,7 @@
         "todayLineColor": "#FF8FA3",
         "monthLabelColor": "#8B6B6B",
         "dayLabelColor": "#A08080",
-        "weekendColor": "#FFE8EC"
+        "weekendColor": "#FFD4DE"
     },
     {
         "id": "classic",
@@ -57,5 +57,61 @@
         "dayLabelColor": "#5C4A34",
         "weekendColor": "#EDE4D4",
         "fontName": "Georgia"
+    },
+    {
+        "id": "dracula",
+        "name": "Dracula",
+        "backgroundColor": "#282A36",
+        "gridLineColor": "#44475A",
+        "todayLineColor": "#FF79C6",
+        "monthLabelColor": "#F8F8F2",
+        "dayLabelColor": "#6272A4",
+        "weekendColor": "#2E303E"
+    },
+    {
+        "id": "tokyo-night",
+        "name": "Tokyo Night",
+        "backgroundColor": "#1A1B26",
+        "gridLineColor": "#292E42",
+        "todayLineColor": "#7AA2F7",
+        "monthLabelColor": "#C0CAF5",
+        "dayLabelColor": "#565F89",
+        "weekendColor": "#1E1F2B"
+    },
+    {
+        "id": "nord-light",
+        "name": "Nord",
+        "backgroundColor": "#ECEFF4",
+        "gridLineColor": "#D8DEE9",
+        "todayLineColor": "#5E81AC",
+        "monthLabelColor": "#2E3440",
+        "dayLabelColor": "#4C566A",
+        "weekendColor": "#D8E0ED",
+        "dark": {
+            "backgroundColor": "#2E3440",
+            "gridLineColor": "#3B4252",
+            "todayLineColor": "#88C0D0",
+            "monthLabelColor": "#ECEFF4",
+            "dayLabelColor": "#7B88A1",
+            "weekendColor": "#3B4455"
+        }
+    },
+    {
+        "id": "solarized-light",
+        "name": "Solarized",
+        "backgroundColor": "#FDF6E3",
+        "gridLineColor": "#EEE8D5",
+        "todayLineColor": "#CB4B16",
+        "monthLabelColor": "#073642",
+        "dayLabelColor": "#586E75",
+        "weekendColor": "#F5EDDA",
+        "dark": {
+            "backgroundColor": "#002B36",
+            "gridLineColor": "#073642",
+            "todayLineColor": "#CB4B16",
+            "monthLabelColor": "#FDF6E3",
+            "dayLabelColor": "#839496",
+            "weekendColor": "#003340"
+        }
     }
 ]
