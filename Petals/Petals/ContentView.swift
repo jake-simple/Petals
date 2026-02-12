@@ -158,15 +158,20 @@ struct ContentView: View {
             .padding(.top, showTopArea ? geo.size.height * 0.15 : 16)
             .padding(.bottom, 16)
             // Canvas layer covers entire board
-            if isCanvasEditMode {
-                CanvasLayer(
-                    yearDocument: currentDocument,
-                    selectedItemID: $selectedCanvasItemID,
-                    showInspector: $showInspector
-                )
-            } else {
-                canvasDisplayLayer
+            Group {
+                if isCanvasEditMode {
+                    CanvasLayer(
+                        yearDocument: currentDocument,
+                        selectedItemID: $selectedCanvasItemID,
+                        showInspector: $showInspector
+                    )
+                } else {
+                    canvasDisplayLayer
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, showTopArea ? geo.size.height * 0.15 : 16)
+            .padding(.bottom, 16)
         }
         } // GeometryReader
         .toolbar { toolbarContent }
@@ -249,10 +254,12 @@ struct ContentView: View {
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.leftArrow) {
+            guard !isCanvasEditMode else { return .ignored }
             navigateBack()
             return .handled
         }
         .onKeyPress(.rightArrow) {
+            guard !isCanvasEditMode else { return .ignored }
             navigateForward()
             return .handled
         }
