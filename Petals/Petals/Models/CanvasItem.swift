@@ -70,7 +70,7 @@ final class CanvasItem {
     static func newText(zIndex: Int) -> CanvasItem {
         let item = CanvasItem(type: .text, relativeX: 0.4, relativeY: 0.4,
                               relativeWidth: 0.15, relativeHeight: 0.05, zIndex: zIndex)
-        item.text = "New Text"
+        item.text = String(localized: "New Text")
         item.fontSize = 16
         item.textColor = "#333333"
         return item

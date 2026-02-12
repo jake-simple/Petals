@@ -10,7 +10,7 @@ struct CalendarFilterView: View {
         }
         return grouped
             .map { entry in
-                let title = entry.value.first?.source?.title ?? "Other"
+                let title = entry.value.first?.source?.title ?? String(localized: "Other")
                 return (sourceTitle: title, sourceID: entry.key, calendars: entry.value)
             }
             .sorted { $0.sourceTitle.localizedCompare($1.sourceTitle) == .orderedAscending }

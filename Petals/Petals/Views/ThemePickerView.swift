@@ -24,7 +24,7 @@ struct ThemePickerView: View {
                             }
                             .frame(width: 36, height: 24)
 
-                        Text(theme.name)
+                        Text(LocalizedStringKey(theme.name))
                             .foregroundStyle(.primary)
 
                         Spacer()

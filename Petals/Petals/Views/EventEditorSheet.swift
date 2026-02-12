@@ -22,7 +22,7 @@ struct EventEditorSheet: View {
             HStack {
                 Button("Cancel") { dismiss() }
                 Spacer()
-                Text(existingEvent == nil ? "New Event" : "Edit Event")
+                Text(existingEvent == nil ? LocalizedStringKey("New Event") : LocalizedStringKey("Edit Event"))
                     .font(.headline)
                 Spacer()
                 Button("Save") { save() }
@@ -96,7 +96,7 @@ struct EventEditorSheet: View {
 
     private func save() {
         guard let cal = selectedCalendar else {
-            errorMessage = "Please select a calendar."
+            errorMessage = String(localized: "Please select a calendar.")
             return
         }
 

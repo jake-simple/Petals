@@ -32,7 +32,7 @@ struct CanvasItemView: View {
 
     @ViewBuilder
     private var textContent: some View {
-        Text(item.text ?? "Text")
+        Text(item.text ?? String(localized: "Text"))
             .font(.system(
                 size: item.fontSize ?? 16,
                 weight: (item.isBold ?? false) ? .bold : .regular

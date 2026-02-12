@@ -15,7 +15,7 @@ struct EventDetailPopover: View {
                 Circle()
                     .fill(Color(cgColor: event.calendar.cgColor))
                     .frame(width: 10, height: 10)
-                Text(event.title ?? "Untitled")
+                Text(event.title ?? String(localized: "Untitled"))
                     .font(.headline)
             }
 
