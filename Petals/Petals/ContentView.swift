@@ -13,6 +13,7 @@ struct ContentView: View {
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
     @AppStorage("obfuscateEventText") private var obfuscateText = false
     @AppStorage("hideSingleDayEvents") private var hideSingleDayEvents = false
+    @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
 
     // Cached layout (recomputed only on data change)
     @State private var segments: [EventSegment] = []
@@ -23,6 +24,7 @@ struct ContentView: View {
     @State private var showEventDetail = false
     @State private var showEventEditor = false
     @State private var showCalendarFilter = false
+    @State private var showFontSizePicker = false
     @State private var editorStartDate: Date?
     @State private var editorEndDate: Date?
 
@@ -36,6 +38,8 @@ struct ContentView: View {
     @State private var showImagePicker = false
     @State private var showInspector = false
     @State private var showThemePicker = false
+    @State private var scrollMonitor: Any?
+    @State private var accumulatedScrollX: CGFloat = 0
 
     private var theme: Theme {
         let themeID = currentDocument?.theme ?? "minimal-light"
@@ -99,6 +103,7 @@ struct ContentView: View {
                 // Z1: Grid + today line
                 CalendarGridView(
                     year: currentYear, theme: theme, showTodayLine: showTodayLine,
+                    eventFontSize: CGFloat(eventFontSize),
                     startMonth: startMonth, monthsShown: monthsPerPage
                 )
                 .allowsHitTesting(false)
@@ -110,6 +115,7 @@ struct ContentView: View {
                         overflows: visibleOverflows,
                         maxEventRows: maxEventRows,
                         obfuscateText: obfuscateText,
+                        eventFontSize: CGFloat(eventFontSize),
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
                         onEventTap: { event in
@@ -194,6 +200,35 @@ struct ContentView: View {
         }
         .onAppear {
             loadDocument(for: currentYear)
+            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                if event.phase == .began {
+                    accumulatedScrollX = 0
+                }
+                accumulatedScrollX += event.scrollingDeltaX
+                if event.phase == .ended {
+                    if accumulatedScrollX < -50 {
+                        if monthsPerPage < 12 {
+                            pageIndex = min(maxPageIndex, pageIndex + 1)
+                        } else {
+                            currentYear += 1
+                        }
+                    } else if accumulatedScrollX > 50 {
+                        if monthsPerPage < 12 {
+                            pageIndex = max(0, pageIndex - 1)
+                        } else {
+                            currentYear -= 1
+                        }
+                    }
+                    accumulatedScrollX = 0
+                }
+                return event
+            }
+        }
+        .onDisappear {
+            if let monitor = scrollMonitor {
+                NSEvent.removeMonitor(monitor)
+                scrollMonitor = nil
+            }
         }
         .onChange(of: currentYear) { _, newYear in
             loadDocument(for: newYear)
@@ -254,7 +289,7 @@ struct ContentView: View {
                 Button(action: { zoomIn() }) {
                     Image(systemName: "plus.magnifyingglass")
                 }
-                .keyboardShortcut("=", modifiers: .command)
+                .keyboardShortcut("=", modifiers: [.command, .option])
                 .disabled(monthsPerPage <= 3)
 
                 Text("\(monthsPerPage)M")
@@ -264,7 +299,7 @@ struct ContentView: View {
                 Button(action: { zoomOut() }) {
                     Image(systemName: "minus.magnifyingglass")
                 }
-                .keyboardShortcut("-", modifiers: .command)
+                .keyboardShortcut("-", modifiers: [.command, .option])
                 .disabled(monthsPerPage >= 12)
 
                 if monthsPerPage < 12 {
@@ -306,6 +341,19 @@ struct ContentView: View {
                 }
                 .popover(isPresented: $showCalendarFilter) {
                     CalendarFilterView(eventManager: eventManager)
+                }
+
+                Button(action: { showFontSizePicker.toggle() }) {
+                    Label("Font Size", systemImage: "textformat.size")
+                }
+                .popover(isPresented: $showFontSizePicker) {
+                    VStack(spacing: 8) {
+                        Text("Event Font Size: \(Int(eventFontSize))pt")
+                            .font(.headline)
+                        Slider(value: $eventFontSize, in: 6...20, step: 1)
+                            .frame(width: 160)
+                    }
+                    .padding()
                 }
 
                 Divider()

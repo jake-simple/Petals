@@ -6,6 +6,7 @@ struct EventBarLayer: View {
     let overflows: [Int: [Int: Int]]
     let maxEventRows: Int
     let obfuscateText: Bool
+    let eventFontSize: CGFloat
     var startMonth: Int = 1
     var monthsShown: Int = 12
     let onEventTap: (EKEvent) -> Void
@@ -21,17 +22,31 @@ struct EventBarLayer: View {
 
             Canvas { context, size in
                 let barHeight = eventBarHeight(layout: layout)
+                let rows = visibleEventRows(layout: layout)
 
-                // Event bars
-                for segment in segments {
+                // Event bars (skip lanes beyond visible rows)
+                for segment in segments where segment.lane < rows {
                     drawBar(segment, layout: layout, barHeight: barHeight, context: &context)
                 }
 
-                // Overflow badges (+N)
+                // Merge hidden segments into overflow counts
+                var badgeCounts: [Int: [Int: Int]] = [:]
+                for segment in segments where segment.lane >= rows {
+                    for day in segment.startDay...segment.endDay {
+                        badgeCounts[segment.month, default: [:]][day, default: 0] += 1
+                    }
+                }
                 for (month, days) in overflows {
                     for (day, count) in days {
+                        badgeCounts[month, default: [:]][day, default: 0] += count
+                    }
+                }
+
+                // Overflow badges (+N)
+                for (month, days) in badgeCounts {
+                    for (day, count) in days {
                         let origin = layout.cellOrigin(month: month, day: day)
-                        let badgeY = origin.y + CGFloat(visibleEventRows) * barHeight
+                        let badgeY = origin.y + CGFloat(rows) * barHeight
                         let text = context.resolve(
                             Text("+\(count)")
                                 .font(.system(size: 7, weight: .medium))
@@ -95,16 +110,13 @@ struct EventBarLayer: View {
         }
     }
 
-    private var visibleEventRows: Int {
-        switch monthsShown {
-        case 6: return 4
-        case 3: return max(maxEventRows - 4, 2)
-        default: return 6
-        }
+    private func visibleEventRows(layout: CalendarLayout) -> Int {
+        let barHeight = eventFontSize + 2
+        return max(1, min(Int(layout.cellHeight / barHeight), maxEventRows))
     }
 
     private func eventBarHeight(layout: CalendarLayout) -> CGFloat {
-        layout.cellHeight / CGFloat(visibleEventRows + 1)
+        eventFontSize + 2
     }
 
     private func barRect(for segment: EventSegment, layout: CalendarLayout, barHeight: CGFloat) -> CGRect {
@@ -127,7 +139,7 @@ struct EventBarLayer: View {
 
         // Title text (clipped to bar)
         let title = obfuscateText ? "●●●●" : (segment.event.title ?? "")
-        let fontSize = rect.height - 1
+        let fontSize = eventFontSize
         guard fontSize >= 3 else { return }
         context.drawLayer { ctx in
             ctx.clip(to: Path(rect))

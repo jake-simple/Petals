@@ -4,6 +4,7 @@ struct CalendarGridView: View {
     let year: Int
     let theme: Theme
     let showTodayLine: Bool
+    let eventFontSize: CGFloat
     var startMonth: Int = 1
     var monthsShown: Int = 12
 
@@ -24,8 +25,10 @@ struct CalendarGridView: View {
             let gridColor = Color(hex: theme.gridLineColor)
             let dayLabelColor = Color(hex: theme.dayLabelColor)
             let monthLabelColor = Color(hex: theme.monthLabelColor)
-            let weekdaySymbols = calendar.veryShortStandaloneWeekdaySymbols
-            let monthNames = calendar.shortMonthSymbols
+            var locCal = calendar
+            locCal.locale = Locale(identifier: Locale.preferredLanguages.first ?? "en")
+            let weekdaySymbols = locCal.veryShortStandaloneWeekdaySymbols
+            let monthNames = locCal.shortMonthSymbols
 
             let endMonth = startMonth + monthsShown - 1
 
@@ -42,6 +45,8 @@ struct CalendarGridView: View {
                     let lastDay = min((subrow + 1) * daysPerRow, 31)
 
                     // MARK: Per-subrow day labels
+                    let dateFontSize = eventFontSize
+
                     for day in firstDay...lastDay where day <= days {
                         let col = day - firstDay
                         let x = monthLabelWidth + (CGFloat(col) + 0.5) * cellWidth
@@ -51,19 +56,11 @@ struct CalendarGridView: View {
 
                         let isWeekend = wd == 1 || wd == 7
 
-                        // Day number
                         let numColor = isWeekend ? Color(hex: theme.todayLineColor).opacity(0.7) : dayLabelColor
-                        let dayResolved = context.resolve(
-                            Text("\(day)").font(.system(size: 9)).foregroundStyle(numColor)
-                        )
-                        context.draw(dayResolved, at: CGPoint(x: x, y: rowY + perMonthLabelHeight * 0.3))
-
-                        // Weekday abbreviation
                         let wdColor = isWeekend ? Color(hex: theme.todayLineColor).opacity(0.7) : dayLabelColor.opacity(0.6)
-                        let wdResolved = context.resolve(
-                            Text(sym).font(.system(size: 7)).foregroundStyle(wdColor)
-                        )
-                        context.draw(wdResolved, at: CGPoint(x: x, y: rowY + perMonthLabelHeight * 0.72))
+                        let label = Text("\(day)").foregroundStyle(numColor) + Text(" \(sym)").foregroundStyle(wdColor)
+                        let resolved = context.resolve(label.font(.system(size: dateFontSize)))
+                        context.draw(resolved, at: CGPoint(x: x, y: rowY + perMonthLabelHeight * 0.5))
                     }
 
                     // MARK: Weekend + inactive cells
@@ -88,7 +85,7 @@ struct CalendarGridView: View {
                         let monthY = rowY + totalMonthHeight / 2
                         let monthResolved = context.resolve(
                             Text(monthNames[month - 1])
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: eventFontSize, weight: .medium))
                                 .foregroundStyle(monthLabelColor)
                         )
                         context.draw(monthResolved, at: CGPoint(x: monthLabelWidth / 2, y: monthY))
@@ -97,24 +94,28 @@ struct CalendarGridView: View {
             }
 
             // MARK: Grid lines
-            // Horizontal lines
+            let boundaryStyle: (Color, CGFloat) = (Color.primary, 0.4)
+            let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.5), 0.5)
+
             for i in 0...totalRows {
+                let isBoundary = i % rowsPerMonth == 0
+                let (color, width) = isBoundary ? boundaryStyle : normalStyle
+                var path = Path()
                 let y = CGFloat(i) * rowHeight
-                var path = Path()
-                path.move(to: CGPoint(x: monthLabelWidth, y: y))
+                path.move(to: CGPoint(x: isBoundary ? 0 : monthLabelWidth, y: y))
                 path.addLine(to: CGPoint(x: size.width, y: y))
-                context.stroke(path, with: .color(gridColor), lineWidth: 0.5)
+                context.stroke(path, with: .color(color), lineWidth: width)
             }
-            // Vertical lines
             for i in 0...daysPerRow {
-                let x = monthLabelWidth + CGFloat(i) * cellWidth
+                let (color, width) = i == 0 ? boundaryStyle : normalStyle
                 var path = Path()
+                let x = monthLabelWidth + CGFloat(i) * cellWidth
                 path.move(to: CGPoint(x: x, y: 0))
                 path.addLine(to: CGPoint(x: x, y: size.height))
-                context.stroke(path, with: .color(gridColor), lineWidth: 0.5)
+                context.stroke(path, with: .color(color), lineWidth: width)
             }
 
-            // MARK: Today line
+            // MARK: Today highlight
             if showTodayLine {
                 let today = Date()
                 let components = calendar.dateComponents([.year, .month, .day], from: today)
@@ -126,13 +127,10 @@ struct CalendarGridView: View {
                     let subrow = (day - 1) / daysPerRow
                     let monthOffset = todayMonth - startMonth
                     let visualRow = monthOffset * rowsPerMonth + subrow
-                    let x = monthLabelWidth + (CGFloat(col) + 0.5) * cellWidth
-                    let rowTop = CGFloat(visualRow) * rowHeight
-                    let rowBottom = rowTop + rowHeight
-                    var path = Path()
-                    path.move(to: CGPoint(x: x, y: rowTop))
-                    path.addLine(to: CGPoint(x: x, y: rowBottom))
-                    context.stroke(path, with: .color(Color(hex: theme.todayLineColor)), lineWidth: 2)
+                    let x = monthLabelWidth + CGFloat(col) * cellWidth
+                    let y = CGFloat(visualRow) * rowHeight
+                    let rect = CGRect(x: x, y: y, width: cellWidth, height: rowHeight)
+                    context.stroke(Path(rect.insetBy(dx: 1, dy: 1)), with: .color(Color(hex: theme.todayLineColor)), lineWidth: 2)
                 }
             }
         }
@@ -152,7 +150,8 @@ struct CalendarGridView: View {
     CalendarGridView(
         year: Calendar.current.component(.year, from: Date()),
         theme: ThemeManager.shared.themes.first ?? ThemeManager.shared.theme(for: "minimal-light"),
-        showTodayLine: true
+        showTodayLine: true,
+        eventFontSize: AppSettings.eventFontSizeDefault
     )
     .frame(width: 1100, height: 700)
 }

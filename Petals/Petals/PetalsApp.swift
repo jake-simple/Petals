@@ -32,6 +32,20 @@ struct PetalsApp: App {
         .defaultSize(width: 1200, height: 800)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(after: .toolbar) {
+                Button("Increase Font Size") {
+                    let current = UserDefaults.standard.double(forKey: "eventFontSize")
+                    let size = current > 0 ? current : AppSettings.eventFontSizeDefault
+                    UserDefaults.standard.set(min(size + 1, 20), forKey: "eventFontSize")
+                }
+                .keyboardShortcut("=", modifiers: .command)
+                Button("Decrease Font Size") {
+                    let current = UserDefaults.standard.double(forKey: "eventFontSize")
+                    let size = current > 0 ? current : AppSettings.eventFontSizeDefault
+                    UserDefaults.standard.set(max(size - 1, 6), forKey: "eventFontSize")
+                }
+                .keyboardShortcut("-", modifiers: .command)
+            }
         }
 
         Settings {
