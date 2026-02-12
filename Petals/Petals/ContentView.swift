@@ -372,15 +372,17 @@ struct ContentView: View {
                     )
                 }
 
-                Divider()
-
                 // Canvas edit mode toggle
                 Toggle(isOn: $isCanvasEditMode) {
                     Label("Canvas", systemImage: "paintbrush")
                 }
                 .toggleStyle(.button)
+            }
+        }
 
-                if isCanvasEditMode {
+        if isCanvasEditMode {
+            ToolbarItem(placement: .secondaryAction) {
+                HStack(spacing: 4) {
                     canvasToolButtons
                 }
             }
