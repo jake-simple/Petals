@@ -45,21 +45,17 @@ struct CalendarGridView: View {
                     let lastDay = min((subrow + 1) * daysPerRow, 31)
 
                     // MARK: Per-subrow day labels
-                    let dateFontSize = eventFontSize
-
                     for day in firstDay...lastDay where day <= days {
                         let col = day - firstDay
                         let x = monthLabelWidth + (CGFloat(col) + 0.5) * cellWidth
                         let date = makeDate(month: month, day: day)
                         let wd = calendar.component(.weekday, from: date)
                         let sym = weekdaySymbols[wd - 1]
-
                         let isWeekend = wd == 1 || wd == 7
-
                         let numColor = isWeekend ? Color(hex: theme.todayLineColor).opacity(0.7) : dayLabelColor
                         let wdColor = isWeekend ? Color(hex: theme.todayLineColor).opacity(0.7) : dayLabelColor.opacity(0.6)
                         let label = Text("\(day)").foregroundStyle(numColor) + Text(" \(sym)").foregroundStyle(wdColor)
-                        let resolved = context.resolve(label.font(.system(size: dateFontSize)))
+                        let resolved = context.resolve(label.font(.system(size: eventFontSize)))
                         context.draw(resolved, at: CGPoint(x: x, y: rowY + perMonthLabelHeight * 0.5))
                     }
 
@@ -94,10 +90,11 @@ struct CalendarGridView: View {
             }
 
             // MARK: Grid lines
-            let boundaryStyle: (Color, CGFloat) = (Color.primary, 0.4)
+            let boundaryStyle: (Color, CGFloat) = (Color.primary.opacity(0.6), 0.4)
             let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.5), 0.5)
 
             for i in 0...totalRows {
+                if i == 0 { continue }
                 let isBoundary = i % rowsPerMonth == 0
                 let (color, width) = isBoundary ? boundaryStyle : normalStyle
                 var path = Path()

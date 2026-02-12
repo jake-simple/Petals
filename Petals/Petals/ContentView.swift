@@ -95,63 +95,76 @@ struct ContentView: View {
     }
 
     var body: some View {
+        GeometryReader { geo in
         ZStack {
-            Color(hex: theme.backgroundColor)
+            // Board background covers entire window
+            MoodBoardBackground(gridLineColor: theme.gridLineColor)
                 .ignoresSafeArea()
 
+            // Calendar pinned onto the board with margin
             ZStack {
-                // Z1: Grid + today line
-                CalendarGridView(
-                    year: currentYear, theme: theme, showTodayLine: showTodayLine,
-                    eventFontSize: CGFloat(eventFontSize),
-                    startMonth: startMonth, monthsShown: monthsPerPage
-                )
-                .allowsHitTesting(false)
+                Color(hex: theme.backgroundColor)
 
-                // Z2: Event bars (hidden in canvas edit mode)
-                if !isCanvasEditMode {
-                    EventBarLayer(
-                        segments: visibleSegments,
-                        overflows: visibleOverflows,
-                        maxEventRows: maxEventRows,
-                        obfuscateText: obfuscateText,
+                ZStack {
+                    // Z1: Grid + today line
+                    CalendarGridView(
+                        year: currentYear, theme: theme, showTodayLine: showTodayLine,
                         eventFontSize: CGFloat(eventFontSize),
-                        startMonth: startMonth,
-                        monthsShown: monthsPerPage,
-                        onEventTap: { event in
-                            selectedEvent = event
-                            showEventDetail = true
-                        },
-                        onEmptyTap: { month, day in
-                            openEditor(month: month, startDay: day, endDay: day)
-                        },
-                        onDragCreate: { month, startDay, _, endDay in
-                            openEditor(month: month, startDay: startDay, endDay: endDay)
-                        }
+                        startMonth: startMonth, monthsShown: monthsPerPage
                     )
-                }
+                    .allowsHitTesting(false)
 
-                // Z3: Canvas items
-                if isCanvasEditMode {
-                    CanvasLayer(
-                        yearDocument: currentDocument,
-                        selectedItemID: $selectedCanvasItemID
-                    )
-                } else {
-                    canvasDisplayLayer
-                }
-            }
-            .gesture(
-                MagnifyGesture()
-                    .onEnded { value in
-                        if value.magnification > 1.3 {
-                            zoomIn()
-                        } else if value.magnification < 0.7 {
-                            zoomOut()
-                        }
+                    // Z2: Event bars (hidden in canvas edit mode)
+                    if !isCanvasEditMode {
+                        EventBarLayer(
+                            segments: visibleSegments,
+                            overflows: visibleOverflows,
+                            maxEventRows: maxEventRows,
+                            obfuscateText: obfuscateText,
+                            eventFontSize: CGFloat(eventFontSize),
+                            startMonth: startMonth,
+                            monthsShown: monthsPerPage,
+                            onEventTap: { event in
+                                selectedEvent = event
+                                showEventDetail = true
+                            },
+                            onEmptyTap: { month, day in
+                                openEditor(month: month, startDay: day, endDay: day)
+                            },
+                            onDragCreate: { month, startDay, _, endDay in
+                                openEditor(month: month, startDay: startDay, endDay: endDay)
+                            }
+                        )
                     }
-            )
+                }
+                .gesture(
+                    MagnifyGesture()
+                        .onEnded { value in
+                            if value.magnification > 1.3 {
+                                zoomIn()
+                            } else if value.magnification < 0.7 {
+                                zoomOut()
+                            }
+                        }
+                )
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+            .padding(.horizontal, 16)
+            .padding(.top, geo.size.height * 0.15)
+            .padding(.bottom, 16)
+
+            // Canvas layer covers entire board
+            if isCanvasEditMode {
+                CanvasLayer(
+                    yearDocument: currentDocument,
+                    selectedItemID: $selectedCanvasItemID
+                )
+            } else {
+                canvasDisplayLayer
+            }
         }
+        } // GeometryReader
         .toolbar { toolbarContent }
         .popover(isPresented: $showEventDetail, attachmentAnchor: .point(.center)) {
             if let event = selectedEvent {
@@ -293,7 +306,6 @@ struct ContentView: View {
                 .disabled(monthsPerPage <= 3)
 
                 Text("\(monthsPerPage)M")
-                    .font(.caption.monospacedDigit())
                     .frame(minWidth: 30)
 
                 Button(action: { zoomOut() }) {
@@ -348,7 +360,7 @@ struct ContentView: View {
                 }
                 .popover(isPresented: $showFontSizePicker) {
                     VStack(spacing: 8) {
-                        Text("Event Font Size: \(Int(eventFontSize))pt")
+                        Text("Font Size: \(Int(eventFontSize))pt")
                             .font(.headline)
                         Slider(value: $eventFontSize, in: 6...20, step: 1)
                             .frame(width: 160)

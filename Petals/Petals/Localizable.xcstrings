@@ -342,13 +342,13 @@
         }
       }
     },
-    "Event Font Size: %lldpt" : {
+    "Font Size: %lldpt" : {
       "extractionState" : "manual",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "이벤트 글꼴 크기: %lldpt"
+            "value" : "글꼴 크기: %lldpt"
           }
         }
       }
