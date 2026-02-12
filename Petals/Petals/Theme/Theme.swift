@@ -1,5 +1,14 @@
 import SwiftUI
 
+struct ThemeColors: Codable, Sendable {
+    var backgroundColor: String
+    var gridLineColor: String
+    var todayLineColor: String
+    var monthLabelColor: String
+    var dayLabelColor: String
+    var weekendColor: String?
+}
+
 struct Theme: Codable, Identifiable, Sendable {
     var id: String
     var name: String
@@ -10,6 +19,19 @@ struct Theme: Codable, Identifiable, Sendable {
     var dayLabelColor: String
     var weekendColor: String?
     var fontName: String?
+    var dark: ThemeColors?
+
+    func resolved(for colorScheme: ColorScheme) -> Theme {
+        guard colorScheme == .dark, let dark else { return self }
+        var copy = self
+        copy.backgroundColor = dark.backgroundColor
+        copy.gridLineColor = dark.gridLineColor
+        copy.todayLineColor = dark.todayLineColor
+        copy.monthLabelColor = dark.monthLabelColor
+        copy.dayLabelColor = dark.dayLabelColor
+        copy.weekendColor = dark.weekendColor
+        return copy
+    }
 }
 
 struct ThemeManager: Sendable {
@@ -33,7 +55,7 @@ struct ThemeManager: Sendable {
 
     private static let fallback = Theme(
         id: "minimal-light",
-        name: "Minimal Light",
+        name: "Minimal",
         backgroundColor: "#FFFFFF",
         gridLineColor: "#E0E0E0",
         todayLineColor: "#FF6B35",

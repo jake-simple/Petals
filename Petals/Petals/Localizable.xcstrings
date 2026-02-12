@@ -496,13 +496,13 @@
         }
       }
     },
-    "Minimal Light" : {
+    "Minimal" : {
       "extractionState" : "manual",
       "localizations" : {
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "밝은 미니멀"
+            "value" : "미니멀"
           }
         }
       }

@@ -40,10 +40,11 @@ struct ContentView: View {
     @State private var showThemePicker = false
     @State private var scrollMonitor: Any?
     @State private var accumulatedScrollX: CGFloat = 0
+    @Environment(\.colorScheme) private var colorScheme
 
     private var theme: Theme {
         let themeID = currentDocument?.theme ?? "minimal-light"
-        return ThemeManager.shared.theme(for: themeID)
+        return ThemeManager.shared.theme(for: themeID).resolved(for: colorScheme)
     }
 
     private var selectedCanvasItem: CanvasItem? {
@@ -418,14 +419,7 @@ struct ContentView: View {
         }) {
             Label("Text", systemImage: "textformat")
         }
-        Menu {
-            Button("Rectangle") { if let doc = currentDocument { addCanvasItem(.newShape("rectangle", zIndex: doc.nextZIndex)) } }
-            Button("Circle") { if let doc = currentDocument { addCanvasItem(.newShape("circle", zIndex: doc.nextZIndex)) } }
-            Button("Line") { if let doc = currentDocument { addCanvasItem(.newShape("line", zIndex: doc.nextZIndex)) } }
-        } label: {
-            Label("Shape", systemImage: "square.on.circle")
-        }
-        Menu {
+Menu {
             Button("Star") { if let doc = currentDocument { addCanvasItem(.newSticker("star.fill", zIndex: doc.nextZIndex)) } }
             Button("Heart") { if let doc = currentDocument { addCanvasItem(.newSticker("heart.fill", zIndex: doc.nextZIndex)) } }
             Button("Bell") { if let doc = currentDocument { addCanvasItem(.newSticker("bell.fill", zIndex: doc.nextZIndex)) } }

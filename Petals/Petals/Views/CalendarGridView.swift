@@ -70,7 +70,7 @@ struct CalendarGridView: View {
                         } else if let weekendHex = theme.weekendColor {
                             let weekday = calendar.component(.weekday, from: makeDate(month: month, day: day))
                             if weekday == 1 || weekday == 7 {
-                                context.fill(Path(rect), with: .color(Color(hex: weekendHex)))
+                                context.fill(Path(rect), with: .color(Color(hex: weekendHex).opacity(0.5)))
                             }
                         }
                     }
@@ -90,7 +90,7 @@ struct CalendarGridView: View {
             }
 
             // MARK: Grid lines
-            let boundaryStyle: (Color, CGFloat) = (Color.primary.opacity(0.6), 0.4)
+            let boundaryStyle: (Color, CGFloat) = (gridColor, 0.4)
             let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.6), 0.5)
 
             for i in 0...totalRows {

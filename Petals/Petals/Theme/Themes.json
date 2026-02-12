@@ -1,13 +1,21 @@
 [
     {
         "id": "minimal-light",
-        "name": "Minimal Light",
+        "name": "Minimal",
         "backgroundColor": "#FFFFFF",
         "gridLineColor": "#E0E0E0",
         "todayLineColor": "#FF6B35",
         "monthLabelColor": "#333333",
         "dayLabelColor": "#666666",
-        "weekendColor": "#F5F5F5"
+        "weekendColor": "#F5F5F5",
+        "dark": {
+            "backgroundColor": "#1C1C1E",
+            "gridLineColor": "#38383A",
+            "todayLineColor": "#FF6B35",
+            "monthLabelColor": "#E5E5E7",
+            "dayLabelColor": "#98989D",
+            "weekendColor": "#2C2C2E"
+        }
     },
     {
         "id": "dark-mode",
