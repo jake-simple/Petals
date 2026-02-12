@@ -1,8 +1,20 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "NSCalendarsUsageDescription" : {
+    "CFBundleName" : {
+      "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Petals"
+          }
+        }
+      }
+    },
+    "NSCalendarsUsageDescription" : {
+      "comment" : "Privacy - Calendars Usage Description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -14,6 +26,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Petals이 연간 캘린더에 이벤트를 표시하기 위해 캘린더 접근 권한이 필요합니다."
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright" : {
+      "comment" : "Copyright (human-readable)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : ""
           }
         }
       }
