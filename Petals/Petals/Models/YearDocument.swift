@@ -27,6 +27,10 @@ final class YearDocument {
         canvasItems?.removeAll(where: predicate)
     }
 
+    func canvasItems(for zoomLevel: Int) -> [CanvasItem] {
+        (canvasItems ?? []).filter { $0.zoomLevel == zoomLevel }
+    }
+
     var nextZIndex: Int {
         ((canvasItems ?? []).map(\.zIndex).max() ?? 0) + 1
     }

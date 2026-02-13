@@ -162,6 +162,7 @@ struct ContentView: View {
                 if isCanvasEditMode {
                     CanvasLayer(
                         yearDocument: currentDocument,
+                        zoomLevel: monthsPerPage,
                         selectedItemID: $selectedCanvasItemID,
                         showInspector: $showInspector
                     )
@@ -284,7 +285,7 @@ struct ContentView: View {
     @ViewBuilder
     private var canvasDisplayLayer: some View {
         GeometryReader { proxy in
-            ForEach((currentDocument?.canvasItems ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
+            ForEach((currentDocument?.canvasItems(for: monthsPerPage) ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
                 let itemW = item.relativeWidth * proxy.size.width
                 let itemH: CGFloat = if let ar = item.aspectRatio, ar > 0 { itemW / ar } else { item.relativeHeight * proxy.size.height }
                 let pct = item.cornerRadius ?? 0
@@ -524,6 +525,7 @@ struct ContentView: View {
         }
         monthsPerPage = next
         pageIndex = (current - 1) / next
+        selectedCanvasItemID = nil
     }
 
     private func zoomOut() {
@@ -537,6 +539,7 @@ struct ContentView: View {
         }
         monthsPerPage = next
         pageIndex = (current - 1) / next
+        selectedCanvasItemID = nil
     }
 
     private func reloadEvents() {
@@ -588,6 +591,7 @@ struct ContentView: View {
         guard let result = ImageManager.importImage(from: url),
               let doc = currentDocument else { return }
         let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+        item.zoomLevel = monthsPerPage
         doc.appendItem(item)
         selectedCanvasItemID = item.persistentModelID
     }
@@ -604,6 +608,7 @@ struct ContentView: View {
 
     private func addCanvasItem(_ item: CanvasItem) {
         guard let doc = currentDocument else { return }
+        item.zoomLevel = monthsPerPage
         doc.appendItem(item)
         selectedCanvasItemID = item.persistentModelID
     }

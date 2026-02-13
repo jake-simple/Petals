@@ -5,13 +5,14 @@ import UniformTypeIdentifiers
 struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     var yearDocument: YearDocument?
+    var zoomLevel: Int = 12
     @Binding var selectedItemID: PersistentIdentifier?
     @Binding var showInspector: Bool
 
     @State private var clipboard: CanvasItemSnapshot?
 
     private var sortedItems: [CanvasItem] {
-        (yearDocument?.canvasItems ?? []).sorted { $0.zIndex < $1.zIndex }
+        (yearDocument?.canvasItems(for: zoomLevel) ?? []).sorted { $0.zIndex < $1.zIndex }
     }
 
     private var selectedItem: CanvasItem? {
@@ -86,7 +87,8 @@ struct CanvasLayer: View {
                               relativeWidth: snap.relativeWidth,
                               relativeHeight: snap.relativeHeight,
                               rotation: snap.rotation,
-                              opacity: snap.opacity)
+                              opacity: snap.opacity,
+                              zoomLevel: zoomLevel)
         item.imageFileName = snap.imageFileName
         item.thumbnailData = snap.thumbnailData
         item.text = snap.text
@@ -116,6 +118,7 @@ struct CanvasLayer: View {
                     guard let result = ImageManager.importImage(from: tempURL),
                           let doc = yearDocument else { return }
                     let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+                    item.zoomLevel = zoomLevel
                     doc.appendItem(item)
                     selectedItemID = item.persistentModelID
                 }

@@ -38,6 +38,9 @@ final class CanvasItem {
     var strokeColor: String?
     var strokeWidth: Double?
 
+    /// monthsPerPage at which this item is visible (12, 6, 3, 1)
+    var zoomLevel: Int = 12
+
     var yearDocument: YearDocument?
 
     init(type: CanvasItemType,
@@ -47,7 +50,8 @@ final class CanvasItem {
          relativeHeight: Double = 0.1,
          rotation: Double = 0,
          zIndex: Int = 0,
-         opacity: Double = 1.0) {
+         opacity: Double = 1.0,
+         zoomLevel: Int = 12) {
         self.type = type.rawValue
         self.relativeX = relativeX
         self.relativeY = relativeY
@@ -56,6 +60,7 @@ final class CanvasItem {
         self.rotation = rotation
         self.zIndex = zIndex
         self.opacity = opacity
+        self.zoomLevel = zoomLevel
         self.createdAt = Date()
     }
 
