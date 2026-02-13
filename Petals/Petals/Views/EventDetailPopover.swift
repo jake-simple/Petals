@@ -24,7 +24,7 @@ struct EventDetailPopover: View {
                     Spacer()
 
                     Button(action: onEdit) {
-                        Image(systemName: "pencil")
+                        Image(systemName: "square.and.pencil")
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -120,11 +120,10 @@ struct EventDetailPopover: View {
 
     private func formattedDateRange(start: Date, end: Date) -> String {
         if event.isAllDay {
-            if Calendar.current.isDate(start, inSameDayAs: end.addingTimeInterval(-1)) {
+            if Calendar.current.isDate(start, inSameDayAs: end) {
                 return start.formatted(date: .long, time: .omitted)
             } else {
-                let adjustedEnd = Calendar.current.date(byAdding: .day, value: -1, to: end) ?? end
-                return "\(start.formatted(date: .abbreviated, time: .omitted)) – \(adjustedEnd.formatted(date: .abbreviated, time: .omitted))"
+                return "\(start.formatted(date: .abbreviated, time: .omitted)) – \(end.formatted(date: .abbreviated, time: .omitted))"
             }
         } else {
             if Calendar.current.isDate(start, inSameDayAs: end) {

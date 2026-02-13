@@ -546,10 +546,7 @@ struct ContentView: View {
             let cal = Calendar.current
             events = eventManager.events.filter { event in
                 guard let start = event.startDate, let end = event.endDate else { return true }
-                let adjustedEnd = event.isAllDay
-                    ? (cal.date(byAdding: .day, value: -1, to: end) ?? end)
-                    : end
-                return !cal.isDate(start, inSameDayAs: adjustedEnd)
+                return !cal.isDate(start, inSameDayAs: end)
             }
         } else {
             events = eventManager.events

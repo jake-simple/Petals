@@ -17,13 +17,7 @@ enum EventLayoutEngine {
         for event in events {
             let startDate = event.startDate!
             let rawEnd = event.endDate!
-            let endDate: Date
-            if event.isAllDay {
-                let adjusted = cal.date(byAdding: .day, value: -1, to: rawEnd) ?? rawEnd
-                endDate = adjusted >= startDate ? adjusted : startDate
-            } else {
-                endDate = rawEnd >= startDate ? rawEnd : startDate
-            }
+            let endDate = rawEnd >= startDate ? rawEnd : startDate
 
             let sc = cal.dateComponents([.year, .month, .day], from: startDate)
             let ec = cal.dateComponents([.year, .month, .day], from: endDate)
@@ -100,13 +94,7 @@ enum EventLayoutEngine {
         for event in events {
             let startDate = event.startDate!
             let rawEnd = event.endDate!
-            let endDate: Date
-            if event.isAllDay {
-                let adjusted = cal.date(byAdding: .day, value: -1, to: rawEnd) ?? rawEnd
-                endDate = adjusted >= startDate ? adjusted : startDate
-            } else {
-                endDate = rawEnd >= startDate ? rawEnd : startDate
-            }
+            let endDate = rawEnd >= startDate ? rawEnd : startDate
 
             let sc = cal.dateComponents([.year, .month, .day], from: startDate)
             let ec = cal.dateComponents([.year, .month, .day], from: endDate)

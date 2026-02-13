@@ -82,7 +82,7 @@ struct EventEditorSheet: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 400, height: 550)
+        .frame(width: 400, height: 480)
         .onAppear { populateFields() }
     }
 
@@ -94,10 +94,7 @@ struct EventEditorSheet: View {
         if let event = existingEvent {
             title = event.title ?? ""
             startDate = event.startDate ?? Date()
-            let rawEnd = event.endDate ?? Date()
-            endDate = event.isAllDay
-                ? Calendar.current.date(byAdding: .day, value: -1, to: rawEnd) ?? rawEnd
-                : rawEnd
+            endDate = event.endDate ?? Date()
             isAllDay = event.isAllDay
             notes = event.notes ?? ""
             selectedCalendarID = event.calendar?.calendarIdentifier ?? ""
@@ -167,21 +164,16 @@ struct EventEditorSheet: View {
             if let event = existingEvent {
                 event.title = title
                 event.startDate = startDate
-                event.endDate = isAllDay
-                    ? Calendar.current.date(byAdding: .day, value: 1, to: endDate) ?? endDate
-                    : endDate
+                event.endDate = endDate
                 event.isAllDay = isAllDay
                 event.notes = notes.isEmpty ? nil : notes
                 event.calendar = cal
                 try eventManager.updateEvent(event)
             } else {
-                let actualEnd = isAllDay
-                    ? Calendar.current.date(byAdding: .day, value: 1, to: endDate) ?? endDate
-                    : endDate
                 try eventManager.createEvent(
                     title: title,
                     startDate: startDate,
-                    endDate: actualEnd,
+                    endDate: endDate,
                     calendar: cal,
                     notes: notes.isEmpty ? nil : notes,
                     isAllDay: isAllDay
