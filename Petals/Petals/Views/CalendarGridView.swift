@@ -90,7 +90,8 @@ struct CalendarGridView: View {
             }
 
             // MARK: Grid lines
-            let boundaryStyle: (Color, CGFloat) = (gridColor, 0.4)
+            let boundaryColor = Color(hex: theme.dayLabelColor).opacity(0.3)
+            let boundaryStyle: (Color, CGFloat) = (boundaryColor, 0.9)
             let normalStyle: (Color, CGFloat) = (gridColor.opacity(0.6), 0.5)
 
             for i in 0...totalRows {

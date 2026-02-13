@@ -27,8 +27,8 @@ final class YearDocument {
         canvasItems?.removeAll(where: predicate)
     }
 
-    func canvasItems(for zoomLevel: Int) -> [CanvasItem] {
-        (canvasItems ?? []).filter { $0.zoomLevel == zoomLevel }
+    func canvasItems(for zoomLevel: Int, pageIndex: Int = 0) -> [CanvasItem] {
+        (canvasItems ?? []).filter { $0.zoomLevel == zoomLevel && $0.pageIndex == pageIndex }
     }
 
     var nextZIndex: Int {

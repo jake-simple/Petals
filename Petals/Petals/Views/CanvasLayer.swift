@@ -6,13 +6,14 @@ struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     var yearDocument: YearDocument?
     var zoomLevel: Int = 12
+    var pageIndex: Int = 0
     @Binding var selectedItemID: PersistentIdentifier?
     @Binding var showInspector: Bool
 
     @State private var clipboard: CanvasItemSnapshot?
 
     private var sortedItems: [CanvasItem] {
-        (yearDocument?.canvasItems(for: zoomLevel) ?? []).sorted { $0.zIndex < $1.zIndex }
+        (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
     }
 
     private var selectedItem: CanvasItem? {
@@ -88,7 +89,8 @@ struct CanvasLayer: View {
                               relativeHeight: snap.relativeHeight,
                               rotation: snap.rotation,
                               opacity: snap.opacity,
-                              zoomLevel: zoomLevel)
+                              zoomLevel: zoomLevel,
+                              pageIndex: pageIndex)
         item.imageFileName = snap.imageFileName
         item.thumbnailData = snap.thumbnailData
         item.text = snap.text
@@ -119,6 +121,7 @@ struct CanvasLayer: View {
                           let doc = yearDocument else { return }
                     let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
                     item.zoomLevel = zoomLevel
+                    item.pageIndex = pageIndex
                     doc.appendItem(item)
                     selectedItemID = item.persistentModelID
                 }

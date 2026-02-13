@@ -155,10 +155,6 @@ struct InspectorPanel: View {
     @ViewBuilder
     private var stickerSection: some View {
         Section("Sticker") {
-            TextField("SF Symbol Name", text: Binding(
-                get: { item.stickerName ?? "" },
-                set: { item.stickerName = $0 }
-            ))
             ColorPicker("Color", selection: hexColorBinding(\.fillColor, default: "#000000"))
         }
     }

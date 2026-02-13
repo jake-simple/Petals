@@ -22,6 +22,7 @@ struct ContentView: View {
     // Event state
     @State private var selectedEvent: EKEvent?
     @State private var showEventDetail = false
+    @State private var eventPopoverAnchor: CGRect = .zero
     @State private var showEventEditor = false
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
@@ -40,7 +41,6 @@ struct ContentView: View {
     @State private var showThemePicker = false
     @AppStorage("showTopArea") private var showTopArea = true
     @State private var showStickerInput = false
-    @State private var stickerSymbolName = ""
     @State private var scrollMonitor: Any?
     @State private var accumulatedScrollX: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
@@ -128,8 +128,9 @@ struct ContentView: View {
                             eventFontSize: CGFloat(eventFontSize),
                             startMonth: startMonth,
                             monthsShown: monthsPerPage,
-                            onEventTap: { event in
+                            onEventTap: { event, rect in
                                 selectedEvent = event
+                                eventPopoverAnchor = rect
                                 showEventDetail = true
                             },
                             onEmptyTap: { month, day in
@@ -141,12 +142,32 @@ struct ContentView: View {
                         )
                     }
                 }
+                .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
+                    if let event = selectedEvent {
+                        EventDetailPopover(
+                            event: event,
+                            onEdit: {
+                                showEventDetail = false
+                                selectedEvent = event
+                                editorStartDate = nil
+                                editorEndDate = nil
+                                showEventEditor = true
+                            },
+                            onDelete: { span in
+                                try? eventManager.deleteEvent(event, span: span)
+                                showEventDetail = false
+                                selectedEvent = nil
+                                reloadEvents()
+                            }
+                        )
+                    }
+                }
                 .gesture(
                     MagnifyGesture()
                         .onEnded { value in
-                            if value.magnification > 1.3 {
+                            if value.magnification > 1.15 {
                                 zoomIn()
-                            } else if value.magnification < 0.7 {
+                            } else if value.magnification < 0.85 {
                                 zoomOut()
                             }
                         }
@@ -155,7 +176,7 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
-            .padding(.top, showTopArea ? geo.size.height * 0.15 : 16)
+            .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
             .padding(.bottom, 16)
             // Canvas layer covers entire board
             Group {
@@ -163,6 +184,7 @@ struct ContentView: View {
                     CanvasLayer(
                         yearDocument: currentDocument,
                         zoomLevel: monthsPerPage,
+                        pageIndex: pageIndex,
                         selectedItemID: $selectedCanvasItemID,
                         showInspector: $showInspector
                     )
@@ -171,31 +193,12 @@ struct ContentView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.top, showTopArea ? geo.size.height * 0.15 : 16)
+            .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
             .padding(.bottom, 16)
         }
         } // GeometryReader
+        .frame(minWidth: 900, minHeight: 600)
         .toolbar { toolbarContent }
-        .popover(isPresented: $showEventDetail, attachmentAnchor: .point(.center)) {
-            if let event = selectedEvent {
-                EventDetailPopover(
-                    event: event,
-                    onEdit: {
-                        showEventDetail = false
-                        selectedEvent = event
-                        editorStartDate = nil
-                        editorEndDate = nil
-                        showEventEditor = true
-                    },
-                    onDelete: { span in
-                        try? eventManager.deleteEvent(event, span: span)
-                        showEventDetail = false
-                        selectedEvent = nil
-                        reloadEvents()
-                    }
-                )
-            }
-        }
         .sheet(isPresented: $showEventEditor) {
             EventEditorSheet(
                 eventManager: eventManager,
@@ -243,6 +246,9 @@ struct ContentView: View {
             reloadEvents()
             selectedCanvasItemID = nil
         }
+        .onChange(of: pageIndex) {
+            selectedCanvasItemID = nil
+        }
         .onChange(of: eventManager.selectedCalendarIDs) {
             reloadEvents()
         }
@@ -285,7 +291,7 @@ struct ContentView: View {
     @ViewBuilder
     private var canvasDisplayLayer: some View {
         GeometryReader { proxy in
-            ForEach((currentDocument?.canvasItems(for: monthsPerPage) ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
+            ForEach((currentDocument?.canvasItems(for: monthsPerPage, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
                 let itemW = item.relativeWidth * proxy.size.width
                 let itemH: CGFloat = if let ar = item.aspectRatio, ar > 0 { itemW / ar } else { item.relativeHeight * proxy.size.height }
                 let pct = item.cornerRadius ?? 0
@@ -316,7 +322,12 @@ struct ContentView: View {
                     .font(.title2.bold()).monospacedDigit().frame(minWidth: 60)
                 Button(action: { currentYear += 1 }) { Image(systemName: "chevron.right") }
                     .keyboardShortcut(.rightArrow, modifiers: .command)
-                Button("Today") { currentYear = Calendar.current.component(.year, from: Date()) }
+                Button("Today") {
+                    let now = Date()
+                    currentYear = Calendar.current.component(.year, from: now)
+                    let month = Calendar.current.component(.month, from: now)
+                    pageIndex = (month - 1) / monthsPerPage
+                }
                     .keyboardShortcut("t", modifiers: .command)
 
                 Divider().frame(height: 16)
@@ -325,7 +336,7 @@ struct ContentView: View {
                 Button(action: { zoomIn() }) {
                     Image(systemName: "plus.magnifyingglass")
                 }
-                .keyboardShortcut("=", modifiers: [.command, .option])
+                .keyboardShortcut("=", modifiers: .command)
                 .disabled(monthsPerPage <= 1)
 
                 Text("\(monthsPerPage)M")
@@ -334,7 +345,7 @@ struct ContentView: View {
                 Button(action: { zoomOut() }) {
                     Image(systemName: "minus.magnifyingglass")
                 }
-                .keyboardShortcut("-", modifiers: [.command, .option])
+                .keyboardShortcut("-", modifiers: .command)
                 .disabled(monthsPerPage >= 12)
 
                 if monthsPerPage < 12 {
@@ -399,6 +410,11 @@ struct ContentView: View {
 
                 Divider()
 
+                Button(action: { showTopArea.toggle() }) {
+                    Label("Top Area", systemImage: showTopArea ? "rectangle.topthird.inset.filled" : "rectangle.topthird.inset")
+                }
+                .help(showTopArea ? "상단 영역 숨기기" : "상단 영역 보이기")
+
                 // Theme picker
                 Button(action: { showThemePicker.toggle() }) {
                     Label("Theme", systemImage: "paintpalette")
@@ -412,11 +428,6 @@ struct ContentView: View {
                         )
                     )
                 }
-
-                Button(action: { showTopArea.toggle() }) {
-                    Label("Top Area", systemImage: showTopArea ? "rectangle.topthird.inset.filled" : "rectangle.topthird.inset")
-                }
-                .help(showTopArea ? "상단 영역 숨기기" : "상단 영역 보이기")
 
                 // Canvas edit mode toggle
                 Toggle(isOn: $isCanvasEditMode) {
@@ -446,25 +457,14 @@ struct ContentView: View {
             Label("Text", systemImage: "textformat")
         }
         Button(action: { showStickerInput.toggle() }) {
-            Label("Sticker", systemImage: "face.smiling")
+            Label("Sticker", systemImage: "star.square.on.square")
         }
-        .popover(isPresented: $showStickerInput) {
-            VStack(spacing: 12) {
-                Text("SF Symbol").font(.headline)
-                HStack(spacing: 8) {
-                    TextField("star.fill", text: $stickerSymbolName)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 180)
-                        .onSubmit { addStickerFromInput() }
-                    if let _ = NSImage(systemSymbolName: stickerSymbolName, accessibilityDescription: nil) {
-                        Image(systemName: stickerSymbolName)
-                            .font(.title2)
-                    }
-                }
-                Button("Add") { addStickerFromInput() }
-                    .disabled(stickerSymbolName.isEmpty || NSImage(systemSymbolName: stickerSymbolName, accessibilityDescription: nil) == nil)
+        .sheet(isPresented: $showStickerInput) {
+            SFSymbolPicker { symbolName in
+                guard let doc = currentDocument else { return }
+                addCanvasItem(.newSticker(symbolName, zIndex: doc.nextZIndex))
+                showStickerInput = false
             }
-            .padding()
         }
 
         if selectedCanvasItemID != nil {
@@ -592,23 +592,16 @@ struct ContentView: View {
               let doc = currentDocument else { return }
         let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
         item.zoomLevel = monthsPerPage
+        item.pageIndex = pageIndex
         doc.appendItem(item)
         selectedCanvasItemID = item.persistentModelID
     }
 
-    private func addStickerFromInput() {
-        let name = stickerSymbolName.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty,
-              NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil,
-              let doc = currentDocument else { return }
-        addCanvasItem(.newSticker(name, zIndex: doc.nextZIndex))
-        stickerSymbolName = ""
-        showStickerInput = false
-    }
 
     private func addCanvasItem(_ item: CanvasItem) {
         guard let doc = currentDocument else { return }
         item.zoomLevel = monthsPerPage
+        item.pageIndex = pageIndex
         doc.appendItem(item)
         selectedCanvasItemID = item.persistentModelID
     }

@@ -30,6 +30,7 @@ struct PetalsApp: App {
         }
         .modelContainer(sharedModelContainer)
         .defaultSize(width: 1200, height: 800)
+        .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
             CommandGroup(after: .toolbar) {
@@ -38,13 +39,13 @@ struct PetalsApp: App {
                     let size = current > 0 ? current : AppSettings.eventFontSizeDefault
                     UserDefaults.standard.set(min(size + 1, 20), forKey: "eventFontSize")
                 }
-                .keyboardShortcut("=", modifiers: .command)
+                .keyboardShortcut("=", modifiers: [.command, .option])
                 Button("Decrease Font Size") {
                     let current = UserDefaults.standard.double(forKey: "eventFontSize")
                     let size = current > 0 ? current : AppSettings.eventFontSizeDefault
                     UserDefaults.standard.set(max(size - 1, 6), forKey: "eventFontSize")
                 }
-                .keyboardShortcut("-", modifiers: .command)
+                .keyboardShortcut("-", modifiers: [.command, .option])
             }
         }
 

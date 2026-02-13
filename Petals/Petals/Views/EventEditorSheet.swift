@@ -43,21 +43,35 @@ struct EventEditorSheet: View {
                 DatePicker("End", selection: $endDate,
                            displayedComponents: isAllDay ? .date : [.date, .hourAndMinute])
 
+                if let event = existingEvent, event.hasRecurrenceRules, let rule = event.recurrenceRules?.first {
+                    HStack {
+                        Label("Repeat", systemImage: "repeat")
+                        Spacer()
+                        Text(recurrenceDescription(rule))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Picker("Calendar", selection: $selectedCalendarID) {
-                    ForEach(eventManager.calendars, id: \.calendarIdentifier) { cal in
-                        HStack {
-                            Circle()
-                                .fill(Color(cgColor: cal.cgColor))
-                                .frame(width: 8, height: 8)
-                            Text(cal.title)
+                    let grouped = Dictionary(grouping: eventManager.calendars) { $0.source.title }
+                    let sortedSources = grouped.keys.sorted()
+                    ForEach(sortedSources, id: \.self) { source in
+                        Section(source) {
+                            ForEach(grouped[source]!, id: \.calendarIdentifier) { cal in
+                                Label {
+                                    Text(cal.title)
+                                } icon: {
+                                    Image(nsImage: colorDot(cal.cgColor))
+                                }
+                                .tag(cal.calendarIdentifier)
+                            }
                         }
-                        .tag(cal.calendarIdentifier)
                     }
                 }
 
                 Section("Notes") {
                     TextEditor(text: $notes)
-                        .frame(minHeight: 60)
+                        .frame(minHeight: 100)
                 }
 
                 if let error = errorMessage {
@@ -68,7 +82,7 @@ struct EventEditorSheet: View {
             }
             .formStyle(.grouped)
         }
-        .frame(width: 400, height: 450)
+        .frame(width: 400, height: 550)
         .onAppear { populateFields() }
     }
 
@@ -92,6 +106,55 @@ struct EventEditorSheet: View {
             if let e = initialEndDate { endDate = e }
             selectedCalendarID = eventManager.defaultCalendar?.calendarIdentifier ?? ""
         }
+    }
+
+    private func recurrenceDescription(_ rule: EKRecurrenceRule) -> String {
+        let interval = rule.interval
+        let base: String
+        switch rule.frequency {
+        case .daily:
+            base = interval == 1 ? String(localized: "Every day") : String(localized: "Every \(interval) days")
+        case .weekly:
+            let weekBase = interval == 1 ? String(localized: "Every week") : String(localized: "Every \(interval) weeks")
+            if let days = rule.daysOfTheWeek, !days.isEmpty {
+                let names = days.map { weekdayName($0.dayOfTheWeek) }
+                return "\(weekBase) (\(names.joined(separator: ", ")))"
+            }
+            base = weekBase
+        case .monthly:
+            base = interval == 1 ? String(localized: "Every month") : String(localized: "Every \(interval) months")
+        case .yearly:
+            base = interval == 1 ? String(localized: "Every year") : String(localized: "Every \(interval) years")
+        @unknown default:
+            base = String(localized: "Repeats")
+        }
+        return base
+    }
+
+    private func weekdayName(_ day: EKWeekday) -> String {
+        let symbols = Calendar.current.shortWeekdaySymbols
+        switch day {
+        case .sunday: return symbols[0]
+        case .monday: return symbols[1]
+        case .tuesday: return symbols[2]
+        case .wednesday: return symbols[3]
+        case .thursday: return symbols[4]
+        case .friday: return symbols[5]
+        case .saturday: return symbols[6]
+        @unknown default: return "?"
+        }
+    }
+
+    private func colorDot(_ cgColor: CGColor) -> NSImage {
+        let size: CGFloat = 12
+        let totalWidth: CGFloat = size + 4
+        let image = NSImage(size: NSSize(width: totalWidth, height: size))
+        image.lockFocus()
+        NSColor(cgColor: cgColor)?.setFill()
+        NSBezierPath(ovalIn: NSRect(x: 0, y: 0, width: size, height: size)).fill()
+        image.unlockFocus()
+        image.isTemplate = false
+        return image
     }
 
     private func save() {

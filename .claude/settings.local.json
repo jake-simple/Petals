@@ -10,7 +10,12 @@
       "Bash(git commit -m \"$\\(cat <<''EOF''\n빌드 에러 수정: 심볼 생성 불가 키 처리 및 STRING_CATALOG_GENERATE_SYMBOLS 비활성화\n\n포맷 지정자만 포함된 키\\(%lld°, +%lld 등\\)와 Swift 예약어\\(Type\\)로 인한\nGenerateStringSymbols 빌드 에러를 수정.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(git commit:*)",
       "Bash(ls:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(plutil:*)",
+      "Bash(mcp__XcodeBuildMCP__list_sims)",
+      "Bash(xcrun simctl list:*)",
+      "Bash(# Check if there''s a localized category name in the SF Symbols app or framework find /System/Library/PrivateFrameworks/SFSymbols.framework -name \"\"*categor*\"\" find /System/Library/PrivateFrameworks/SFSymbols.framework -name \"\"*.plist\"\")",
+      "Bash(do echo \"=== $f ===\")"
     ]
   }
 }

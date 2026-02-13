@@ -9,7 +9,7 @@ struct EventBarLayer: View {
     let eventFontSize: CGFloat
     var startMonth: Int = 1
     var monthsShown: Int = 12
-    let onEventTap: (EKEvent) -> Void
+    let onEventTap: (EKEvent, CGRect) -> Void
     let onEmptyTap: (Int, Int) -> Void  // (month, day)
     let onDragCreate: (Int, Int, Int, Int) -> Void  // (month, startDay, endMonth, endDay)
 
@@ -47,12 +47,13 @@ struct EventBarLayer: View {
                     for (day, count) in days {
                         let origin = layout.cellOrigin(month: month, day: day)
                         let badgeY = origin.y + CGFloat(rows) * barHeight
+                        let remainingHeight = layout.cellHeight - CGFloat(rows) * barHeight
                         let text = context.resolve(
                             Text("+\(count)")
-                                .font(.system(size: 7, weight: .medium))
+                                .font(.system(size: eventFontSize - 2, weight: .medium))
                                 .foregroundStyle(.secondary)
                         )
-                        context.draw(text, at: CGPoint(x: origin.x + layout.cellWidth / 2, y: badgeY + 4))
+                        context.draw(text, at: CGPoint(x: origin.x + layout.cellWidth / 2, y: badgeY + remainingHeight * 0.4))
                     }
                 }
 
@@ -93,7 +94,8 @@ struct EventBarLayer: View {
                                 // Tap
                                 let barHeight = eventBarHeight(layout: layout)
                                 if let segment = hitTest(at: value.location, layout: layout, barHeight: barHeight) {
-                                    onEventTap(segment.event)
+                                    let rect = barRect(for: segment, layout: layout, barHeight: barHeight)
+                                    onEventTap(segment.event, rect)
                                 } else if let cell = layout.cellAt(value.location) {
                                     onEmptyTap(cell.month, cell.day)
                                 }

@@ -40,6 +40,8 @@ final class CanvasItem {
 
     /// monthsPerPage at which this item is visible (12, 6, 3, 1)
     var zoomLevel: Int = 12
+    /// page index within the zoom level (0-based)
+    var pageIndex: Int = 0
 
     var yearDocument: YearDocument?
 
@@ -51,7 +53,8 @@ final class CanvasItem {
          rotation: Double = 0,
          zIndex: Int = 0,
          opacity: Double = 1.0,
-         zoomLevel: Int = 12) {
+         zoomLevel: Int = 12,
+         pageIndex: Int = 0) {
         self.type = type.rawValue
         self.relativeX = relativeX
         self.relativeY = relativeY
@@ -61,6 +64,7 @@ final class CanvasItem {
         self.zIndex = zIndex
         self.opacity = opacity
         self.zoomLevel = zoomLevel
+        self.pageIndex = pageIndex
         self.createdAt = Date()
     }
 

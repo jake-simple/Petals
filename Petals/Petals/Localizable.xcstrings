@@ -8,6 +8,7 @@
 
     },
     "%@ – %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -367,6 +368,86 @@
         }
       }
     },
+    "Every %lld days" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld일마다"
+          }
+        }
+      }
+    },
+    "Every %lld months" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld개월마다"
+          }
+        }
+      }
+    },
+    "Every %lld weeks" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld주마다"
+          }
+        }
+      }
+    },
+    "Every %lld years" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld년마다"
+          }
+        }
+      }
+    },
+    "Every day" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매일"
+          }
+        }
+      }
+    },
+    "Every month" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매월"
+          }
+        }
+      }
+    },
+    "Every week" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매주"
+          }
+        }
+      }
+    },
+    "Every year" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "매년"
+          }
+        }
+      }
+    },
     "Fill" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -631,6 +712,26 @@
         }
       }
     },
+    "Repeat" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "반복"
+          }
+        }
+      }
+    },
+    "Repeats" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "반복"
+          }
+        }
+      }
+    },
     "Right" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -751,9 +852,6 @@
           }
         }
       }
-    },
-    "star.fill" : {
-
     },
     "Start" : {
       "extractionState" : "manual",
@@ -898,6 +996,16 @@
         }
       }
     },
+    "결과 없음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results"
+          }
+        }
+      }
+    },
     "상단 영역 보이기" : {
       "localizations" : {
         "en" : {
@@ -914,6 +1022,36 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide Top Area"
+          }
+        }
+      }
+    },
+    "심볼 검색…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search symbols…"
+          }
+        }
+      }
+    },
+    "심볼 선택" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Symbol"
+          }
+        }
+      }
+    },
+    "카테고리" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category"
           }
         }
       }
