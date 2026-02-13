@@ -23,11 +23,9 @@ struct ContentView: View {
     @State private var selectedEvent: EKEvent?
     @State private var showEventDetail = false
     @State private var eventPopoverAnchor: CGRect = .zero
-    @State private var showEventEditor = false
+    @State private var editorContext: EventEditorContext?
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
-    @State private var editorStartDate: Date?
-    @State private var editorEndDate: Date?
 
     // Paging state
     @State private var monthsPerPage = 12  // 12, 6, 3
@@ -121,6 +119,7 @@ struct ContentView: View {
                     // Z2: Event bars (hidden in canvas edit mode)
                     if !isCanvasEditMode {
                         EventBarLayer(
+                            year: currentYear,
                             segments: visibleSegments,
                             overflows: visibleOverflows,
                             maxEventRows: maxEventRows,
@@ -134,10 +133,14 @@ struct ContentView: View {
                                 showEventDetail = true
                             },
                             onEmptyTap: { month, day in
-                                openEditor(month: month, startDay: day, endDay: day)
+                                openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
                             },
-                            onDragCreate: { month, startDay, _, endDay in
-                                openEditor(month: month, startDay: startDay, endDay: endDay)
+                            onDragCreate: { startMonth, startDay, endMonth, endDay in
+                                openEditor(startMonth: startMonth, startDay: startDay, endMonth: endMonth, endDay: endDay)
+                            },
+                            onEventDelete: { event, span in
+                                try? eventManager.deleteEvent(event, span: span)
+                                reloadEvents()
                             }
                         )
                     }
@@ -148,16 +151,7 @@ struct ContentView: View {
                             event: event,
                             onEdit: {
                                 showEventDetail = false
-                                selectedEvent = event
-                                editorStartDate = nil
-                                editorEndDate = nil
-                                showEventEditor = true
-                            },
-                            onDelete: { span in
-                                try? eventManager.deleteEvent(event, span: span)
-                                showEventDetail = false
-                                selectedEvent = nil
-                                reloadEvents()
+                                editorContext = EventEditorContext(existingEvent: event)
                             }
                         )
                     }
@@ -199,12 +193,12 @@ struct ContentView: View {
         } // GeometryReader
         .frame(minWidth: 900, minHeight: 600)
         .toolbar { toolbarContent }
-        .sheet(isPresented: $showEventEditor) {
+        .sheet(item: $editorContext) { ctx in
             EventEditorSheet(
                 eventManager: eventManager,
-                existingEvent: selectedEvent,
-                initialStartDate: editorStartDate,
-                initialEndDate: editorEndDate,
+                existingEvent: ctx.existingEvent,
+                initialStartDate: ctx.startDate,
+                initialEndDate: ctx.endDate,
                 onSave: { reloadEvents() }
             )
         }
@@ -383,8 +377,7 @@ struct ContentView: View {
             HStack(spacing: 4) {
                 // Event tools
                 Button(action: {
-                    editorStartDate = nil; editorEndDate = nil; selectedEvent = nil
-                    showEventEditor = true
+                    editorContext = EventEditorContext()
                 }) { Label("New Event", systemImage: "plus") }
                     .keyboardShortcut("n", modifiers: .command)
 
@@ -565,12 +558,12 @@ struct ContentView: View {
         overflows = EventLayoutEngine.overflowCounts(events: events, year: currentYear, maxLanes: maxEventRows)
     }
 
-    private func openEditor(month: Int, startDay: Int, endDay: Int) {
+    private func openEditor(startMonth: Int, startDay: Int, endMonth: Int, endDay: Int) {
         let cal = Calendar.current
-        editorStartDate = cal.date(from: DateComponents(year: currentYear, month: month, day: startDay))
-        editorEndDate = cal.date(from: DateComponents(year: currentYear, month: month, day: endDay))
-        selectedEvent = nil
-        showEventEditor = true
+        editorContext = EventEditorContext(
+            startDate: cal.date(from: DateComponents(year: currentYear, month: startMonth, day: startDay)),
+            endDate: cal.date(from: DateComponents(year: currentYear, month: endMonth, day: endDay))
+        )
     }
 
     private func loadDocument(for year: Int) {
@@ -627,6 +620,13 @@ struct ContentView: View {
         selectedCanvasItemID = nil
         showInspector = false
     }
+}
+
+struct EventEditorContext: Identifiable {
+    let id = UUID()
+    var existingEvent: EKEvent? = nil
+    var startDate: Date? = nil
+    var endDate: Date? = nil
 }
 
 #Preview {

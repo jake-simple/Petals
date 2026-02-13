@@ -4,9 +4,6 @@ import EventKit
 struct EventDetailPopover: View {
     let event: EKEvent
     let onEdit: () -> Void
-    let onDelete: (EKSpan) -> Void
-
-    @State private var showDeleteConfirm = false
 
     private var calendarColor: Color {
         Color(cgColor: event.calendar.cgColor)
@@ -19,9 +16,19 @@ struct EventDetailPopover: View {
                 .frame(height: 4)
 
             VStack(alignment: .leading, spacing: 12) {
-                // Title
-                Text(event.title ?? String(localized: "Untitled"))
-                    .font(.title3.weight(.semibold))
+                // Title + edit icon
+                HStack(alignment: .top) {
+                    Text(event.title ?? String(localized: "Untitled"))
+                        .font(.title3.weight(.semibold))
+
+                    Spacer()
+
+                    Button(action: onEdit) {
+                        Image(systemName: "pencil")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
 
                 // Calendar name
                 HStack(spacing: 6) {
@@ -68,36 +75,10 @@ struct EventDetailPopover: View {
                     }
                     .frame(maxHeight: 120)
                 }
-
-                Divider()
-
-                // Actions
-                HStack {
-                    Button(action: onEdit) {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    .buttonStyle(.bordered)
-
-                    Spacer()
-
-                    Button(role: .destructive, action: { showDeleteConfirm = true }) {
-                        Label("Delete", systemImage: "trash")
-                    }
-                    .buttonStyle(.bordered)
-                }
             }
             .padding()
         }
         .frame(width: 280)
-        .confirmationDialog("Delete this event?", isPresented: $showDeleteConfirm) {
-            if event.hasRecurrenceRules {
-                Button("This Event Only", role: .destructive) { onDelete(.thisEvent) }
-                Button("All Future Events", role: .destructive) { onDelete(.futureEvents) }
-            } else {
-                Button("Delete", role: .destructive) { onDelete(.thisEvent) }
-            }
-            Button("Cancel", role: .cancel) {}
-        }
     }
 
     private func recurrenceDescription(_ rule: EKRecurrenceRule) -> String {
