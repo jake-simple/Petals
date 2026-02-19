@@ -38,6 +38,9 @@
         }
       }
     },
+    "%lld%%" : {
+
+    },
     "%lld°" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -59,6 +62,9 @@
           }
         }
       }
+    },
+    "%lldpt" : {
+
     },
     "+%lld" : {
       "extractionState" : "manual",
@@ -732,6 +738,16 @@
         }
       }
     },
+    "Reset View" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보기 초기화"
+          }
+        }
+      }
+    },
     "Right" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -996,12 +1012,42 @@
         }
       }
     },
+    "Zoom In" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확대"
+          }
+        }
+      }
+    },
+    "Zoom Out" : {
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "축소"
+          }
+        }
+      }
+    },
     "결과 없음" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "No Results"
+          }
+        }
+      }
+    },
+    "뷰포트 초기화" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Viewport"
           }
         }
       }
@@ -1052,6 +1098,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Category"
+          }
+        }
+      }
+    },
+    "캘린더" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar"
+          }
+        }
+      }
+    },
+    "캘린더 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar View"
+          }
+        }
+      }
+    },
+    "화이트보드" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whiteboard"
+          }
+        }
+      }
+    },
+    "화이트보드 보기" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whiteboard View"
           }
         }
       }

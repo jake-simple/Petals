@@ -7,6 +7,7 @@ struct PetalsApp: App {
         let schema = Schema([
             YearDocument.self,
             CanvasItem.self,
+            VisionBoardItem.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
 

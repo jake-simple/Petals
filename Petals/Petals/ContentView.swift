@@ -31,6 +31,9 @@ struct ContentView: View {
     @State private var monthsPerPage = 12  // 12, 6, 3
     @State private var pageIndex = 0
 
+    // Vision Board mode
+    @State private var showVisionBoard = false
+
     // Canvas state
     @State private var isCanvasEditMode = false
     @State private var selectedCanvasItemID: PersistentIdentifier?
@@ -96,7 +99,44 @@ struct ContentView: View {
         return overflows.filter { $0.key >= startMonth && $0.key <= endMonth }
     }
 
+    @State private var flipAngle: Double = 0
+
     var body: some View {
+        let face = flipAngle.truncatingRemainder(dividingBy: 360)
+        let fade = cos(face * .pi / 180)
+        ZStack {
+            if face < 90 || face >= 270 {
+                calendarBody
+            } else {
+                VisionBoardView()
+                    .scaleEffect(x: -1) // 180도 Y축 회전 거울상 보정
+                    .toolbar { modeToggleToolbar }
+            }
+        }
+        .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
+        .opacity(fade * fade) // cos² — 더 뚜렷한 페이드
+        .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+        .onChange(of: showVisionBoard) { _, isVisionBoard in
+            if isVisionBoard { isCanvasEditMode = false }
+            withAnimation(.easeInOut(duration: 0.5)) {
+                flipAngle += 180
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var modeToggleToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigation) {
+            Button {
+                showVisionBoard.toggle()
+            } label: {
+                Image(systemName: showVisionBoard ? "calendar" : "rectangle.3.group")
+            }
+            .help(showVisionBoard ? "캘린더 보기" : "화이트보드 보기")
+        }
+    }
+
+    private var calendarBody: some View {
         GeometryReader { geo in
         ZStack {
             // Board background covers entire window
@@ -192,7 +232,10 @@ struct ContentView: View {
         }
         } // GeometryReader
         .frame(minWidth: 900, minHeight: 600)
-        .toolbar { toolbarContent }
+        .toolbar {
+            modeToggleToolbar
+            toolbarContent
+        }
         .sheet(item: $editorContext) { ctx in
             EventEditorSheet(
                 eventManager: eventManager,
@@ -214,6 +257,7 @@ struct ContentView: View {
         .onAppear {
             loadDocument(for: currentYear)
             scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                guard !showVisionBoard else { return event }
                 if event.phase == .began {
                     accumulatedScrollX = 0
                 }
@@ -255,12 +299,12 @@ struct ContentView: View {
         .focusable()
         .focusEffectDisabled()
         .onKeyPress(.leftArrow) {
-            guard !isCanvasEditMode else { return .ignored }
+            guard !isCanvasEditMode, !showVisionBoard else { return .ignored }
             navigateBack()
             return .handled
         }
         .onKeyPress(.rightArrow) {
-            guard !isCanvasEditMode else { return .ignored }
+            guard !isCanvasEditMode, !showVisionBoard else { return .ignored }
             navigateForward()
             return .handled
         }
@@ -327,20 +371,20 @@ struct ContentView: View {
                 Divider().frame(height: 16)
 
                 // Zoom level (months per page)
-                Button(action: { zoomIn() }) {
-                    Image(systemName: "plus.magnifyingglass")
+                Button(action: { zoomOut() }) {
+                    Image(systemName: "minus")
                 }
-                .keyboardShortcut("=", modifiers: .command)
-                .disabled(monthsPerPage <= 1)
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(monthsPerPage >= 12)
 
                 Text("\(monthsPerPage)M")
                     .frame(minWidth: 30)
 
-                Button(action: { zoomOut() }) {
-                    Image(systemName: "minus.magnifyingglass")
+                Button(action: { zoomIn() }) {
+                    Image(systemName: "plus")
                 }
-                .keyboardShortcut("-", modifiers: .command)
-                .disabled(monthsPerPage >= 12)
+                .keyboardShortcut("=", modifiers: .command)
+                .disabled(monthsPerPage <= 1)
 
                 if monthsPerPage < 12 {
                     // Page navigation
@@ -375,12 +419,6 @@ struct ContentView: View {
 
         ToolbarItem(placement: .primaryAction) {
             HStack(spacing: 4) {
-                // Event tools
-                Button(action: {
-                    editorContext = EventEditorContext()
-                }) { Label("New Event", systemImage: "plus") }
-                    .keyboardShortcut("n", modifiers: .command)
-
                 Button(action: { showCalendarFilter.toggle() }) {
                     Label("Calendars", systemImage: "line.3.horizontal.decrease.circle")
                 }
@@ -628,5 +666,5 @@ struct EventEditorContext: Identifiable {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [YearDocument.self, CanvasItem.self], inMemory: true)
+        .modelContainer(for: [YearDocument.self, CanvasItem.self, VisionBoardItem.self], inMemory: true)
 }

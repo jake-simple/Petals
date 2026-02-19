@@ -4,6 +4,11 @@ enum ImageManager {
     private static let maxDimension: CGFloat = 2048
     private static let thumbDimension: CGFloat = 200
     private static let thumbQuality: CGFloat = 0.6
+    private static let imageCache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 50
+        return cache
+    }()
 
     static var imagesDirectory: URL {
         // iCloud Drive 컨테이너 우선, 없으면 로컬 Documents
@@ -36,13 +41,19 @@ enum ImageManager {
     }
 
     static func deleteImage(fileName: String) {
+        imageCache.removeObject(forKey: fileName as NSString)
         let url = imagesDirectory.appendingPathComponent(fileName)
         try? FileManager.default.removeItem(at: url)
     }
 
     static func loadImage(fileName: String) -> NSImage? {
+        let key = fileName as NSString
+        if let cached = imageCache.object(forKey: key) {
+            return cached
+        }
         let url = imagesDirectory.appendingPathComponent(fileName)
         if let image = NSImage(contentsOf: url) {
+            imageCache.setObject(image, forKey: key)
             return image
         }
         // iCloud에서 아직 다운로드되지 않은 경우 다운로드 요청
