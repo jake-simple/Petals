@@ -26,7 +26,7 @@ struct ContentView: View {
     @State private var showFontSizePicker = false
 
     // Paging state
-    @State private var monthsPerPage = 12  // 12, 6, 3
+    @State private var monthsPerPage = 12  // 12, 3, 1
     @State private var pageIndex = 0
 
     // 화이트보드 모드
@@ -60,7 +60,6 @@ struct ContentView: View {
 
     private var daysPerRow: Int {
         switch monthsPerPage {
-        case 6: return 16
         case 1, 3: return 8
         default: return 31
         }
@@ -534,8 +533,7 @@ struct ContentView: View {
         let current = startMonth
         let next: Int
         switch monthsPerPage {
-        case 12: next = 6
-        case 6: next = 3
+        case 12: next = 3
         case 3: next = 1
         default: return
         }
@@ -549,8 +547,7 @@ struct ContentView: View {
         let next: Int
         switch monthsPerPage {
         case 1: next = 3
-        case 3: next = 6
-        case 6: next = 12
+        case 3: next = 12
         default: return
         }
         monthsPerPage = next

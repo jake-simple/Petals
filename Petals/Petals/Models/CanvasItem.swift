@@ -38,7 +38,7 @@ final class CanvasItem {
     var strokeColor: String?
     var strokeWidth: Double?
 
-    /// monthsPerPage at which this item is visible (12, 6, 3, 1)
+    /// monthsPerPage at which this item is visible (12, 3, 1)
     var zoomLevel: Int = 12
     /// page index within the zoom level (0-based)
     var pageIndex: Int = 0
