@@ -4,21 +4,23 @@ import UniformTypeIdentifiers
 
 struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ClipboardManager.self) private var clipboardManager
     var yearDocument: YearDocument?
     var zoomLevel: Int = 12
     var pageIndex: Int = 0
-    @Binding var selectedItemID: PersistentIdentifier?
+    @Binding var selectedItemIDs: Set<PersistentIdentifier>
     @Binding var showInspector: Bool
 
-    @State private var clipboard: CanvasItemSnapshot?
+    @State private var containerSize: CGSize = CGSize(width: 900, height: 600)
+    @State private var marqueeRect: CGRect?
+    @State private var multiDragOffset: CGSize = .zero
 
     private var sortedItems: [CanvasItem] {
         (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
     }
 
-    private var selectedItem: CanvasItem? {
-        guard let id = selectedItemID else { return nil }
-        return sortedItems.first { $0.persistentModelID == id }
+    private var selectedItems: [CanvasItem] {
+        sortedItems.filter { selectedItemIDs.contains($0.persistentModelID) }
     }
 
     var body: some View {
@@ -26,39 +28,174 @@ struct CanvasLayer: View {
             ZStack {
                 Color.clear
                     .contentShape(Rectangle())
-                    .onTapGesture { selectedItemID = nil }
+                    .contextMenu {
+                        Button("붙여넣기") { pasteItem() }
+                            .disabled(clipboardManager.snapshot == nil)
+                    }
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 5)
+                            .onChanged { value in
+                                guard NSEvent.modifierFlags.contains(.command) else { return }
+                                let origin = CGPoint(
+                                    x: min(value.startLocation.x, value.location.x),
+                                    y: min(value.startLocation.y, value.location.y)
+                                )
+                                let size = CGSize(
+                                    width: abs(value.location.x - value.startLocation.x),
+                                    height: abs(value.location.y - value.startLocation.y)
+                                )
+                                marqueeRect = CGRect(origin: origin, size: size)
+                            }
+                            .onEnded { _ in
+                                if let rect = marqueeRect {
+                                    selectItems(in: rect, containerSize: proxy.size)
+                                }
+                                marqueeRect = nil
+                            }
+                    )
 
                 ForEach(sortedItems) { item in
+                    let isSelected = selectedItemIDs.contains(item.persistentModelID)
+                    let isMultiSelected = selectedItemIDs.count > 1
                     DraggableCanvasItem(
                         item: item,
                         containerSize: proxy.size,
-                        isSelected: item.persistentModelID == selectedItemID,
-                        onSelect: { selectedItemID = item.persistentModelID },
+                        isSelected: isSelected,
+                        multipleSelected: isSelected && isMultiSelected,
+                        onSelect: { addToSelection in
+                            if addToSelection {
+                                if selectedItemIDs.contains(item.persistentModelID) {
+                                    selectedItemIDs.remove(item.persistentModelID)
+                                } else {
+                                    selectedItemIDs.insert(item.persistentModelID)
+                                }
+                            } else {
+                                selectedItemIDs = [item.persistentModelID]
+                            }
+                        },
                         showInspector: $showInspector,
+                        onCopy: {
+                            clipboardManager.snapshot = CanvasItemSnapshot(from: item, containerSize: proxy.size)
+                            clipboardManager.triggerCopyToast()
+                        },
+                        onPaste: { pasteItem() },
                         onDelete: { deleteItem(item) },
                         onBringToFront: { bringToFront(item) },
-                        onSendToBack: { sendToBack(item) }
+                        onSendToBack: { sendToBack(item) },
+                        onMoveAll: { translation in
+                            multiDragOffset = translation
+                        },
+                        onMoveAllEnd: { translation in
+                            let dx = translation.width / proxy.size.width
+                            let dy = translation.height / proxy.size.height
+                            for id in selectedItemIDs {
+                                if let target = sortedItems.first(where: { $0.persistentModelID == id }) {
+                                    target.relativeX += dx
+                                    target.relativeY += dy
+                                }
+                            }
+                            multiDragOffset = .zero
+                        },
+                        multiDragOffset: isSelected && isMultiSelected ? multiDragOffset : .zero
                     )
                 }
+
+                // 마키 사각형 오버레이
+                if let rect = marqueeRect {
+                    Rectangle()
+                        .fill(Color.accentColor.opacity(0.1))
+                        .overlay(
+                            Rectangle().stroke(Color.accentColor, lineWidth: 1)
+                        )
+                        .frame(width: rect.width, height: rect.height)
+                        .position(x: rect.midX, y: rect.midY)
+                        .allowsHitTesting(false)
+                }
             }
+            .simultaneousGesture(
+                SpatialTapGesture()
+                    .onEnded { value in
+                        let loc = value.location
+                        let addToSelection = NSEvent.modifierFlags.contains(.command)
+                        if let hitItem = topItem(at: loc, containerSize: proxy.size) {
+                            if addToSelection {
+                                if selectedItemIDs.contains(hitItem.persistentModelID) {
+                                    selectedItemIDs.remove(hitItem.persistentModelID)
+                                } else {
+                                    selectedItemIDs.insert(hitItem.persistentModelID)
+                                }
+                            } else {
+                                selectedItemIDs = [hitItem.persistentModelID]
+                            }
+                        } else {
+                            if !addToSelection {
+                                selectedItemIDs.removeAll()
+                            }
+                        }
+                    }
+            )
+            .onAppear { containerSize = proxy.size }
+            .onChange(of: proxy.size) { _, newSize in containerSize = newSize }
         }
         .onDrop(of: [.image], isTargeted: nil) { providers, location in
             handleDrop(providers: providers)
             return true
         }
         .onDeleteCommand {
-            guard let item = selectedItem else { return }
-            deleteItem(item)
+            deleteSelectedItems()
         }
         .onCopyCommand {
-            guard let item = selectedItem else { return [] }
-            clipboard = CanvasItemSnapshot(from: item)
-            return []
+            guard let item = selectedItems.first else { return [] }
+            clipboardManager.snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
+            clipboardManager.triggerCopyToast()
+            return [NSItemProvider(object: "" as NSString)]
         }
         .onPasteCommand(of: [.plainText]) { _ in
             pasteItem()
         }
     }
+
+    // MARK: - Hit Test
+
+    private func topItem(at point: CGPoint, containerSize: CGSize) -> CanvasItem? {
+        for item in sortedItems.reversed() {
+            let x = item.relativeX * containerSize.width
+            let y = item.relativeY * containerSize.height
+            let w = item.relativeWidth * containerSize.width
+            let h: CGFloat
+            if let ar = item.aspectRatio, ar > 0 {
+                h = w / ar
+            } else {
+                h = item.relativeHeight * containerSize.height
+            }
+            if CGRect(x: x, y: y, width: w, height: h).contains(point) {
+                return item
+            }
+        }
+        return nil
+    }
+
+    // MARK: - Marquee Selection
+
+    private func selectItems(in rect: CGRect, containerSize: CGSize) {
+        for item in sortedItems {
+            let itemX = item.relativeX * containerSize.width
+            let itemY = item.relativeY * containerSize.height
+            let itemW = item.relativeWidth * containerSize.width
+            let itemH: CGFloat
+            if let ar = item.aspectRatio, ar > 0 {
+                itemH = itemW / ar
+            } else {
+                itemH = item.relativeHeight * containerSize.height
+            }
+            let itemRect = CGRect(x: itemX, y: itemY, width: itemW, height: itemH)
+            if rect.intersects(itemRect) {
+                selectedItemIDs.insert(item.persistentModelID)
+            }
+        }
+    }
+
+    // MARK: - Actions
 
     private func deleteItem(_ item: CanvasItem) {
         if let fileName = item.imageFileName {
@@ -66,7 +203,13 @@ struct CanvasLayer: View {
         }
         yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
-        if selectedItemID == item.persistentModelID { selectedItemID = nil }
+        selectedItemIDs.remove(item.persistentModelID)
+    }
+
+    private func deleteSelectedItems() {
+        for item in selectedItems {
+            deleteItem(item)
+        }
     }
 
     private func bringToFront(_ item: CanvasItem) {
@@ -80,34 +223,28 @@ struct CanvasLayer: View {
     }
 
     private func pasteItem() {
-        guard let snap = clipboard, let doc = yearDocument else { return }
+        guard let snap = clipboardManager.snapshot, let doc = yearDocument else { return }
         let itemType = CanvasItemType(rawValue: snap.type) ?? .text
+        let relW = (snap.absoluteWidth ?? snap.relativeWidth * containerSize.width) / containerSize.width
+        let relH = (snap.absoluteHeight ?? snap.relativeHeight * containerSize.height) / containerSize.height
         let item = CanvasItem(type: itemType,
-                              relativeX: snap.relativeX + 0.02,
-                              relativeY: snap.relativeY + 0.02,
-                              relativeWidth: snap.relativeWidth,
-                              relativeHeight: snap.relativeHeight,
+                              relativeX: 0.4 + Double.random(in: -0.02...0.02),
+                              relativeY: 0.4 + Double.random(in: -0.02...0.02),
+                              relativeWidth: relW,
+                              relativeHeight: relH,
                               rotation: snap.rotation,
                               opacity: snap.opacity,
                               zoomLevel: zoomLevel,
                               pageIndex: pageIndex)
-        item.imageFileName = snap.imageFileName
-        item.thumbnailData = snap.thumbnailData
-        item.text = snap.text
-        item.fontSize = snap.fontSize
-        item.fontName = snap.fontName
-        item.textColor = snap.textColor
-        item.textAlignment = snap.textAlignment
-        item.isBold = snap.isBold
-        item.isItalic = snap.isItalic
-        item.stickerName = snap.stickerName
-        item.shapeType = snap.shapeType
-        item.fillColor = snap.fillColor
-        item.strokeColor = snap.strokeColor
-        item.strokeWidth = snap.strokeWidth
+        snap.applyContent(to: item)
+        // 이미지 복사 시 파일을 복제하여 독립 참조 유지
+        if let original = snap.imageFileName,
+           let copied = ImageManager.copyImageFile(fileName: original) {
+            item.imageFileName = copied
+        }
         item.zIndex = doc.nextZIndex
         doc.appendItem(item)
-        selectedItemID = item.persistentModelID
+        selectedItemIDs = [item.persistentModelID]
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
@@ -123,7 +260,7 @@ struct CanvasLayer: View {
                     item.zoomLevel = zoomLevel
                     item.pageIndex = pageIndex
                     doc.appendItem(item)
-                    selectedItemID = item.persistentModelID
+                    selectedItemIDs = [item.persistentModelID]
                 }
             }
         }

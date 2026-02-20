@@ -6,11 +6,17 @@ struct DraggableCanvasItem: View {
     @Bindable var item: CanvasItem
     let containerSize: CGSize
     let isSelected: Bool
-    let onSelect: () -> Void
+    let multipleSelected: Bool
+    let onSelect: (_ addToSelection: Bool) -> Void
     @Binding var showInspector: Bool
+    let onCopy: () -> Void
+    let onPaste: () -> Void
     let onDelete: () -> Void
     let onBringToFront: () -> Void
     let onSendToBack: () -> Void
+    var onMoveAll: ((_ translation: CGSize) -> Void)?
+    var onMoveAllEnd: ((_ translation: CGSize) -> Void)?
+    var multiDragOffset: CGSize = .zero
 
     @State private var dragOffset: CGSize = .zero
     @State private var resizeOffset: CGSize = .zero
@@ -28,11 +34,11 @@ struct DraggableCanvasItem: View {
     }
     private var cx: CGFloat {
         let baseX = item.relativeX + (activeHandle != nil ? resizeDeltaX : 0) + dragOffset.width / containerSize.width
-        return baseX * containerSize.width + w / 2
+        return baseX * containerSize.width + w / 2 + multiDragOffset.width
     }
     private var cy: CGFloat {
         let baseY = item.relativeY + (activeHandle != nil ? resizeDeltaY : 0) + dragOffset.height / containerSize.height
-        return baseY * containerSize.height + h / 2
+        return baseY * containerSize.height + h / 2 + multiDragOffset.height
     }
 
     private var imageCornerRadius: CGFloat {
@@ -49,7 +55,7 @@ struct DraggableCanvasItem: View {
                 .rotationEffect(.degrees(item.rotation))
                 .opacity(item.opacity)
                 .popover(isPresented: Binding(
-                    get: { isSelected && showInspector },
+                    get: { isSelected && showInspector && !multipleSelected },
                     set: { if !$0 { showInspector = false } }
                 )) {
                     InspectorPanel(item: item) {
@@ -57,31 +63,36 @@ struct DraggableCanvasItem: View {
                         showInspector = false
                     }
                 }
-                .position(x: cx, y: cy)
                 .onTapGesture(count: 2) {
                     if CanvasItemType(rawValue: item.type) == .text {
                         isEditing = true
-                        onSelect()
+                        onSelect(false)
                     }
                 }
-                .onTapGesture { onSelect() }
+                .position(x: cx, y: cy)
                 .gesture(moveGesture)
-                .onChange(of: isSelected) { _, selected in
-                    if !selected { isEditing = false }
-                }
                 .contextMenu {
-                    Button("Edit") { onSelect(); showInspector = true }
+                    Button("복사하기") { onCopy() }
+                    if !multipleSelected {
+                        Button("붙여넣기") { onPaste() }
+                        Divider()
+                        Button("Edit") { onSelect(false); showInspector = true }
+                    }
                     Divider()
                     Button("Bring to Front") { onBringToFront() }
                     Button("Send to Back") { onSendToBack() }
                     Divider()
                     Button("Delete", role: .destructive) { onDelete() }
                 }
+                .onChange(of: isSelected) { _, selected in
+                    if !selected { isEditing = false }
+                }
 
             if isSelected {
                 Rectangle()
                     .stroke(Color.accentColor, lineWidth: 1)
                     .frame(width: w, height: h)
+                    .allowsHitTesting(false)
                     .position(x: cx, y: cy)
 
                 ForEach(HandlePos.allCases, id: \.self) { pos in
@@ -97,13 +108,21 @@ struct DraggableCanvasItem: View {
         DragGesture()
             .onChanged { value in
                 guard !isEditing else { return }
-                dragOffset = value.translation
+                if multipleSelected, let onMoveAll {
+                    onMoveAll(value.translation)
+                } else {
+                    dragOffset = value.translation
+                }
             }
             .onEnded { value in
                 guard !isEditing else { return }
-                item.relativeX += value.translation.width / containerSize.width
-                item.relativeY += value.translation.height / containerSize.height
-                dragOffset = .zero
+                if multipleSelected, let onMoveAllEnd {
+                    onMoveAllEnd(value.translation)
+                } else {
+                    item.relativeX += value.translation.width / containerSize.width
+                    item.relativeY += value.translation.height / containerSize.height
+                    dragOffset = .zero
+                }
             }
     }
 

@@ -3,6 +3,7 @@ import SwiftData
 
 @main
 struct PetalsApp: App {
+    @State private var clipboardManager = ClipboardManager()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             YearDocument.self,
@@ -29,6 +30,7 @@ struct PetalsApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(clipboardManager)
                 .task { migrateOrphanVisionBoardItems() }
         }
         .modelContainer(sharedModelContainer)

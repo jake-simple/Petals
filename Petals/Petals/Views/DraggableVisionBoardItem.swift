@@ -7,16 +7,24 @@ struct DraggableVisionBoardItem: View, Equatable {
         lhs.item.persistentModelID == rhs.item.persistentModelID
         && lhs.scale == rhs.scale
         && lhs.isSelected == rhs.isSelected
+        && lhs.multipleSelected == rhs.multipleSelected
+        && lhs.multiDragOffset == rhs.multiDragOffset
     }
 
     @Bindable var item: VisionBoardItem
     let scale: CGFloat
     let isSelected: Bool
-    let onSelect: () -> Void
+    let multipleSelected: Bool
+    var multiDragOffset: CGSize = .zero
+    let onSelect: (_ addToSelection: Bool) -> Void
     @Binding var showInspector: Bool
+    let onCopy: () -> Void
+    let onPaste: () -> Void
     let onDelete: () -> Void
     let onBringToFront: () -> Void
     let onSendToBack: () -> Void
+    var onMoveAll: ((_ translation: CGSize) -> Void)?
+    var onMoveAllEnd: ((_ translation: CGSize) -> Void)?
 
     @State private var dragOffset: CGSize = .zero
     @State private var resizeOffset: CGSize = .zero
@@ -45,13 +53,13 @@ struct DraggableVisionBoardItem: View, Equatable {
 
     // 캔버스 공간에서의 중심점
     private var cx: CGFloat {
-        let baseX = item.x + (activeHandle != nil ? resizeDeltaX : 0) + dragOffset.width / scale
-        return baseX + w / 2
+        let baseX = item.x + (activeHandle != nil ? resizeDeltaX : 0) + dragOffset.width
+        return baseX + w / 2 + multiDragOffset.width
     }
 
     private var cy: CGFloat {
-        let baseY = item.y + (activeHandle != nil ? resizeDeltaY : 0) + dragOffset.height / scale
-        return baseY + h / 2
+        let baseY = item.y + (activeHandle != nil ? resizeDeltaY : 0) + dragOffset.height
+        return baseY + h / 2 + multiDragOffset.height
     }
 
     private var imageCornerRadius: CGFloat {
@@ -68,7 +76,7 @@ struct DraggableVisionBoardItem: View, Equatable {
                 .rotationEffect(.degrees(item.rotation))
                 .opacity(item.opacity)
                 .popover(isPresented: Binding(
-                    get: { isSelected && showInspector },
+                    get: { isSelected && showInspector && !multipleSelected },
                     set: { if !$0 { showInspector = false } }
                 )) {
                     VisionBoardInspectorPanel(item: item) {
@@ -76,31 +84,36 @@ struct DraggableVisionBoardItem: View, Equatable {
                         showInspector = false
                     }
                 }
-                .position(x: cx, y: cy)
                 .onTapGesture(count: 2) {
                     if CanvasItemType(rawValue: item.type) == .text {
                         isEditing = true
-                        onSelect()
+                        onSelect(false)
                     }
                 }
-                .onTapGesture { onSelect() }
+                .position(x: cx, y: cy)
                 .gesture(moveGesture)
-                .onChange(of: isSelected) { _, selected in
-                    if !selected { isEditing = false }
-                }
                 .contextMenu {
-                    Button("Edit") { onSelect(); showInspector = true }
+                    Button("복사하기") { onCopy() }
+                    if !multipleSelected {
+                        Button("붙여넣기") { onPaste() }
+                        Divider()
+                        Button("Edit") { onSelect(false); showInspector = true }
+                    }
                     Divider()
                     Button("Bring to Front") { onBringToFront() }
                     Button("Send to Back") { onSendToBack() }
                     Divider()
                     Button("Delete", role: .destructive) { onDelete() }
                 }
+                .onChange(of: isSelected) { _, selected in
+                    if !selected { isEditing = false }
+                }
 
             if isSelected {
                 Rectangle()
                     .stroke(Color.accentColor, lineWidth: 1)
                     .frame(width: w, height: h)
+                    .allowsHitTesting(false)
                     .position(x: cx, y: cy)
 
                 ForEach(HandlePos.allCases, id: \.self) { pos in
@@ -110,19 +123,32 @@ struct DraggableVisionBoardItem: View, Equatable {
         }
     }
 
-    // MARK: - Move (드래그 델타를 scale로 나눠 캔버스 공간 변환)
+    // MARK: - Move
 
     private var moveGesture: some Gesture {
         DragGesture()
             .onChanged { value in
                 guard !isEditing else { return }
-                dragOffset = value.translation
+                if NSEvent.modifierFlags.contains(.command) {
+                    dragOffset = .zero
+                    return
+                }
+                if multipleSelected, let onMoveAll {
+                    onMoveAll(value.translation)
+                } else {
+                    dragOffset = value.translation
+                }
             }
             .onEnded { value in
                 guard !isEditing else { return }
-                item.x += value.translation.width / scale
-                item.y += value.translation.height / scale
                 dragOffset = .zero
+                if NSEvent.modifierFlags.contains(.command) { return }
+                if multipleSelected, let onMoveAllEnd {
+                    onMoveAllEnd(value.translation)
+                } else {
+                    item.x += value.translation.width
+                    item.y += value.translation.height
+                }
             }
     }
 
@@ -190,15 +216,15 @@ struct DraggableVisionBoardItem: View, Equatable {
             }
     }
 
-    // MARK: - Resize deltas (절대좌표, scale 보정)
+    // MARK: - Resize deltas (절대좌표)
 
     private var effectiveResizeOffset: CGSize {
         guard wasConstrained || NSEvent.modifierFlags.contains(.command), let pos = activeHandle else {
             return resizeOffset
         }
 
-        let dx = resizeOffset.width / scale
-        let dy = resizeOffset.height / scale
+        let dx = resizeOffset.width
+        let dy = resizeOffset.height
 
         let wSign: CGFloat = (pos == .topLeft || pos == .bottomLeft) ? -1 : 1
         let hSign: CGFloat = (pos == .topLeft || pos == .topRight) ? -1 : 1
@@ -213,15 +239,15 @@ struct DraggableVisionBoardItem: View, Equatable {
             side = max(20, newH)
         }
 
-        let adjustedDx = wSign * (side - initialBounds.w) * scale
-        let adjustedDy = hSign * (side - initialBounds.h) * scale
+        let adjustedDx = wSign * (side - initialBounds.w)
+        let adjustedDy = hSign * (side - initialBounds.h)
 
         return CGSize(width: adjustedDx, height: adjustedDy)
     }
 
     private var resizeDeltaX: CGFloat {
         guard let pos = activeHandle else { return 0 }
-        let dx = effectiveResizeOffset.width / scale
+        let dx = effectiveResizeOffset.width
         switch pos {
         case .topLeft, .bottomLeft: return dx
         default: return 0
@@ -230,7 +256,7 @@ struct DraggableVisionBoardItem: View, Equatable {
 
     private var resizeDeltaY: CGFloat {
         guard let pos = activeHandle else { return 0 }
-        let dy = effectiveResizeOffset.height / scale
+        let dy = effectiveResizeOffset.height
         switch pos {
         case .topLeft, .topRight: return dy
         default: return 0
@@ -239,7 +265,7 @@ struct DraggableVisionBoardItem: View, Equatable {
 
     private var resizeDeltaW: CGFloat {
         guard let pos = activeHandle else { return 0 }
-        let dx = effectiveResizeOffset.width / scale
+        let dx = effectiveResizeOffset.width
         switch pos {
         case .topLeft, .bottomLeft: return -dx
         case .topRight, .bottomRight: return dx
@@ -248,7 +274,7 @@ struct DraggableVisionBoardItem: View, Equatable {
 
     private var resizeDeltaH: CGFloat {
         guard let pos = activeHandle else { return 0 }
-        let dy = effectiveResizeOffset.height / scale
+        let dy = effectiveResizeOffset.height
         switch pos {
         case .topLeft, .topRight: return -dy
         case .bottomLeft, .bottomRight: return dy

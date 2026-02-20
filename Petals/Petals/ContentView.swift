@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(ClipboardManager.self) private var clipboardManager
     @State private var currentYear = Calendar.current.component(.year, from: Date())
     @State private var eventManager = EventManager()
     @State private var currentDocument: YearDocument?
@@ -35,7 +36,7 @@ struct ContentView: View {
 
     // Canvas state
     @State private var isCanvasEditMode = false
-    @State private var selectedCanvasItemID: PersistentIdentifier?
+    @State private var selectedCanvasItemIDs: Set<PersistentIdentifier> = []
     @State private var showImagePicker = false
     @State private var showInspector = false
     @State private var showThemePicker = false
@@ -50,9 +51,9 @@ struct ContentView: View {
         return ThemeManager.shared.theme(for: themeID).resolved(for: colorScheme)
     }
 
-    private var selectedCanvasItem: CanvasItem? {
-        guard let id = selectedCanvasItemID else { return nil }
-        return currentDocument?.canvasItems?.first { $0.persistentModelID == id }
+    private var selectedCanvasItems: [CanvasItem] {
+        guard !selectedCanvasItemIDs.isEmpty else { return [] }
+        return (currentDocument?.canvasItems ?? []).filter { selectedCanvasItemIDs.contains($0.persistentModelID) }
     }
 
     private var startMonth: Int { pageIndex * monthsPerPage + 1 }
@@ -107,9 +108,18 @@ struct ContentView: View {
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
-        .onChange(of: showVisionBoard) { _, isVisionBoard in
-            if isVisionBoard { isCanvasEditMode = false }
+        .overlay(alignment: .bottom) {
+            if clipboardManager.showCopyToast {
+                Text("복사됨")
+                    .font(.caption)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .padding(.bottom, 40)
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: clipboardManager.showCopyToast)
     }
 
     @ToolbarContentBuilder
@@ -206,7 +216,7 @@ struct ContentView: View {
                         yearDocument: currentDocument,
                         zoomLevel: monthsPerPage,
                         pageIndex: pageIndex,
-                        selectedItemID: $selectedCanvasItemID,
+                        selectedItemIDs: $selectedCanvasItemIDs,
                         showInspector: $showInspector
                     )
                 } else {
@@ -269,10 +279,10 @@ struct ContentView: View {
         .onChange(of: currentYear) { _, newYear in
             loadDocument(for: newYear)
             reloadEvents()
-            selectedCanvasItemID = nil
+            selectedCanvasItemIDs.removeAll()
         }
         .onChange(of: pageIndex) {
-            selectedCanvasItemID = nil
+            selectedCanvasItemIDs.removeAll()
         }
         .onChange(of: eventManager.selectedCalendarIDs) {
             reloadEvents()
@@ -293,18 +303,26 @@ struct ContentView: View {
             return .handled
         }
         .onKeyPress(.delete) {
-            guard isCanvasEditMode, selectedCanvasItemID != nil else { return .ignored }
-            deleteSelectedCanvasItem()
+            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return .ignored }
+            deleteSelectedCanvasItems()
             return .handled
         }
         .onKeyPress(.deleteForward) {
-            guard isCanvasEditMode, selectedCanvasItemID != nil else { return .ignored }
-            deleteSelectedCanvasItem()
+            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return .ignored }
+            deleteSelectedCanvasItems()
             return .handled
         }
         .onDeleteCommand {
-            guard isCanvasEditMode, selectedCanvasItemID != nil else { return }
-            deleteSelectedCanvasItem()
+            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return }
+            deleteSelectedCanvasItems()
+        }
+        .onKeyPress(.escape) {
+            if !selectedCanvasItemIDs.isEmpty {
+                selectedCanvasItemIDs.removeAll()
+                showInspector = false
+                return .handled
+            }
+            return .ignored
         }
     }
 
@@ -482,11 +500,13 @@ struct ContentView: View {
             }
         }
 
-        if selectedCanvasItemID != nil {
-            Button(action: { showInspector = true }) {
-                Label("Inspector", systemImage: "slider.horizontal.3")
+        if !selectedCanvasItemIDs.isEmpty {
+            if selectedCanvasItemIDs.count == 1 {
+                Button(action: { showInspector = true }) {
+                    Label("Inspector", systemImage: "slider.horizontal.3")
+                }
+                .help("Inspector")
             }
-            .help("Inspector")
             Button(action: { bringSelectedToFront() }) {
                 Label("Bring to Front", systemImage: "square.3.layers.3d.top.filled")
             }
@@ -539,7 +559,7 @@ struct ContentView: View {
         }
         monthsPerPage = next
         pageIndex = (current - 1) / next
-        selectedCanvasItemID = nil
+        selectedCanvasItemIDs.removeAll()
     }
 
     private func zoomOut() {
@@ -552,7 +572,7 @@ struct ContentView: View {
         }
         monthsPerPage = next
         pageIndex = (current - 1) / next
-        selectedCanvasItemID = nil
+        selectedCanvasItemIDs.removeAll()
     }
 
     private func reloadEvents() {
@@ -595,7 +615,7 @@ struct ContentView: View {
         item.zoomLevel = monthsPerPage
         item.pageIndex = pageIndex
         doc.appendItem(item)
-        selectedCanvasItemID = item.persistentModelID
+        selectedCanvasItemIDs = [item.persistentModelID]
     }
 
 
@@ -604,28 +624,32 @@ struct ContentView: View {
         item.zoomLevel = monthsPerPage
         item.pageIndex = pageIndex
         doc.appendItem(item)
-        selectedCanvasItemID = item.persistentModelID
+        selectedCanvasItemIDs = [item.persistentModelID]
     }
 
     private func bringSelectedToFront() {
-        guard let item = selectedCanvasItem, let doc = currentDocument else { return }
-        item.zIndex = doc.nextZIndex
+        guard let doc = currentDocument else { return }
+        for item in selectedCanvasItems {
+            item.zIndex = doc.nextZIndex
+        }
     }
 
     private func sendSelectedToBack() {
-        guard let item = selectedCanvasItem, let doc = currentDocument else { return }
-        item.zIndex = doc.minZIndex
+        guard let doc = currentDocument else { return }
+        for item in selectedCanvasItems {
+            item.zIndex = doc.minZIndex
+        }
     }
 
-    private func deleteSelectedCanvasItem() {
-        guard let id = selectedCanvasItemID,
-              let item = currentDocument?.canvasItems?.first(where: { $0.persistentModelID == id }) else { return }
-        if let fileName = item.imageFileName {
-            ImageManager.deleteImage(fileName: fileName)
+    private func deleteSelectedCanvasItems() {
+        for item in selectedCanvasItems {
+            if let fileName = item.imageFileName {
+                ImageManager.deleteImage(fileName: fileName)
+            }
+            currentDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
+            modelContext.delete(item)
         }
-        currentDocument?.removeItem { $0.persistentModelID == id }
-        modelContext.delete(item)
-        selectedCanvasItemID = nil
+        selectedCanvasItemIDs.removeAll()
         showInspector = false
     }
 }

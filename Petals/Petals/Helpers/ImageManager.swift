@@ -40,6 +40,18 @@ enum ImageManager {
         return (fileName, thumbData)
     }
 
+    static func copyImageFile(fileName: String) -> String? {
+        let src = imagesDirectory.appendingPathComponent(fileName)
+        guard FileManager.default.fileExists(atPath: src.path) else { return nil }
+        let ext = (fileName as NSString).pathExtension
+        let newName = "\(UUID().uuidString).\(ext.isEmpty ? "jpg" : ext)"
+        let dst = imagesDirectory.appendingPathComponent(newName)
+        do {
+            try FileManager.default.copyItem(at: src, to: dst)
+            return newName
+        } catch { return nil }
+    }
+
     static func deleteImage(fileName: String) {
         imageCache.removeObject(forKey: fileName as NSString)
         let url = imagesDirectory.appendingPathComponent(fileName)
