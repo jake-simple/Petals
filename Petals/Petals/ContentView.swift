@@ -11,8 +11,6 @@ struct ContentView: View {
 
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
-    @AppStorage("obfuscateEventText") private var obfuscateText = false
-    @AppStorage("hideSingleDayEvents") private var hideSingleDayEvents = false
     @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
 
     // Cached layout (recomputed only on data change)
@@ -31,8 +29,9 @@ struct ContentView: View {
     @State private var monthsPerPage = 12  // 12, 6, 3
     @State private var pageIndex = 0
 
-    // Vision Board mode
+    // 화이트보드 모드
     @State private var showVisionBoard = false
+    @State private var selectedVisionBoardID: PersistentIdentifier?
 
     // Canvas state
     @State private var isCanvasEditMode = false
@@ -99,28 +98,18 @@ struct ContentView: View {
         return overflows.filter { $0.key >= startMonth && $0.key <= endMonth }
     }
 
-    @State private var flipAngle: Double = 0
-
     var body: some View {
-        let face = flipAngle.truncatingRemainder(dividingBy: 360)
-        let fade = cos(face * .pi / 180)
-        ZStack {
-            if face < 90 || face >= 270 {
-                calendarBody
-            } else {
-                VisionBoardView()
-                    .scaleEffect(x: -1) // 180도 Y축 회전 거울상 보정
+        Group {
+            if showVisionBoard {
+                VisionBoardContainerView(selectedBoardID: $selectedVisionBoardID)
                     .toolbar { modeToggleToolbar }
+            } else {
+                calendarBody
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
-        .opacity(fade * fade) // cos² — 더 뚜렷한 페이드
-        .rotation3DEffect(.degrees(flipAngle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
         .onChange(of: showVisionBoard) { _, isVisionBoard in
             if isVisionBoard { isCanvasEditMode = false }
-            withAnimation(.easeInOut(duration: 0.5)) {
-                flipAngle += 180
-            }
         }
     }
 
@@ -163,7 +152,6 @@ struct ContentView: View {
                             segments: visibleSegments,
                             overflows: visibleOverflows,
                             maxEventRows: maxEventRows,
-                            obfuscateText: obfuscateText,
                             eventFontSize: CGFloat(eventFontSize),
                             startMonth: startMonth,
                             monthsShown: monthsPerPage,
@@ -289,9 +277,6 @@ struct ContentView: View {
         }
         .onChange(of: eventManager.selectedCalendarIDs) {
             reloadEvents()
-        }
-        .onChange(of: hideSingleDayEvents) {
-            recomputeLayout()
         }
         .onChange(of: maxEventRows) {
             recomputeLayout()
@@ -579,16 +564,7 @@ struct ContentView: View {
     }
 
     private func recomputeLayout() {
-        let events: [EKEvent]
-        if hideSingleDayEvents {
-            let cal = Calendar.current
-            events = eventManager.events.filter { event in
-                guard let start = event.startDate, let end = event.endDate else { return true }
-                return !cal.isDate(start, inSameDayAs: end)
-            }
-        } else {
-            events = eventManager.events
-        }
+        let events = eventManager.events
         segments = EventLayoutEngine.layout(events: events, year: currentYear, maxLanes: maxEventRows)
         overflows = EventLayoutEngine.overflowCounts(events: events, year: currentYear, maxLanes: maxEventRows)
     }
@@ -666,5 +642,5 @@ struct EventEditorContext: Identifiable {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [YearDocument.self, CanvasItem.self, VisionBoardItem.self], inMemory: true)
+        .modelContainer(for: [YearDocument.self, CanvasItem.self, VisionBoard.self, VisionBoardItem.self], inMemory: true)
 }

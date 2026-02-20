@@ -7,6 +7,7 @@ struct PetalsApp: App {
         let schema = Schema([
             YearDocument.self,
             CanvasItem.self,
+            VisionBoard.self,
             VisionBoardItem.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
@@ -28,6 +29,7 @@ struct PetalsApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task { migrateOrphanVisionBoardItems() }
         }
         .modelContainer(sharedModelContainer)
         .defaultSize(width: 1200, height: 800)
@@ -52,6 +54,37 @@ struct PetalsApp: App {
 
         Settings {
             SettingsView()
+        }
+    }
+
+    /// 기존 board == nil인 VisionBoardItem을 기본 보드로 마이그레이션 (멱등)
+    private func migrateOrphanVisionBoardItems() {
+        let context = sharedModelContainer.mainContext
+        let boardDescriptor = FetchDescriptor<VisionBoard>()
+        let boardCount = (try? context.fetchCount(boardDescriptor)) ?? 0
+
+        // 이미 보드가 존재하면 고아 아이템만 처리
+        let defaultBoard: VisionBoard
+        if boardCount > 0 {
+            // 고아 아이템 확인
+            let orphanDescriptor = FetchDescriptor<VisionBoardItem>(predicate: #Predicate { $0.board == nil })
+            let orphans = (try? context.fetch(orphanDescriptor)) ?? []
+            guard !orphans.isEmpty else { return }
+            // 첫 번째 보드에 연결
+            var sortedDescriptor = FetchDescriptor<VisionBoard>(sortBy: [SortDescriptor(\VisionBoard.sortIndex)])
+            defaultBoard = (try? context.fetch(sortedDescriptor))?.first ?? VisionBoard(name: "나의 보드")
+            for item in orphans {
+                defaultBoard.appendItem(item)
+            }
+        } else {
+            // 보드가 없으면 기본 보드 생성
+            defaultBoard = VisionBoard(name: "나의 보드", sortIndex: 0)
+            context.insert(defaultBoard)
+
+            let allItems = (try? context.fetch(FetchDescriptor<VisionBoardItem>())) ?? []
+            for item in allItems {
+                defaultBoard.appendItem(item)
+            }
         }
     }
 }

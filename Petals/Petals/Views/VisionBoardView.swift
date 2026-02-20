@@ -4,12 +4,7 @@ import UniformTypeIdentifiers
 
 struct VisionBoardView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \VisionBoardItem.zIndex) private var items: [VisionBoardItem]
-
-    // 뷰포트 영속화 (제스처 종료 시에만 저장)
-    @AppStorage("visionBoard.scale") private var savedScale: Double = 1.0
-    @AppStorage("visionBoard.offsetX") private var savedOffsetX: Double = 0.0
-    @AppStorage("visionBoard.offsetY") private var savedOffsetY: Double = 0.0
+    @Bindable var board: VisionBoard
 
     // 실시간 뷰포트 (렌더링에 사용)
     @State private var scale: CGFloat = 1.0
@@ -36,6 +31,9 @@ struct VisionBoardView: View {
     private let maxScale: CGFloat = 4.0
     private let zoomSteps: [CGFloat] = [0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00, 4.00]
 
+    // board.items 변경 시에만 정렬 (제스처 중 body 재평가마다 sort 방지)
+    @State private var sortedItems: [VisionBoardItem] = []
+
     // 합산 값
     private var currentScale: CGFloat {
         clampScale(scale * gestureScale)
@@ -48,18 +46,9 @@ struct VisionBoardView: View {
         )
     }
 
-    // @Query(sort: \..zIndex) 이미 정렬 → O(1)
-    private var nextZIndex: Int {
-        (items.last?.zIndex ?? 0) + 1
-    }
-
-    private var minZIndex: Int {
-        (items.first?.zIndex ?? 0) - 1
-    }
-
     private var selectedItem: VisionBoardItem? {
         guard let id = selectedItemID else { return nil }
-        return items.first { $0.persistentModelID == id }
+        return sortedItems.first { $0.persistentModelID == id }
     }
 
     var body: some View {
@@ -74,7 +63,7 @@ struct VisionBoardView: View {
                         .contentShape(Rectangle())
                         .onTapGesture { selectedItemID = nil }
 
-                    ForEach(items) { item in
+                    ForEach(sortedItems) { item in
                         let itemRect = CGRect(x: item.x, y: item.y,
                                               width: item.width, height: item.height)
                         if item.persistentModelID == selectedItemID
@@ -86,8 +75,8 @@ struct VisionBoardView: View {
                                 onSelect: { selectedItemID = item.persistentModelID },
                                 showInspector: $showInspector,
                                 onDelete: { deleteItem(item) },
-                                onBringToFront: { item.zIndex = nextZIndex },
-                                onSendToBack: { item.zIndex = minZIndex }
+                                onBringToFront: { item.zIndex = board.nextZIndex },
+                                onSendToBack: { item.zIndex = board.minZIndex }
                             )
                         }
                     }
@@ -97,10 +86,11 @@ struct VisionBoardView: View {
                 .gesture(panGesture)
             }
             .onAppear {
-                // AppStorage → State 복원
-                scale = savedScale
-                offsetX = savedOffsetX
-                offsetY = savedOffsetY
+                // board에서 뷰포트 복원
+                scale = board.viewportScale
+                offsetX = board.viewportOffsetX
+                offsetY = board.viewportOffsetY
+                refreshSortedItems()
                 setupScrollMonitor()
             }
             .onDisappear {
@@ -133,16 +123,20 @@ struct VisionBoardView: View {
             if let item = selectedItem { deleteItem(item) }
             return .handled
         }
-        .focusable()
-        .focusEffectDisabled()
+    }
+
+    // MARK: - Items Cache
+
+    private func refreshSortedItems() {
+        sortedItems = (board.items ?? []).sorted { $0.zIndex < $1.zIndex }
     }
 
     // MARK: - Viewport Persistence
 
     private func persistViewport() {
-        savedScale = scale
-        savedOffsetX = offsetX
-        savedOffsetY = offsetY
+        board.viewportScale = scale
+        board.viewportOffsetX = offsetX
+        board.viewportOffsetY = offsetY
     }
 
     // MARK: - Gestures
@@ -338,15 +332,19 @@ struct VisionBoardView: View {
 
     private func addText() {
         let center = visibleCenter(in: NSScreen.main.map { CGSize(width: $0.frame.width, height: $0.frame.height) } ?? CGSize(width: 1200, height: 800))
-        let item = VisionBoardItem.newText(at: center, zIndex: nextZIndex)
+        let item = VisionBoardItem.newText(at: center, zIndex: board.nextZIndex)
         modelContext.insert(item)
+        board.appendItem(item)
+        refreshSortedItems()
         selectedItemID = item.persistentModelID
     }
 
     private func addSticker(_ name: String) {
         let center = visibleCenter(in: NSScreen.main.map { CGSize(width: $0.frame.width, height: $0.frame.height) } ?? CGSize(width: 1200, height: 800))
-        let item = VisionBoardItem.newSticker(at: center, name, zIndex: nextZIndex)
+        let item = VisionBoardItem.newSticker(at: center, name, zIndex: board.nextZIndex)
         modelContext.insert(item)
+        board.appendItem(item)
+        refreshSortedItems()
         selectedItemID = item.persistentModelID
     }
 
@@ -356,8 +354,10 @@ struct VisionBoardView: View {
 
         guard let result = ImageManager.importImage(from: url) else { return }
         let center = visibleCenter(in: NSScreen.main.map { CGSize(width: $0.frame.width, height: $0.frame.height) } ?? CGSize(width: 1200, height: 800))
-        let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: nextZIndex)
+        let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
         modelContext.insert(item)
+        board.appendItem(item)
+        refreshSortedItems()
         selectedItemID = item.persistentModelID
     }
 
@@ -370,8 +370,10 @@ struct VisionBoardView: View {
                     try? ImageManager.jpegData(from: image, quality: 0.9)?.write(to: tempURL)
                     guard let result = ImageManager.importImage(from: tempURL) else { return }
                     let center = visibleCenter(in: CGSize(width: 1200, height: 800))
-                    let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: nextZIndex)
+                    let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
                     modelContext.insert(item)
+                    board.appendItem(item)
+                    refreshSortedItems()
                     selectedItemID = item.persistentModelID
                 }
             }
@@ -382,21 +384,25 @@ struct VisionBoardView: View {
         if let fileName = item.imageFileName {
             ImageManager.deleteImage(fileName: fileName)
         }
+        board.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
         if selectedItemID == item.persistentModelID {
             selectedItemID = nil
             showInspector = false
         }
+        refreshSortedItems()
     }
 
     private func bringSelectedToFront() {
         guard let item = selectedItem else { return }
-        item.zIndex = nextZIndex
+        item.zIndex = board.nextZIndex
+        refreshSortedItems()
     }
 
     private func sendSelectedToBack() {
         guard let item = selectedItem else { return }
-        item.zIndex = minZIndex
+        item.zIndex = board.minZIndex
+        refreshSortedItems()
     }
 
     private func resetViewport() {

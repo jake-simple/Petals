@@ -520,17 +520,6 @@
         }
       }
     },
-    "Hide Single-Day Events" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "단일일 이벤트 숨기기"
-          }
-        }
-      }
-    },
     "Image" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -648,17 +637,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "메모"
-          }
-        }
-      }
-    },
-    "Obfuscate Event Text" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이벤트 텍스트 가리기"
           }
         }
       }
@@ -1042,12 +1020,62 @@
         }
       }
     },
+    "보드 이름" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Board Name"
+          }
+        }
+      }
+    },
+    "보드를 만들 수 없습니다" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cannot Create Board"
+          }
+        }
+      }
+    },
+    "보드를 선택하세요" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a Board"
+          }
+        }
+      }
+    },
     "뷰포트 초기화" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset Viewport"
+          }
+        }
+      }
+    },
+    "사이드바에서 보드를 선택하거나 새 보드를 만드세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select a board from the sidebar or create a new one."
+          }
+        }
+      }
+    },
+    "삭제" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
           }
         }
       }
@@ -1072,6 +1100,16 @@
         }
       }
     },
+    "새 보드" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Board"
+          }
+        }
+      }
+    },
     "심볼 검색…" : {
       "localizations" : {
         "en" : {
@@ -1088,6 +1126,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Choose Symbol"
+          }
+        }
+      }
+    },
+    "이름 변경" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
           }
         }
       }
@@ -1138,6 +1186,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Whiteboard View"
+          }
+        }
+      }
+    },
+    "확인" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }

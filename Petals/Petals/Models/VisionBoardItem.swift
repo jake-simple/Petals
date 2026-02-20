@@ -15,6 +15,9 @@ final class VisionBoardItem {
     var aspectRatio: Double?
     var createdAt: Date = Date()
 
+    // 소속 보드 (CloudKit 호환: optional)
+    var board: VisionBoard?
+
     // 이미지
     var imageFileName: String?
     var thumbnailData: Data?

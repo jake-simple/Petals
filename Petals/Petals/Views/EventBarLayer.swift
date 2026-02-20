@@ -6,7 +6,6 @@ struct EventBarLayer: View {
     let segments: [EventSegment]
     let overflows: [Int: [Int: Int]]
     let maxEventRows: Int
-    let obfuscateText: Bool
     let eventFontSize: CGFloat
     var startMonth: Int = 1
     var monthsShown: Int = 12
@@ -218,7 +217,7 @@ struct EventBarLayer: View {
         context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
 
         // Title text (clipped to bar)
-        let title = obfuscateText ? "●●●●" : (segment.event.title ?? "")
+        let title = segment.event.title ?? ""
         let fontSize = eventFontSize
         guard fontSize >= 3 else { return }
         context.drawLayer { ctx in
