@@ -87,7 +87,6 @@ struct DraggableVisionBoardItem: View, Equatable {
                 .onTapGesture(count: 2) {
                     if CanvasItemType(rawValue: item.type) == .text {
                         isEditing = true
-                        onSelect(false)
                     }
                 }
                 .position(x: cx, y: cy)
@@ -202,17 +201,16 @@ struct DraggableVisionBoardItem: View, Equatable {
                 resizeOffset = value.translation
             }
             .onEnded { _ in
+                let constrained = wasConstrained || NSEvent.modifierFlags.contains(.command)
                 item.x = initialBounds.x + resizeDeltaX
                 item.y = initialBounds.y + resizeDeltaY
                 item.width = max(20, initialBounds.w + resizeDeltaW)
                 item.height = max(20, initialBounds.h + resizeDeltaH)
-                if wasConstrained {
-                    item.aspectRatio = item.width / item.height
-                } else {
-                    item.aspectRatio = nil
-                }
+                // Cmd 누른 상태에서 끝났을 때만 비율 잠금, 아니면 해제
+                item.aspectRatio = constrained ? item.width / item.height : nil
                 activeHandle = nil
                 resizeOffset = .zero
+                wasConstrained = false
             }
     }
 
@@ -337,6 +335,16 @@ struct VisionBoardInspectorPanel: View {
                 set: { item.text = $0 }
             ), axis: .vertical)
 
+            Picker("Font", selection: Binding(
+                get: { item.fontName ?? "" },
+                set: { item.fontName = $0.isEmpty ? nil : $0 }
+            )) {
+                Text("System Default").tag("")
+                ForEach(Self.availableFonts, id: \.self) { name in
+                    Text(name).font(.custom(name, size: 13)).tag(name)
+                }
+            }
+
             LabeledContent("Size") {
                 HStack {
                     Slider(value: Binding(
@@ -347,6 +355,24 @@ struct VisionBoardInspectorPanel: View {
                         .monospacedDigit()
                         .frame(width: 44)
                 }
+            }
+
+            HStack {
+                Toggle(isOn: Binding(
+                    get: { item.isBold ?? false },
+                    set: { item.isBold = $0 }
+                )) {
+                    Image(systemName: "bold")
+                }
+                .toggleStyle(.button)
+
+                Toggle(isOn: Binding(
+                    get: { item.isItalic ?? false },
+                    set: { item.isItalic = $0 }
+                )) {
+                    Image(systemName: "italic")
+                }
+                .toggleStyle(.button)
             }
 
             Picker("Alignment", selection: Binding(
@@ -362,6 +388,10 @@ struct VisionBoardInspectorPanel: View {
             ColorPicker("Color", selection: hexColorBinding(\.textColor, default: "#333333"))
         }
     }
+
+    private static let availableFonts: [String] = {
+        NSFontManager.shared.availableFontFamilies.sorted()
+    }()
 
     @ViewBuilder
     private var shapeSection: some View {

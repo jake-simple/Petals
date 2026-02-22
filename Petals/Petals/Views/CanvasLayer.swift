@@ -14,6 +14,7 @@ struct CanvasLayer: View {
     @State private var containerSize: CGSize = CGSize(width: 900, height: 600)
     @State private var marqueeRect: CGRect?
     @State private var multiDragOffset: CGSize = .zero
+    @State private var keyMonitor: Any?
 
     private var sortedItems: [CanvasItem] {
         (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
@@ -35,7 +36,6 @@ struct CanvasLayer: View {
                     .simultaneousGesture(
                         DragGesture(minimumDistance: 5)
                             .onChanged { value in
-                                guard NSEvent.modifierFlags.contains(.command) else { return }
                                 let origin = CGPoint(
                                     x: min(value.startLocation.x, value.location.x),
                                     y: min(value.startLocation.y, value.location.y)
@@ -48,6 +48,10 @@ struct CanvasLayer: View {
                             }
                             .onEnded { _ in
                                 if let rect = marqueeRect {
+                                    let addToSelection = NSEvent.modifierFlags.contains(.command)
+                                    if !addToSelection {
+                                        selectedItemIDs.removeAll()
+                                    }
                                     selectItems(in: rect, containerSize: proxy.size)
                                 }
                                 marqueeRect = nil
@@ -75,8 +79,8 @@ struct CanvasLayer: View {
                         },
                         showInspector: $showInspector,
                         onCopy: {
-                            clipboardManager.snapshot = CanvasItemSnapshot(from: item, containerSize: proxy.size)
-                            clipboardManager.triggerCopyToast()
+                            let snapshot = CanvasItemSnapshot(from: item, containerSize: proxy.size)
+                            clipboardManager.performCopy(snapshot: snapshot)
                         },
                         onPaste: { pasteItem() },
                         onDelete: { deleteItem(item) },
@@ -111,6 +115,7 @@ struct CanvasLayer: View {
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
                 }
+
             }
             .simultaneousGesture(
                 SpatialTapGesture()
@@ -141,18 +146,8 @@ struct CanvasLayer: View {
             handleDrop(providers: providers)
             return true
         }
-        .onDeleteCommand {
-            deleteSelectedItems()
-        }
-        .onCopyCommand {
-            guard let item = selectedItems.first else { return [] }
-            clipboardManager.snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
-            clipboardManager.triggerCopyToast()
-            return [NSItemProvider(object: "" as NSString)]
-        }
-        .onPasteCommand(of: [.plainText]) { _ in
-            pasteItem()
-        }
+        .onAppear { setupKeyMonitor() }
+        .onDisappear { teardownKeyMonitor() }
     }
 
     // MARK: - Hit Test
@@ -245,6 +240,43 @@ struct CanvasLayer: View {
         item.zIndex = doc.nextZIndex
         doc.appendItem(item)
         selectedItemIDs = [item.persistentModelID]
+    }
+
+    // MARK: - Key Monitor
+
+    private func setupKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
+                guard let item = selectedItems.first else { return event }
+                let snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
+                clipboardManager.performCopy(snapshot: snapshot)
+                return nil
+            }
+            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "v" {
+                if clipboardManager.snapshot != nil {
+                    pasteItem()
+                }
+                return nil
+            }
+            if event.keyCode == 51 || event.keyCode == 117 {
+                guard !selectedItemIDs.isEmpty else { return event }
+                deleteSelectedItems()
+                return nil
+            }
+            if event.keyCode == 53 {
+                selectedItemIDs.removeAll()
+                showInspector = false
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func teardownKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
     }
 
     private func handleDrop(providers: [NSItemProvider]) {

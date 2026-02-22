@@ -151,8 +151,18 @@ private struct BoardRow: View {
         if editingBoardID == board.persistentModelID {
             TextField("보드 이름", text: $board.name)
                 .focused($textFieldFocused)
-                .onSubmit { editingBoardID = nil }
-                .onExitCommand { editingBoardID = nil }
+                .onSubmit {
+                    if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
+                        board.name = "새 보드"
+                    }
+                    editingBoardID = nil
+                }
+                .onExitCommand {
+                    if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
+                        board.name = "새 보드"
+                    }
+                    editingBoardID = nil
+                }
                 .onAppear { textFieldFocused = true }
         } else {
             Text(board.name)

@@ -14,6 +14,7 @@ final class VisionBoardItem {
     var opacity: Double = 1.0
     var aspectRatio: Double?
     var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
 
     // 소속 보드 (CloudKit 호환: optional)
     var board: VisionBoard?

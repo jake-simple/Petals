@@ -18,6 +18,7 @@ struct VisionBoardView: View {
     @State private var pinchOffset: CGSize = .zero
     @State private var isPinching = false
 
+
     // 선택/편집
     @State private var selectedItemIDs: Set<PersistentIdentifier> = []
     @State private var showInspector = false
@@ -36,6 +37,7 @@ struct VisionBoardView: View {
 
     // 스크롤 모니터
     @State private var scrollMonitor: Any?
+    @State private var keyMonitor: Any?
 
     // 줌 범위 및 스텝
     private let minScale: CGFloat = 0.25
@@ -44,6 +46,8 @@ struct VisionBoardView: View {
 
     // board.items 변경 시에만 정렬 (제스처 중 body 재평가마다 sort 방지)
     @State private var sortedItems: [VisionBoardItem] = []
+    // cachedWorldBounds 캐시 (아이템 변경 시에만 재계산)
+    @State private var cachedWorldBounds: CGRect = .zero
 
     // 합산 값
     private var currentScale: CGFloat {
@@ -55,6 +59,28 @@ struct VisionBoardView: View {
             width: offsetX + gesturePanOffset.width + pinchOffset.width,
             height: offsetY + gesturePanOffset.height + pinchOffset.height
         )
+    }
+
+    /// cachedWorldBounds 재계산 (sortedItems 또는 viewSize 변경 시 호출)
+    private func recalcWorldBounds() {
+        let defaultRect = CGRect(
+            x: -viewSize.width,
+            y: -viewSize.height,
+            width: viewSize.width * 3,
+            height: viewSize.height * 3
+        )
+        guard !sortedItems.isEmpty else { cachedWorldBounds = defaultRect; return }
+        var mnX = CGFloat.infinity, mnY = CGFloat.infinity
+        var mxX = -CGFloat.infinity, mxY = -CGFloat.infinity
+        for item in sortedItems {
+            mnX = min(mnX, item.x)
+            mnY = min(mnY, item.y)
+            mxX = max(mxX, item.x + item.width)
+            mxY = max(mxY, item.y + item.height)
+        }
+        let itemsBounds = CGRect(x: mnX - 200, y: mnY - 200,
+                                  width: mxX - mnX + 400, height: mxY - mnY + 400)
+        cachedWorldBounds = defaultRect.union(itemsBounds)
     }
 
     private var selectedItems: [VisionBoardItem] {
@@ -104,8 +130,8 @@ struct VisionBoardView: View {
                                 },
                                 showInspector: $showInspector,
                                 onCopy: {
-                                    clipboardManager.snapshot = CanvasItemSnapshot(from: item)
-                                    clipboardManager.triggerCopyToast()
+                                    let snapshot = CanvasItemSnapshot(from: item)
+                                    clipboardManager.performCopy(snapshot: snapshot)
                                 },
                                 onPaste: {
                                     let viewSize = viewSize
@@ -127,6 +153,7 @@ struct VisionBoardView: View {
                                         }
                                     }
                                     multiDragOffset = .zero
+                                    recalcWorldBounds()
                                 }
                             )
                         }
@@ -148,6 +175,15 @@ struct VisionBoardView: View {
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
                 }
+
+                // 스크롤바 오버레이
+                CanvasScrollBars(
+                    cachedWorldBounds: cachedWorldBounds,
+                    scale: currentScale,
+                    offset: currentOffset,
+                    viewSize: geo.size
+                )
+
             }
             .simultaneousGesture(
                 SpatialTapGesture()
@@ -174,17 +210,23 @@ struct VisionBoardView: View {
             .simultaneousGesture(marqueeGesture)
             .onAppear {
                 viewSize = geo.size
-                // board에서 뷰포트 복원
                 scale = board.viewportScale
                 offsetX = board.viewportOffsetX
                 offsetY = board.viewportOffsetY
                 refreshSortedItems()
+                clampViewport()
                 setupScrollMonitor()
+                setupKeyMonitor()
             }
-            .onChange(of: geo.size) { _, newSize in viewSize = newSize }
+            .onChange(of: geo.size) { _, newSize in
+                viewSize = newSize
+                recalcWorldBounds()
+                clampViewport()
+            }
             .onDisappear {
                 persistViewport()
                 teardownScrollMonitor()
+                teardownKeyMonitor()
             }
         }
         .frame(minWidth: 900, minHeight: 600)
@@ -198,42 +240,13 @@ struct VisionBoardView: View {
             handleDrop(providers: providers)
             return true
         }
-        .onDeleteCommand {
-            deleteSelectedItems()
-        }
-        .onCopyCommand {
-            guard let item = selectedItems.first else { return [] }
-            clipboardManager.snapshot = CanvasItemSnapshot(from: item)
-            clipboardManager.triggerCopyToast()
-            return [NSItemProvider(object: "" as NSString)]
-        }
-        .onPasteCommand(of: [.plainText]) { _ in
-            pasteItem(in: viewSize)
-        }
-        .onKeyPress(.delete) {
-            guard !selectedItemIDs.isEmpty else { return .ignored }
-            deleteSelectedItems()
-            return .handled
-        }
-        .onKeyPress(.deleteForward) {
-            guard !selectedItemIDs.isEmpty else { return .ignored }
-            deleteSelectedItems()
-            return .handled
-        }
-        .focusable()
-        .focusEffectDisabled()
-        .onKeyPress(.escape) {
-            guard !selectedItemIDs.isEmpty else { return .ignored }
-            selectedItemIDs.removeAll()
-            showInspector = false
-            return .handled
-        }
     }
 
     // MARK: - Items Cache
 
     private func refreshSortedItems() {
         sortedItems = (board.items ?? []).sorted { $0.zIndex < $1.zIndex }
+        recalcWorldBounds()
     }
 
     // MARK: - Viewport Persistence
@@ -265,6 +278,7 @@ struct VisionBoardView: View {
                 offsetX += value.translation.width
                 offsetY += value.translation.height
                 gesturePanOffset = .zero
+                clampViewport()
                 persistViewport()
             }
     }
@@ -351,6 +365,7 @@ struct VisionBoardView: View {
                     gestureScale = 1.0
                     pinchOffset = .zero
                     isPinching = false
+                    clampViewport()
                     persistViewport()
                 }
                 return event
@@ -371,6 +386,7 @@ struct VisionBoardView: View {
                 offsetX = cx - canvasX * newScale
                 offsetY = cy - canvasY * newScale
                 scale = newScale
+                clampViewport()
                 if event.phase == .ended || event.momentumPhase == .ended {
                     persistViewport()
                 }
@@ -380,6 +396,7 @@ struct VisionBoardView: View {
             // 일반 scroll → 패닝
             offsetX += event.scrollingDeltaX
             offsetY += event.scrollingDeltaY
+            clampViewport()
             if event.phase == .ended || event.momentumPhase == .ended {
                 persistViewport()
             }
@@ -411,6 +428,30 @@ struct VisionBoardView: View {
         min(max(s, minScale), maxScale)
     }
 
+    /// scale과 offset을 월드 바운드 내로 클램핑한 값 반환
+    private func clampedViewport(scale s: CGFloat, offsetX ox: CGFloat, offsetY oy: CGFloat) -> (scale: CGFloat, offsetX: CGFloat, offsetY: CGFloat) {
+        let cs = clampScale(s)
+        let world = cachedWorldBounds
+
+        let maxOX = -world.minX * cs
+        let minOX = viewSize.width - world.maxX * cs
+        let cx: CGFloat = minOX >= maxOX ? (maxOX + minOX) / 2 : min(max(ox, minOX), maxOX)
+
+        let maxOY = -world.minY * cs
+        let minOY = viewSize.height - world.maxY * cs
+        let cy: CGFloat = minOY >= maxOY ? (maxOY + minOY) / 2 : min(max(oy, minOY), maxOY)
+
+        return (cs, cx, cy)
+    }
+
+    /// 현재 뷰포트를 월드 바운드 내로 클램핑
+    private func clampViewport() {
+        let v = clampedViewport(scale: scale, offsetX: offsetX, offsetY: offsetY)
+        scale = v.scale
+        offsetX = v.offsetX
+        offsetY = v.offsetY
+    }
+
     /// 캔버스 좌표계 기준 현재 보이는 영역 (여유 마진 포함)
     private func visibleCanvasRect(viewSize: CGSize) -> CGRect {
         CGRect(
@@ -431,7 +472,7 @@ struct VisionBoardView: View {
                 Button(action: { stepZoomOut() }) {
                     Label("Zoom Out", systemImage: "minus")
                 }
-                .disabled(currentScale <= zoomSteps.first!)
+                .disabled(currentScale <= minScale + 0.001)
                 .keyboardShortcut("-", modifiers: .command)
 
                 Text("\(Int(currentScale * 100))%")
@@ -554,13 +595,13 @@ struct VisionBoardView: View {
     private func pasteItem(in viewSize: CGSize) {
         guard let snap = clipboardManager.snapshot else { return }
         let center = visibleCenter(in: viewSize)
-        let jitter = Double.random(in: -20...20)
+        let offset: Double = 20
         let itemType = CanvasItemType(rawValue: snap.type) ?? .text
         let w = snap.absoluteWidth ?? 200
         let h = snap.absoluteHeight ?? 200
         let item = VisionBoardItem(type: itemType,
-                                   x: center.x - w / 2 + jitter,
-                                   y: center.y - h / 2 + jitter,
+                                   x: center.x - w / 2 + offset,
+                                   y: center.y - h / 2 + offset,
                                    width: w,
                                    height: h,
                                    rotation: snap.rotation,
@@ -576,6 +617,43 @@ struct VisionBoardView: View {
         board.appendItem(item)
         refreshSortedItems()
         selectedItemIDs = [item.persistentModelID]
+    }
+
+    // MARK: - Key Monitor
+
+    private func setupKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
+                guard let item = selectedItems.first else { return event }
+                let snapshot = CanvasItemSnapshot(from: item)
+                clipboardManager.performCopy(snapshot: snapshot)
+                return nil
+            }
+            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "v" {
+                if clipboardManager.snapshot != nil {
+                    pasteItem(in: viewSize)
+                }
+                return nil
+            }
+            if event.keyCode == 51 || event.keyCode == 117 {
+                guard !selectedItemIDs.isEmpty else { return event }
+                deleteSelectedItems()
+                return nil
+            }
+            if event.keyCode == 53 {
+                selectedItemIDs.removeAll()
+                showInspector = false
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func teardownKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
     }
 
     private func deleteItem(_ item: VisionBoardItem) {
@@ -612,10 +690,11 @@ struct VisionBoardView: View {
     }
 
     private func resetViewport() {
+        let v = clampedViewport(scale: 1.0, offsetX: 0, offsetY: 0)
         withAnimation(.easeOut(duration: 0.2)) {
-            scale = 1.0
-            offsetX = 0
-            offsetY = 0
+            scale = v.scale
+            offsetX = v.offsetX
+            offsetY = v.offsetY
         }
         persistViewport()
     }
@@ -635,11 +714,83 @@ struct VisionBoardView: View {
         let cx = ws.width / 2, cy = ws.height / 2
         let canvasX = (cx - offsetX) / scale
         let canvasY = (cy - offsetY) / scale
+        let targetOX = cx - canvasX * newScale
+        let targetOY = cy - canvasY * newScale
+        let v = clampedViewport(scale: newScale, offsetX: targetOX, offsetY: targetOY)
         withAnimation(.easeOut(duration: 0.2)) {
-            offsetX = cx - canvasX * newScale
-            offsetY = cy - canvasY * newScale
-            scale = newScale
+            offsetX = v.offsetX
+            offsetY = v.offsetY
+            scale = v.scale
         }
         persistViewport()
+    }
+}
+
+// MARK: - Canvas Scroll Bars
+
+private struct CanvasScrollBars: View {
+    let cachedWorldBounds: CGRect
+    let scale: CGFloat
+    let offset: CGSize
+    let viewSize: CGSize
+
+    private let barThickness: CGFloat = 6
+    private let barMargin: CGFloat = 4
+    private let minThumbLength: CGFloat = 30
+
+    var body: some View {
+        let totalW = cachedWorldBounds.width * scale
+        let totalH = cachedWorldBounds.height * scale
+        // 뷰포트가 전체 월드를 다 보여주면 스크롤바 불필요
+        let showH = totalW > viewSize.width + 1
+        let showV = totalH > viewSize.height + 1
+
+        ZStack(alignment: .bottomTrailing) {
+            Color.clear
+
+            if showH {
+                horizontalBar(totalWidth: totalW)
+            }
+            if showV {
+                verticalBar(totalHeight: totalH)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder
+    private func horizontalBar(totalWidth: CGFloat) -> some View {
+        let trackWidth = viewSize.width - barMargin * 2 - (barThickness + barMargin)
+        let ratio = viewSize.width / totalWidth
+        let thumbW = max(minThumbLength, trackWidth * ratio)
+        let scrollableRange = totalWidth - viewSize.width
+        let viewportX = -(offset.width + cachedWorldBounds.minX * scale)
+        let progress = scrollableRange > 0 ? viewportX / scrollableRange : 0
+        let thumbX = barMargin + (trackWidth - thumbW) * clamp(progress)
+
+        RoundedRectangle(cornerRadius: barThickness / 2)
+            .fill(Color.primary.opacity(0.25))
+            .frame(width: thumbW, height: barThickness)
+            .position(x: thumbX + thumbW / 2, y: viewSize.height - barMargin - barThickness / 2)
+    }
+
+    @ViewBuilder
+    private func verticalBar(totalHeight: CGFloat) -> some View {
+        let trackHeight = viewSize.height - barMargin * 2 - (barThickness + barMargin)
+        let ratio = viewSize.height / totalHeight
+        let thumbH = max(minThumbLength, trackHeight * ratio)
+        let scrollableRange = totalHeight - viewSize.height
+        let viewportY = -(offset.height + cachedWorldBounds.minY * scale)
+        let progress = scrollableRange > 0 ? viewportY / scrollableRange : 0
+        let thumbY = barMargin + (trackHeight - thumbH) * clamp(progress)
+
+        RoundedRectangle(cornerRadius: barThickness / 2)
+            .fill(Color.primary.opacity(0.25))
+            .frame(width: barThickness, height: thumbH)
+            .position(x: viewSize.width - barMargin - barThickness / 2, y: thumbY + thumbH / 2)
+    }
+
+    private func clamp(_ v: CGFloat) -> CGFloat {
+        min(max(v, 0), 1)
     }
 }

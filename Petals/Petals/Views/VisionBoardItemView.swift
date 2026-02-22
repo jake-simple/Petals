@@ -61,13 +61,25 @@ struct VisionBoardItemView: View {
 
     private func textFont() -> Font {
         let size = max(6, item.fontSize ?? 32)
+        let bold = item.isBold ?? false
+        let italic = item.isItalic ?? false
+
         if let fontName = item.fontName {
+            // 커스텀 폰트 패밀리 → NSFont로 trait 적용
+            var traits: NSFontTraitMask = []
+            if bold { traits.insert(.boldFontMask) }
+            if italic { traits.insert(.italicFontMask) }
+            if let nsFont = NSFontManager.shared.font(
+                withFamily: fontName, traits: traits, weight: 5, size: size
+            ) {
+                return Font(nsFont)
+            }
             return .custom(fontName, size: size)
         }
-        return .system(
-            size: size,
-            weight: (item.isBold ?? false) ? .bold : .regular
-        )
+
+        var font: Font = .system(size: size, weight: bold ? .bold : .regular)
+        if italic { font = font.italic() }
+        return font
     }
 
     private var textAlign: TextAlignment {

@@ -891,6 +891,9 @@
         }
       }
     },
+    "System Default" : {
+
+    },
     "Text" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -6,6 +6,11 @@ final class ClipboardManager {
     var showCopyToast = false
     private var toastWorkItem: DispatchWorkItem?
 
+    func performCopy(snapshot: CanvasItemSnapshot) {
+        self.snapshot = snapshot
+        triggerCopyToast()
+    }
+
     func triggerCopyToast() {
         toastWorkItem?.cancel()
         showCopyToast = true

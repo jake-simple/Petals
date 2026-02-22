@@ -5,6 +5,7 @@ import SwiftData
 final class VisionBoard {
     var name: String = ""
     var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
     var sortIndex: Int = 0
 
     // 보드별 뷰포트 상태
@@ -19,6 +20,7 @@ final class VisionBoard {
         self.name = name
         self.sortIndex = sortIndex
         self.createdAt = Date()
+        self.modifiedAt = Date()
     }
 
     func appendItem(_ item: VisionBoardItem) {

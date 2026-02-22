@@ -111,7 +111,7 @@ struct ContentView: View {
         .overlay(alignment: .bottom) {
             if clipboardManager.showCopyToast {
                 Text("복사됨")
-                    .font(.caption)
+                    .font(.body)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
                     .background(.ultraThinMaterial, in: Capsule())
@@ -301,28 +301,6 @@ struct ContentView: View {
             guard !isCanvasEditMode, !showVisionBoard else { return .ignored }
             navigateForward()
             return .handled
-        }
-        .onKeyPress(.delete) {
-            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return .ignored }
-            deleteSelectedCanvasItems()
-            return .handled
-        }
-        .onKeyPress(.deleteForward) {
-            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return .ignored }
-            deleteSelectedCanvasItems()
-            return .handled
-        }
-        .onDeleteCommand {
-            guard isCanvasEditMode, !selectedCanvasItemIDs.isEmpty else { return }
-            deleteSelectedCanvasItems()
-        }
-        .onKeyPress(.escape) {
-            if !selectedCanvasItemIDs.isEmpty {
-                selectedCanvasItemIDs.removeAll()
-                showInspector = false
-                return .handled
-            }
-            return .ignored
         }
     }
 

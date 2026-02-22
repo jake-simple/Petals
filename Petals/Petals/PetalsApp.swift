@@ -38,6 +38,7 @@ struct PetalsApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .pasteboard) {}
             CommandGroup(after: .toolbar) {
                 Button("Increase Font Size") {
                     let current = UserDefaults.standard.double(forKey: "eventFontSize")
