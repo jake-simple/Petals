@@ -148,39 +148,38 @@ struct ContentView: View {
                 ZStack {
                     // Z1: Grid + today line
                     CalendarGridView(
-                        year: currentYear, theme: theme, showTodayLine: showTodayLine && !isCanvasEditMode,
+                        year: currentYear, theme: theme, showTodayLine: showTodayLine,
                         eventFontSize: CGFloat(eventFontSize),
                         startMonth: startMonth, monthsShown: monthsPerPage
                     )
                     .allowsHitTesting(false)
 
-                    // Z2: Event bars (hidden in canvas edit mode)
-                    if !isCanvasEditMode {
-                        EventBarLayer(
-                            year: currentYear,
-                            segments: visibleSegments,
-                            overflows: visibleOverflows,
-                            maxEventRows: maxEventRows,
-                            eventFontSize: CGFloat(eventFontSize),
-                            startMonth: startMonth,
-                            monthsShown: monthsPerPage,
-                            onEventTap: { event, rect in
-                                selectedEvent = event
-                                eventPopoverAnchor = rect
-                                showEventDetail = true
-                            },
-                            onEmptyTap: { month, day in
-                                openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
-                            },
-                            onDragCreate: { startMonth, startDay, endMonth, endDay in
-                                openEditor(startMonth: startMonth, startDay: startDay, endMonth: endMonth, endDay: endDay)
-                            },
-                            onEventDelete: { event, span in
-                                try? eventManager.deleteEvent(event, span: span)
-                                reloadEvents()
-                            }
-                        )
-                    }
+                    // Z2: Event bars
+                    EventBarLayer(
+                        year: currentYear,
+                        segments: visibleSegments,
+                        overflows: visibleOverflows,
+                        maxEventRows: maxEventRows,
+                        eventFontSize: CGFloat(eventFontSize),
+                        startMonth: startMonth,
+                        monthsShown: monthsPerPage,
+                        onEventTap: { event, rect in
+                            selectedEvent = event
+                            eventPopoverAnchor = rect
+                            showEventDetail = true
+                        },
+                        onEmptyTap: { month, day in
+                            openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
+                        },
+                        onDragCreate: { startMonth, startDay, endMonth, endDay in
+                            openEditor(startMonth: startMonth, startDay: startDay, endMonth: endMonth, endDay: endDay)
+                        },
+                        onEventDelete: { event, span in
+                            try? eventManager.deleteEvent(event, span: span)
+                            reloadEvents()
+                        }
+                    )
+                    .allowsHitTesting(!isCanvasEditMode)
                 }
                 .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
                     if let event = selectedEvent {
@@ -209,7 +208,8 @@ struct ContentView: View {
             .padding(.horizontal, 16)
             .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
             .padding(.bottom, 16)
-            // Canvas layer covers entire board
+            .allowsHitTesting(!isCanvasEditMode)
+            // Canvas layer (편집/표시 모드 동일한 좌표계)
             Group {
                 if isCanvasEditMode {
                     CanvasLayer(
@@ -223,9 +223,6 @@ struct ContentView: View {
                     canvasDisplayLayer
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
-            .padding(.bottom, 16)
         }
         } // GeometryReader
         .frame(minWidth: 900, minHeight: 600)
