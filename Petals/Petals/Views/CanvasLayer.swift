@@ -13,8 +13,8 @@ struct CanvasLayer: View {
 
     @State private var containerSize: CGSize = CGSize(width: 900, height: 600)
     @State private var marqueeRect: CGRect?
+    @State private var isMarqueeActive = false
     @State private var multiDragOffset: CGSize = .zero
-    @State private var keyMonitor: Any?
 
     private var sortedItems: [CanvasItem] {
         (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
@@ -27,36 +27,12 @@ struct CanvasLayer: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                Color.clear
+                Color.white.opacity(0.001)
                     .contentShape(Rectangle())
                     .contextMenu {
                         Button("붙여넣기") { pasteItem() }
                             .disabled(clipboardManager.snapshot == nil)
                     }
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 5)
-                            .onChanged { value in
-                                let origin = CGPoint(
-                                    x: min(value.startLocation.x, value.location.x),
-                                    y: min(value.startLocation.y, value.location.y)
-                                )
-                                let size = CGSize(
-                                    width: abs(value.location.x - value.startLocation.x),
-                                    height: abs(value.location.y - value.startLocation.y)
-                                )
-                                marqueeRect = CGRect(origin: origin, size: size)
-                            }
-                            .onEnded { _ in
-                                if let rect = marqueeRect {
-                                    let addToSelection = NSEvent.modifierFlags.contains(.command)
-                                    if !addToSelection {
-                                        selectedItemIDs.removeAll()
-                                    }
-                                    selectItems(in: rect, containerSize: proxy.size)
-                                }
-                                marqueeRect = nil
-                            }
-                    )
 
                 ForEach(sortedItems) { item in
                     let isSelected = selectedItemIDs.contains(item.persistentModelID)
@@ -115,14 +91,12 @@ struct CanvasLayer: View {
                         .position(x: rect.midX, y: rect.midY)
                         .allowsHitTesting(false)
                 }
-
             }
             .simultaneousGesture(
                 SpatialTapGesture()
                     .onEnded { value in
-                        let loc = value.location
                         let addToSelection = NSEvent.modifierFlags.contains(.command)
-                        if let hitItem = topItem(at: loc, containerSize: proxy.size) {
+                        if let hitItem = topItem(at: value.location, containerSize: proxy.size) {
                             if addToSelection {
                                 if selectedItemIDs.contains(hitItem.persistentModelID) {
                                     selectedItemIDs.remove(hitItem.persistentModelID)
@@ -139,6 +113,7 @@ struct CanvasLayer: View {
                         }
                     }
             )
+            .simultaneousGesture(marqueeGesture)
             .onAppear { containerSize = proxy.size }
             .onChange(of: proxy.size) { _, newSize in containerSize = newSize }
         }
@@ -146,8 +121,45 @@ struct CanvasLayer: View {
             handleDrop(providers: providers)
             return true
         }
-        .onAppear { setupKeyMonitor() }
-        .onDisappear { teardownKeyMonitor() }
+        .modifier(CanvasKeyCommands(
+            selectedItemIDs: $selectedItemIDs,
+            showInspector: $showInspector,
+            onDelete: { deleteSelectedItems() },
+            onCopy: {
+                guard let item = selectedItems.first else { return }
+                let snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
+                clipboardManager.performCopy(snapshot: snapshot)
+            },
+            onPaste: {
+                if clipboardManager.snapshot != nil { pasteItem() }
+            }
+        ))
+    }
+
+    // MARK: - Marquee Gesture
+
+    private var marqueeGesture: some Gesture {
+        DragGesture(minimumDistance: 5)
+            .onChanged { value in
+                guard NSEvent.modifierFlags.contains(.command) else { return }
+                isMarqueeActive = true
+                let origin = CGPoint(
+                    x: min(value.startLocation.x, value.location.x),
+                    y: min(value.startLocation.y, value.location.y)
+                )
+                let size = CGSize(
+                    width: abs(value.location.x - value.startLocation.x),
+                    height: abs(value.location.y - value.startLocation.y)
+                )
+                marqueeRect = CGRect(origin: origin, size: size)
+            }
+            .onEnded { _ in
+                if isMarqueeActive, let rect = marqueeRect {
+                    selectItems(in: rect, containerSize: containerSize)
+                }
+                marqueeRect = nil
+                isMarqueeActive = false
+            }
     }
 
     // MARK: - Hit Test
@@ -242,43 +254,6 @@ struct CanvasLayer: View {
         selectedItemIDs = [item.persistentModelID]
     }
 
-    // MARK: - Key Monitor
-
-    private func setupKeyMonitor() {
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
-                guard let item = selectedItems.first else { return event }
-                let snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
-                clipboardManager.performCopy(snapshot: snapshot)
-                return nil
-            }
-            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "v" {
-                if clipboardManager.snapshot != nil {
-                    pasteItem()
-                }
-                return nil
-            }
-            if event.keyCode == 51 || event.keyCode == 117 {
-                guard !selectedItemIDs.isEmpty else { return event }
-                deleteSelectedItems()
-                return nil
-            }
-            if event.keyCode == 53 {
-                selectedItemIDs.removeAll()
-                showInspector = false
-                return nil
-            }
-            return event
-        }
-    }
-
-    private func teardownKeyMonitor() {
-        if let monitor = keyMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyMonitor = nil
-        }
-    }
-
     private func handleDrop(providers: [NSItemProvider]) {
         for provider in providers {
             _ = provider.loadDataRepresentation(for: .image) { data, _ in
@@ -298,3 +273,4 @@ struct CanvasLayer: View {
         }
     }
 }
+

@@ -108,6 +108,10 @@ struct DraggableCanvasItem: View {
         DragGesture()
             .onChanged { value in
                 guard !isEditing else { return }
+                if NSEvent.modifierFlags.contains(.command) {
+                    dragOffset = .zero
+                    return
+                }
                 if multipleSelected, let onMoveAll {
                     onMoveAll(value.translation)
                 } else {
@@ -116,12 +120,13 @@ struct DraggableCanvasItem: View {
             }
             .onEnded { value in
                 guard !isEditing else { return }
+                dragOffset = .zero
+                if NSEvent.modifierFlags.contains(.command) { return }
                 if multipleSelected, let onMoveAllEnd {
                     onMoveAllEnd(value.translation)
                 } else {
                     item.relativeX += value.translation.width / containerSize.width
                     item.relativeY += value.translation.height / containerSize.height
-                    dragOffset = .zero
                 }
             }
     }
