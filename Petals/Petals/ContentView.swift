@@ -281,6 +281,12 @@ struct ContentView: View {
         .onChange(of: pageIndex) {
             selectedCanvasItemIDs.removeAll()
         }
+        .onChange(of: isCanvasEditMode) { _, editing in
+            if !editing {
+                selectedCanvasItemIDs.removeAll()
+                showInspector = false
+            }
+        }
         .onChange(of: eventManager.selectedCalendarIDs) {
             reloadEvents()
         }
