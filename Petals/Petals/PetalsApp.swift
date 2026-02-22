@@ -38,7 +38,16 @@ struct PetalsApp: App {
         .windowResizability(.contentMinSize)
         .commands {
             CommandGroup(replacing: .newItem) {}
-            CommandGroup(replacing: .pasteboard) {}
+            CommandGroup(replacing: .pasteboard) {
+                Button("복사") {
+                    NotificationCenter.default.post(name: .performCopy, object: nil)
+                }
+                .keyboardShortcut("c", modifiers: .command)
+                Button("붙여넣기") {
+                    NotificationCenter.default.post(name: .performPaste, object: nil)
+                }
+                .keyboardShortcut("v", modifiers: .command)
+            }
             CommandGroup(after: .toolbar) {
                 Button("Increase Font Size") {
                     let current = UserDefaults.standard.double(forKey: "eventFontSize")

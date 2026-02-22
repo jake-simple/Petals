@@ -37,7 +37,6 @@ struct VisionBoardView: View {
 
     // 스크롤 모니터
     @State private var scrollMonitor: Any?
-    @State private var keyMonitor: Any?
 
     // 줌 범위 및 스텝
     private let minScale: CGFloat = 0.25
@@ -216,7 +215,6 @@ struct VisionBoardView: View {
                 refreshSortedItems()
                 clampViewport()
                 setupScrollMonitor()
-                setupKeyMonitor()
             }
             .onChange(of: geo.size) { _, newSize in
                 viewSize = newSize
@@ -226,7 +224,6 @@ struct VisionBoardView: View {
             .onDisappear {
                 persistViewport()
                 teardownScrollMonitor()
-                teardownKeyMonitor()
             }
         }
         .frame(minWidth: 900, minHeight: 600)
@@ -240,6 +237,19 @@ struct VisionBoardView: View {
             handleDrop(providers: providers)
             return true
         }
+        .modifier(CanvasKeyCommands(
+            selectedItemIDs: $selectedItemIDs,
+            showInspector: $showInspector,
+            onDelete: { deleteSelectedItems() },
+            onCopy: {
+                guard let item = selectedItems.first else { return }
+                let snapshot = CanvasItemSnapshot(from: item)
+                clipboardManager.performCopy(snapshot: snapshot)
+            },
+            onPaste: {
+                if clipboardManager.snapshot != nil { pasteItem(in: viewSize) }
+            }
+        ))
     }
 
     // MARK: - Items Cache
@@ -617,43 +627,6 @@ struct VisionBoardView: View {
         board.appendItem(item)
         refreshSortedItems()
         selectedItemIDs = [item.persistentModelID]
-    }
-
-    // MARK: - Key Monitor
-
-    private func setupKeyMonitor() {
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "c" {
-                guard let item = selectedItems.first else { return event }
-                let snapshot = CanvasItemSnapshot(from: item)
-                clipboardManager.performCopy(snapshot: snapshot)
-                return nil
-            }
-            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "v" {
-                if clipboardManager.snapshot != nil {
-                    pasteItem(in: viewSize)
-                }
-                return nil
-            }
-            if event.keyCode == 51 || event.keyCode == 117 {
-                guard !selectedItemIDs.isEmpty else { return event }
-                deleteSelectedItems()
-                return nil
-            }
-            if event.keyCode == 53 {
-                selectedItemIDs.removeAll()
-                showInspector = false
-                return nil
-            }
-            return event
-        }
-    }
-
-    private func teardownKeyMonitor() {
-        if let monitor = keyMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyMonitor = nil
-        }
     }
 
     private func deleteItem(_ item: VisionBoardItem) {
