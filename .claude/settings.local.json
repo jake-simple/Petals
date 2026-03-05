@@ -15,7 +15,8 @@
       "Bash(mcp__XcodeBuildMCP__list_sims)",
       "Bash(xcrun simctl list:*)",
       "Bash(# Check if there''s a localized category name in the SF Symbols app or framework find /System/Library/PrivateFrameworks/SFSymbols.framework -name \"\"*categor*\"\" find /System/Library/PrivateFrameworks/SFSymbols.framework -name \"\"*.plist\"\")",
-      "Bash(do echo \"=== $f ===\")"
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(git config:*)"
     ]
   }
 }
