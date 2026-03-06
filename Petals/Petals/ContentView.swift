@@ -192,16 +192,6 @@ struct ContentView: View {
                         )
                     }
                 }
-                .gesture(
-                    MagnifyGesture()
-                        .onEnded { value in
-                            if value.magnification > 1.15 {
-                                zoomIn()
-                            } else if value.magnification < 0.85 {
-                                zoomOut()
-                            }
-                        }
-                )
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
@@ -276,6 +266,11 @@ struct ContentView: View {
         .onChange(of: currentYear) { _, newYear in
             loadDocument(for: newYear)
             reloadEvents()
+            selectedCanvasItemIDs.removeAll()
+        }
+        .onChange(of: monthsPerPage) { oldValue, newValue in
+            let current = pageIndex * oldValue + 1
+            pageIndex = newValue < 12 ? (current - 1) / newValue : 0
             selectedCanvasItemIDs.removeAll()
         }
         .onChange(of: pageIndex) {
@@ -354,25 +349,18 @@ struct ContentView: View {
                 Divider().frame(height: 16)
 
                 // Zoom level (months per page)
-                Button(action: { zoomOut() }) {
-                    Image(systemName: "minus")
+                Picker("Zoom", selection: $monthsPerPage) {
+                    Text("연별").tag(12)
+                    Text("분기").tag(3)
+                    Text("월별").tag(1)
                 }
-                .keyboardShortcut("-", modifiers: .command)
-                .disabled(monthsPerPage >= 12)
-
-                Text("\(monthsPerPage)M")
-                    .frame(minWidth: 30)
-
-                Button(action: { zoomIn() }) {
-                    Image(systemName: "plus")
-                }
-                .keyboardShortcut("=", modifiers: .command)
-                .disabled(monthsPerPage <= 1)
+                .pickerStyle(.segmented)
+                .frame(width: 180)
 
                 if monthsPerPage < 12 {
                     // Page navigation
                     Button(action: { pageIndex = max(0, pageIndex - 1) }) {
-                        Image(systemName: "chevron.left.2")
+                        Image(systemName: "chevron.left")
                     }
                     .disabled(pageIndex <= 0)
 
@@ -387,15 +375,9 @@ struct ContentView: View {
                     .frame(minWidth: 36)
 
                     Button(action: { pageIndex = min(maxPageIndex, pageIndex + 1) }) {
-                        Image(systemName: "chevron.right.2")
+                        Image(systemName: "chevron.right")
                     }
                     .disabled(pageIndex >= maxPageIndex)
-
-                    Button("All") {
-                        monthsPerPage = 12
-                        pageIndex = 0
-                    }
-                    .keyboardShortcut("0", modifiers: .command)
                 }
             }
         }
@@ -530,31 +512,6 @@ struct ContentView: View {
         }
     }
 
-    private func zoomIn() {
-        let current = startMonth
-        let next: Int
-        switch monthsPerPage {
-        case 12: next = 3
-        case 3: next = 1
-        default: return
-        }
-        monthsPerPage = next
-        pageIndex = (current - 1) / next
-        selectedCanvasItemIDs.removeAll()
-    }
-
-    private func zoomOut() {
-        let current = startMonth
-        let next: Int
-        switch monthsPerPage {
-        case 1: next = 3
-        case 3: next = 12
-        default: return
-        }
-        monthsPerPage = next
-        pageIndex = (current - 1) / next
-        selectedCanvasItemIDs.removeAll()
-    }
 
     private func reloadEvents() {
         eventManager.fetchEvents(for: currentYear)
