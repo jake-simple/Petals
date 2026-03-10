@@ -6,8 +6,6 @@ struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
     var yearDocument: YearDocument?
-    var zoomLevel: Int = 12
-    var pageIndex: Int = 0
     @Binding var selectedItemIDs: Set<PersistentIdentifier>
     @Binding var showInspector: Bool
 
@@ -17,7 +15,7 @@ struct CanvasLayer: View {
     @State private var multiDragOffset: CGSize = .zero
 
     private var sortedItems: [CanvasItem] {
-        (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
+        (yearDocument?.canvasItems ?? []).sorted { $0.zIndex < $1.zIndex }
     }
 
     private var selectedItems: [CanvasItem] {
@@ -240,9 +238,7 @@ struct CanvasLayer: View {
                               relativeWidth: relW,
                               relativeHeight: relH,
                               rotation: snap.rotation,
-                              opacity: snap.opacity,
-                              zoomLevel: zoomLevel,
-                              pageIndex: pageIndex)
+                              opacity: snap.opacity)
         snap.applyContent(to: item)
         // 이미지 복사 시 파일을 복제하여 독립 참조 유지
         if let original = snap.imageFileName,
@@ -264,8 +260,6 @@ struct CanvasLayer: View {
                     guard let result = ImageManager.importImage(from: tempURL),
                           let doc = yearDocument else { return }
                     let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
-                    item.zoomLevel = zoomLevel
-                    item.pageIndex = pageIndex
                     doc.appendItem(item)
                     selectedItemIDs = [item.persistentModelID]
                 }

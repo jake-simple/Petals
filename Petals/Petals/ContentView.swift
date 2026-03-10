@@ -26,9 +26,14 @@ struct ContentView: View {
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
 
-    // Paging state
-    @State private var monthsPerPage = 12  // 12, 3, 1
-    @State private var pageIndex = 0
+    // Viewport state (infinite zoom)
+    @State private var calendarScale: CGFloat = 1.0
+    @State private var calendarOffsetX: CGFloat = 0.0
+    @State private var calendarOffsetY: CGFloat = 0.0
+    @State private var gestureScale: CGFloat = 1.0
+    @State private var pinchOffset: CGSize = .zero
+    @State private var isPinching = false
+    @State private var viewSize: CGSize = CGSize(width: 1200, height: 800)
 
     // 화이트보드 모드
     @State private var showVisionBoard = false
@@ -43,8 +48,23 @@ struct ContentView: View {
     @AppStorage("showTopArea") private var showTopArea = true
     @State private var showStickerInput = false
     @State private var scrollMonitor: Any?
-    @State private var accumulatedScrollX: CGFloat = 0
     @Environment(\.colorScheme) private var colorScheme
+
+    // Zoom constants
+    private let minScale: CGFloat = 0.5
+    private let maxScale: CGFloat = 10.0
+    private let zoomSteps: [CGFloat] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 5.0, 7.0, 10.0]
+
+    private var currentScale: CGFloat {
+        clampScale(calendarScale * gestureScale)
+    }
+
+    private var currentOffset: CGSize {
+        CGSize(
+            width: calendarOffsetX + pinchOffset.width,
+            height: calendarOffsetY + pinchOffset.height
+        )
+    }
 
     private var theme: Theme {
         let themeID = currentDocument?.theme ?? "minimal-light"
@@ -56,24 +76,11 @@ struct ContentView: View {
         return (currentDocument?.canvasItems ?? []).filter { selectedCanvasItemIDs.contains($0.persistentModelID) }
     }
 
-    private var startMonth: Int { pageIndex * monthsPerPage + 1 }
-    private var maxPageIndex: Int { (12 / monthsPerPage) - 1 }
-
-    private var daysPerRow: Int {
-        switch monthsPerPage {
-        case 1, 3: return 8
-        default: return 31
-        }
-    }
-
-    /// Segments filtered to visible months and split at subrow boundaries.
+    /// Segments split at subrow boundaries (always 12 months, daysPerRow=31).
     private var visibleSegments: [EventSegment] {
-        let endMonth = startMonth + monthsPerPage - 1
-        let dpr = daysPerRow
+        let dpr = 31
         var result: [EventSegment] = []
         for seg in segments {
-            guard seg.month >= startMonth, seg.month <= endMonth else { continue }
-            // Split segment at subrow boundaries
             var day = seg.startDay
             while day <= seg.endDay {
                 let rowEnd = ((day - 1) / dpr + 1) * dpr
@@ -90,12 +97,6 @@ struct ContentView: View {
             }
         }
         return result
-    }
-
-    /// Overflows filtered to visible months.
-    private var visibleOverflows: [Int: [Int: Int]] {
-        let endMonth = startMonth + monthsPerPage - 1
-        return overflows.filter { $0.key >= startMonth && $0.key <= endMonth }
     }
 
     var body: some View {
@@ -141,79 +142,86 @@ struct ContentView: View {
             MoodBoardBackground(gridLineColor: theme.gridLineColor)
                 .ignoresSafeArea()
 
-            // Calendar pinned onto the board with margin
+            // Scaled calendar content
             ZStack {
-                Color(hex: theme.backgroundColor)
-
+                // Calendar card
                 ZStack {
-                    // Z1: Grid + today line
-                    CalendarGridView(
-                        year: currentYear, theme: theme, showTodayLine: showTodayLine,
-                        eventFontSize: CGFloat(eventFontSize),
-                        startMonth: startMonth, monthsShown: monthsPerPage
-                    )
-                    .allowsHitTesting(false)
+                    Color(hex: theme.backgroundColor)
 
-                    // Z2: Event bars
-                    EventBarLayer(
-                        year: currentYear,
-                        segments: visibleSegments,
-                        overflows: visibleOverflows,
-                        maxEventRows: maxEventRows,
-                        eventFontSize: CGFloat(eventFontSize),
-                        startMonth: startMonth,
-                        monthsShown: monthsPerPage,
-                        onEventTap: { event, rect in
-                            selectedEvent = event
-                            eventPopoverAnchor = rect
-                            showEventDetail = true
-                        },
-                        onEmptyTap: { month, day in
-                            openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
-                        },
-                        onDragCreate: { startMonth, startDay, endMonth, endDay in
-                            openEditor(startMonth: startMonth, startDay: startDay, endMonth: endMonth, endDay: endDay)
-                        },
-                        onEventDelete: { event, span in
-                            try? eventManager.deleteEvent(event, span: span)
-                            reloadEvents()
-                        }
-                    )
-                    .allowsHitTesting(!isCanvasEditMode)
-                }
-                .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
-                    if let event = selectedEvent {
-                        EventDetailPopover(
-                            event: event,
-                            onEdit: {
-                                showEventDetail = false
-                                editorContext = EventEditorContext(existingEvent: event)
+                    ZStack {
+                        // Z1: Grid + today line
+                        CalendarGridView(
+                            year: currentYear, theme: theme, showTodayLine: showTodayLine,
+                            eventFontSize: CGFloat(eventFontSize),
+                            startMonth: 1, monthsShown: 12
+                        )
+                        .allowsHitTesting(false)
+
+                        // Z2: Event bars
+                        EventBarLayer(
+                            year: currentYear,
+                            segments: visibleSegments,
+                            overflows: overflows,
+                            maxEventRows: maxEventRows,
+                            eventFontSize: CGFloat(eventFontSize),
+                            startMonth: 1,
+                            monthsShown: 12,
+                            onEventTap: { event, rect in
+                                selectedEvent = event
+                                eventPopoverAnchor = rect
+                                showEventDetail = true
+                            },
+                            onEmptyTap: { month, day in
+                                openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
+                            },
+                            onDragCreate: { startMonth, startDay, endMonth, endDay in
+                                openEditor(startMonth: startMonth, startDay: startDay, endMonth: endMonth, endDay: endDay)
+                            },
+                            onEventDelete: { event, span in
+                                try? eventManager.deleteEvent(event, span: span)
+                                reloadEvents()
                             }
                         )
+                        .allowsHitTesting(!isCanvasEditMode)
+                    }
+                    .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
+                        if let event = selectedEvent {
+                            EventDetailPopover(
+                                event: event,
+                                onEdit: {
+                                    showEventDetail = false
+                                    editorContext = EventEditorContext(existingEvent: event)
+                                }
+                            )
+                        }
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                .padding(.horizontal, 16)
+                .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
+                .padding(.bottom, 16)
+                .allowsHitTesting(!isCanvasEditMode)
+
+                // Canvas layer (편집/표시 모드 동일한 좌표계)
+                Group {
+                    if isCanvasEditMode {
+                        CanvasLayer(
+                            yearDocument: currentDocument,
+                            selectedItemIDs: $selectedCanvasItemIDs,
+                            showInspector: $showInspector
+                        )
+                    } else {
+                        canvasDisplayLayer
                     }
                 }
             }
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
-            .padding(.horizontal, 16)
-            .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
-            .padding(.bottom, 16)
-            .allowsHitTesting(!isCanvasEditMode)
-            // Canvas layer (편집/표시 모드 동일한 좌표계)
-            Group {
-                if isCanvasEditMode {
-                    CanvasLayer(
-                        yearDocument: currentDocument,
-                        zoomLevel: monthsPerPage,
-                        pageIndex: pageIndex,
-                        selectedItemIDs: $selectedCanvasItemIDs,
-                        showInspector: $showInspector
-                    )
-                } else {
-                    canvasDisplayLayer
-                }
-            }
+            .scaleEffect(currentScale, anchor: .topLeading)
+            .offset(currentOffset)
         }
+        .clipped()
+        .onAppear { viewSize = geo.size }
+        .onChange(of: geo.size) { _, newSize in viewSize = newSize }
         } // GeometryReader
         .frame(minWidth: 900, minHeight: 600)
         .toolbar {
@@ -240,41 +248,16 @@ struct ContentView: View {
         }
         .onAppear {
             loadDocument(for: currentYear)
-            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
-                guard !showVisionBoard else { return event }
-                if event.phase == .began {
-                    accumulatedScrollX = 0
-                }
-                accumulatedScrollX += event.scrollingDeltaX
-                if event.phase == .ended {
-                    if accumulatedScrollX < -50 {
-                        navigateForward()
-                    } else if accumulatedScrollX > 50 {
-                        navigateBack()
-                    }
-                    accumulatedScrollX = 0
-                }
-                return event
-            }
+            setupCalendarZoomMonitor()
         }
         .onDisappear {
-            if let monitor = scrollMonitor {
-                NSEvent.removeMonitor(monitor)
-                scrollMonitor = nil
-            }
+            teardownCalendarZoomMonitor()
         }
         .onChange(of: currentYear) { _, newYear in
             loadDocument(for: newYear)
             reloadEvents()
             selectedCanvasItemIDs.removeAll()
-        }
-        .onChange(of: monthsPerPage) { oldValue, newValue in
-            let current = pageIndex * oldValue + 1
-            pageIndex = newValue < 12 ? (current - 1) / newValue : 0
-            selectedCanvasItemIDs.removeAll()
-        }
-        .onChange(of: pageIndex) {
-            selectedCanvasItemIDs.removeAll()
+            resetZoom()
         }
         .onChange(of: isCanvasEditMode) { _, editing in
             if !editing {
@@ -290,16 +273,6 @@ struct ContentView: View {
         }
         .focusable()
         .focusEffectDisabled()
-        .onKeyPress(.leftArrow) {
-            guard !isCanvasEditMode, !showVisionBoard else { return .ignored }
-            navigateBack()
-            return .handled
-        }
-        .onKeyPress(.rightArrow) {
-            guard !isCanvasEditMode, !showVisionBoard else { return .ignored }
-            navigateForward()
-            return .handled
-        }
     }
 
     // MARK: - Display-only canvas (non-edit mode)
@@ -307,7 +280,7 @@ struct ContentView: View {
     @ViewBuilder
     private var canvasDisplayLayer: some View {
         GeometryReader { proxy in
-            ForEach((currentDocument?.canvasItems(for: monthsPerPage, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
+            ForEach((currentDocument?.canvasItems ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
                 let itemW = item.relativeWidth * proxy.size.width
                 let itemH: CGFloat = if let ar = item.aspectRatio, ar > 0 { itemW / ar } else { item.relativeHeight * proxy.size.height }
                 let pct = item.cornerRadius ?? 0
@@ -341,44 +314,34 @@ struct ContentView: View {
                 Button("Today") {
                     let now = Date()
                     currentYear = Calendar.current.component(.year, from: now)
-                    let month = Calendar.current.component(.month, from: now)
-                    pageIndex = (month - 1) / monthsPerPage
+                    resetZoom()
                 }
                     .keyboardShortcut("t", modifiers: .command)
 
                 Divider().frame(height: 16)
 
-                // Zoom level (months per page)
-                Picker("Zoom", selection: $monthsPerPage) {
-                    Text("연별").tag(12)
-                    Text("분기").tag(3)
-                    Text("월별").tag(1)
+                // Zoom controls
+                Button(action: { stepZoomOut() }) {
+                    Image(systemName: "minus")
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
+                .disabled(currentScale <= minScale + 0.001)
+                .keyboardShortcut("-", modifiers: .command)
 
-                if monthsPerPage < 12 {
-                    // Page navigation
-                    Button(action: { pageIndex = max(0, pageIndex - 1) }) {
-                        Image(systemName: "chevron.left")
-                    }
-                    .disabled(pageIndex <= 0)
+                Text("\(Int(currentScale * 100))%")
+                    .monospacedDigit()
+                    .frame(minWidth: 40)
 
-                    Group {
-                        if monthsPerPage == 1 {
-                            Text(Calendar.current.shortMonthSymbols[startMonth - 1])
-                        } else {
-                            Text("\(startMonth)–\(startMonth + monthsPerPage - 1)")
-                        }
-                    }
-                    .font(.caption.monospacedDigit())
-                    .frame(minWidth: 36)
-
-                    Button(action: { pageIndex = min(maxPageIndex, pageIndex + 1) }) {
-                        Image(systemName: "chevron.right")
-                    }
-                    .disabled(pageIndex >= maxPageIndex)
+                Button(action: { stepZoomIn() }) {
+                    Image(systemName: "plus")
                 }
+                .disabled(currentScale >= maxScale - 0.001)
+                .keyboardShortcut("=", modifiers: .command)
+
+                Button(action: { resetZoom() }) {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                .help("뷰포트 초기화")
+                .keyboardShortcut("0", modifiers: .command)
             }
         }
 
@@ -484,34 +447,109 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Zoom & Pan
+
+    private func clampScale(_ s: CGFloat) -> CGFloat {
+        min(max(s, minScale), maxScale)
+    }
+
+    private func setupCalendarZoomMonitor() {
+        scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .magnify]) { event in
+            guard !showVisionBoard else { return event }
+
+            if event.type == .magnify {
+                // Trackpad pinch zoom
+                if event.phase == .began {
+                    gestureScale = 1.0
+                    isPinching = true
+                }
+
+                gestureScale = clampScale(calendarScale * gestureScale * (1 + event.magnification)) / calendarScale
+
+                // Anchor zoom to view center
+                let ws = viewSize
+                pinchOffset = CGSize(
+                    width: (ws.width / 2 - calendarOffsetX) * (1 - gestureScale),
+                    height: (ws.height / 2 - calendarOffsetY) * (1 - gestureScale)
+                )
+
+                if event.phase == .ended || event.phase == .cancelled {
+                    let finalScale = calendarScale * gestureScale
+                    calendarOffsetX += pinchOffset.width
+                    calendarOffsetY += pinchOffset.height
+                    calendarScale = finalScale
+                    gestureScale = 1.0
+                    pinchOffset = .zero
+                    isPinching = false
+                }
+                return event
+            }
+
+            // scrollWheel
+            guard !isPinching else { return event }
+
+            // ⌘+scroll → zoom
+            if event.modifierFlags.contains(.command) {
+                let delta = event.scrollingDeltaY * 0.01
+                guard delta != 0 else { return event }
+                let newScale = clampScale(calendarScale * (1 + delta))
+                let ws = viewSize
+                let cx = ws.width / 2, cy = ws.height / 2
+                let canvasX = (cx - calendarOffsetX) / calendarScale
+                let canvasY = (cy - calendarOffsetY) / calendarScale
+                calendarOffsetX = cx - canvasX * newScale
+                calendarOffsetY = cy - canvasY * newScale
+                calendarScale = newScale
+                return event
+            }
+
+            // Regular scroll → pan
+            calendarOffsetX += event.scrollingDeltaX
+            calendarOffsetY += event.scrollingDeltaY
+            return event
+        }
+    }
+
+    private func teardownCalendarZoomMonitor() {
+        if let monitor = scrollMonitor {
+            NSEvent.removeMonitor(monitor)
+            scrollMonitor = nil
+        }
+    }
+
+    private func stepZoomIn() {
+        guard let next = zoomSteps.first(where: { $0 > currentScale + 0.001 }) else { return }
+        zoomToStep(next)
+    }
+
+    private func stepZoomOut() {
+        guard let prev = zoomSteps.last(where: { $0 < currentScale - 0.001 }) else { return }
+        zoomToStep(prev)
+    }
+
+    private func zoomToStep(_ newScale: CGFloat) {
+        let ws = viewSize
+        let cx = ws.width / 2, cy = ws.height / 2
+        let canvasX = (cx - calendarOffsetX) / calendarScale
+        let canvasY = (cy - calendarOffsetY) / calendarScale
+        let targetOX = cx - canvasX * newScale
+        let targetOY = cy - canvasY * newScale
+        withAnimation(.easeOut(duration: 0.2)) {
+            calendarOffsetX = targetOX
+            calendarOffsetY = targetOY
+            calendarScale = newScale
+        }
+    }
+
+    private func resetZoom() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            calendarScale = 1.0
+            calendarOffsetX = 0
+            calendarOffsetY = 0
+        }
+    }
+
     // MARK: - Actions
-
-    private func navigateBack() {
-        if monthsPerPage < 12 {
-            if pageIndex > 0 {
-                pageIndex -= 1
-            } else {
-                currentYear -= 1
-                pageIndex = maxPageIndex
-            }
-        } else {
-            currentYear -= 1
-        }
-    }
-
-    private func navigateForward() {
-        if monthsPerPage < 12 {
-            if pageIndex < maxPageIndex {
-                pageIndex += 1
-            } else {
-                currentYear += 1
-                pageIndex = 0
-            }
-        } else {
-            currentYear += 1
-        }
-    }
-
 
     private func reloadEvents() {
         eventManager.fetchEvents(for: currentYear)
@@ -550,8 +588,6 @@ struct ContentView: View {
         guard let result = ImageManager.importImage(from: url),
               let doc = currentDocument else { return }
         let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
-        item.zoomLevel = monthsPerPage
-        item.pageIndex = pageIndex
         doc.appendItem(item)
         selectedCanvasItemIDs = [item.persistentModelID]
     }
@@ -559,8 +595,6 @@ struct ContentView: View {
 
     private func addCanvasItem(_ item: CanvasItem) {
         guard let doc = currentDocument else { return }
-        item.zoomLevel = monthsPerPage
-        item.pageIndex = pageIndex
         doc.appendItem(item)
         selectedCanvasItemIDs = [item.persistentModelID]
     }
