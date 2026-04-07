@@ -11,8 +11,6 @@ enum SFSymbolCatalog {
         var displayName: String { Self.displayNames[key] ?? key }
 
         private static let displayNames: [String: String] = [
-            "whatsnew": "새로운 항목",
-            "draw": "그리기",
             "variable": "가변",
             "multicolor": "다색",
             "communication": "커뮤니케이션",
@@ -55,7 +53,7 @@ enum SFSymbolCatalog {
             return []
         }
         return arr.compactMap { dict in
-            guard let key = dict["key"], let icon = dict["icon"], key != "all" else { return nil }
+            guard let key = dict["key"], let icon = dict["icon"], key != "all", key != "whatsnew", key != "draw" else { return nil }
             return Category(key: key, icon: icon)
         }
     }()
@@ -88,15 +86,22 @@ enum SFSymbolCatalog {
               let dict = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: [String]] else {
             return [:]
         }
-        // Reverse map: symbol → [categories] to category → [symbols]
-        var result = [String: [String]]()
-        for (symbol, cats) in dict {
-            for cat in cats {
-                result[cat, default: []].append(symbol)
+        let idx = orderIndex
+        // macOS 버전에 따라 포맷이 다름:
+        // 구버전: symbol → [categories] (키에 점(.) 포함)
+        // 신버전: category → [symbols] (키가 카테고리명)
+        let isCategoryKeyed = !(dict.keys.first?.contains(".") ?? true)
+        var result: [String: [String]]
+        if isCategoryKeyed {
+            result = dict
+        } else {
+            result = [String: [String]]()
+            for (symbol, cats) in dict {
+                for cat in cats {
+                    result[cat, default: []].append(symbol)
+                }
             }
         }
-        // Sort each category's symbols by symbol_order
-        let idx = orderIndex
         for key in result.keys {
             result[key]?.sort { (idx[$0] ?? Int.max) < (idx[$1] ?? Int.max) }
         }

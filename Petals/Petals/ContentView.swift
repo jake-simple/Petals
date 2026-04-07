@@ -40,7 +40,6 @@ struct ContentView: View {
     @State private var showImagePicker = false
     @State private var showInspector = false
     @State private var showThemePicker = false
-    @AppStorage("showTopArea") private var showTopArea = true
     @State private var showStickerInput = false
     @State private var scrollMonitor: Any?
     @State private var accumulatedScrollX: CGFloat = 0
@@ -120,6 +119,7 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.3), value: clipboardManager.showCopyToast)
+        .background(ToolbarConfigurator())
     }
 
     @ToolbarContentBuilder
@@ -196,7 +196,7 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
-            .padding(.top, showTopArea ? geo.size.height * 0.18 : 16)
+            .padding(.top, geo.size.height * 0.18)
             .padding(.bottom, 16)
             .allowsHitTesting(!isCanvasEditMode)
             // Canvas layer (편집/표시 모드 동일한 좌표계)
@@ -405,11 +405,6 @@ struct ContentView: View {
                 }
 
                 Divider()
-
-                Button(action: { showTopArea.toggle() }) {
-                    Label("Top Area", systemImage: showTopArea ? "rectangle.topthird.inset.filled" : "rectangle.topthird.inset")
-                }
-                .help(showTopArea ? "상단 영역 숨기기" : "상단 영역 보이기")
 
                 // Theme picker
                 Button(action: { showThemePicker.toggle() }) {
