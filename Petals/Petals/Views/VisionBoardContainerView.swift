@@ -47,7 +47,7 @@ struct VisionBoardContainerView: View {
         .alert("보드를 만들 수 없습니다", isPresented: boardCreationErrorBinding) {
             Button("확인", role: .cancel) {}
         } message: {
-            Text(boardCreationError ?? "알 수 없는 오류가 발생했습니다.")
+            Text(boardCreationError ?? String(localized: "알 수 없는 오류가 발생했습니다."))
         }
     }
 
@@ -100,7 +100,7 @@ struct VisionBoardContainerView: View {
         do {
             try modelContext.save()
         } catch {
-            boardCreationError = "새 보드 저장에 실패했습니다. 잠시 후 다시 시도해 주세요."
+            boardCreationError = String(localized: "새 보드 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.")
             print("Failed to save new board: \(error)")
             return
         }

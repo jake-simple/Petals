@@ -892,7 +892,15 @@
       }
     },
     "System Default" : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시스템 기본값"
+          }
+        }
+      }
     },
     "Text" : {
       "extractionState" : "manual",
@@ -994,7 +1002,15 @@
       }
     },
     "Zoom" : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확대/축소"
+          }
+        }
+      }
     },
     "Zoom In" : {
       "localizations" : {
@@ -1012,6 +1028,325 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "축소"
+          }
+        }
+      }
+    },
+    "Accessibility" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "손쉬운 사용"
+          }
+        }
+      }
+    },
+    "Arrows" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화살표"
+          }
+        }
+      }
+    },
+    "Automotive" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동차"
+          }
+        }
+      }
+    },
+    "Camera & Photos" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "카메라 및 사진"
+          }
+        }
+      }
+    },
+    "Commerce" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "상거래"
+          }
+        }
+      }
+    },
+    "Communication" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "커뮤니케이션"
+          }
+        }
+      }
+    },
+    "Connectivity" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "연결"
+          }
+        }
+      }
+    },
+    "Devices" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기기"
+          }
+        }
+      }
+    },
+    "Editing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "편집"
+          }
+        }
+      }
+    },
+    "Fitness" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "피트니스"
+          }
+        }
+      }
+    },
+    "Gaming" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "게임"
+          }
+        }
+      }
+    },
+    "Health" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "건강"
+          }
+        }
+      }
+    },
+    "Home" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "홈"
+          }
+        }
+      }
+    },
+    "Human" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사람"
+          }
+        }
+      }
+    },
+    "Indices" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "색인"
+          }
+        }
+      }
+    },
+    "Keyboard" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "키보드"
+          }
+        }
+      }
+    },
+    "Maps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지도"
+          }
+        }
+      }
+    },
+    "Math" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "수학"
+          }
+        }
+      }
+    },
+    "Media" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미디어"
+          }
+        }
+      }
+    },
+    "Multicolor" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "다색"
+          }
+        }
+      }
+    },
+    "Nature" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자연"
+          }
+        }
+      }
+    },
+    "Objects & Tools" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "물체 및 도구"
+          }
+        }
+      }
+    },
+    "Privacy & Security" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "개인 정보 및 보안"
+          }
+        }
+      }
+    },
+    "Shapes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도형"
+          }
+        }
+      }
+    },
+    "Text Formatting" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "텍스트 포맷"
+          }
+        }
+      }
+    },
+    "Time" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "시간"
+          }
+        }
+      }
+    },
+    "Transportation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "교통"
+          }
+        }
+      }
+    },
+    "Variable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "가변"
+          }
+        }
+      }
+    },
+    "Weather" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날씨"
           }
         }
       }
@@ -1057,19 +1392,54 @@
       }
     },
     "복사" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
     },
     "복사됨" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copied"
+          }
+        }
+      }
     },
     "복사하기" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        }
+      }
     },
     "분기" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quarter"
+          }
+        }
+      }
     },
     "붙여넣기" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paste"
+          }
+        }
+      }
     },
     "뷰포트 초기화" : {
       "localizations" : {
@@ -1091,6 +1461,26 @@
         }
       }
     },
+    "새 보드 저장에 실패했습니다. 잠시 후 다시 시도해 주세요." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to save the new board. Please try again later."
+          }
+        }
+      }
+    },
+    "알 수 없는 오류가 발생했습니다." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An unknown error occurred."
+          }
+        }
+      }
+    },
     "삭제" : {
       "localizations" : {
         "en" : {
@@ -1102,6 +1492,7 @@
       }
     },
     "상단 영역 보이기" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1112,6 +1503,7 @@
       }
     },
     "상단 영역 숨기기" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1152,10 +1544,24 @@
       }
     },
     "연별" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year"
+          }
+        }
+      }
     },
     "월별" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month"
+          }
+        }
+      }
     },
     "이름 변경" : {
       "localizations" : {
