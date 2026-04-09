@@ -120,6 +120,24 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: clipboardManager.showCopyToast)
         .background(ToolbarConfigurator())
+        .background {
+            // Cmd+= / Cmd+- 폰트 크기 단축키 (캘린더 모드 전용)
+            // 비전보드 모드에서는 Cmd+=/- 가 뷰포트 줌에 사용되므로 렌더링 제외
+            if !showVisionBoard {
+                Group {
+                    Button("Increase Font Size") {
+                        eventFontSize = min(eventFontSize + 1, 20)
+                    }
+                    .keyboardShortcut("=", modifiers: .command)
+
+                    Button("Decrease Font Size") {
+                        eventFontSize = max(eventFontSize - 1, 6)
+                    }
+                    .keyboardShortcut("-", modifiers: .command)
+                }
+                .hidden()
+            }
+        }
     }
 
     @ToolbarContentBuilder
