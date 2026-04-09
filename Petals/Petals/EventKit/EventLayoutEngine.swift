@@ -15,18 +15,18 @@ enum EventLayoutEngine {
         var rawByMonth: [Int: [(event: EKEvent, startDay: Int, endDay: Int)]] = [:]
 
         for event in events {
-            let startDate = event.startDate!
-            let rawEnd = event.endDate!
+            guard let startDate = event.startDate, let rawEnd = event.endDate else { continue }
             let endDate = rawEnd >= startDate ? rawEnd : startDate
 
             let sc = cal.dateComponents([.year, .month, .day], from: startDate)
             let ec = cal.dateComponents([.year, .month, .day], from: endDate)
 
             // Skip events entirely outside this year
-            guard sc.year! <= year, ec.year! >= year else { continue }
+            guard let scYear = sc.year, let ecYear = ec.year,
+                  scYear <= year, ecYear >= year else { continue }
 
-            let firstMonth = sc.year! < year ? 1 : sc.month!
-            let lastMonth = ec.year! > year ? 12 : ec.month!
+            let firstMonth = scYear < year ? 1 : sc.month!
+            let lastMonth = ecYear > year ? 12 : ec.month!
             guard firstMonth >= 1, lastMonth <= 12, firstMonth <= lastMonth else { continue }
 
             for month in firstMonth...lastMonth {
@@ -72,7 +72,7 @@ enum EventLayoutEngine {
                 }
 
                 result.append(EventSegment(
-                    id: "\(seg.event.eventIdentifier ?? UUID().uuidString)_\(month)",
+                    id: "\(seg.event.eventIdentifier ?? "\(seg.event.title ?? "")_\(seg.startDay)")_\(month)",
                     event: seg.event,
                     month: month,
                     startDay: seg.startDay,
@@ -92,17 +92,17 @@ enum EventLayoutEngine {
         var dayCounts: [Int: [Int: Int]] = [:]  // [month: [day: totalCount]]
 
         for event in events {
-            let startDate = event.startDate!
-            let rawEnd = event.endDate!
+            guard let startDate = event.startDate, let rawEnd = event.endDate else { continue }
             let endDate = rawEnd >= startDate ? rawEnd : startDate
 
             let sc = cal.dateComponents([.year, .month, .day], from: startDate)
             let ec = cal.dateComponents([.year, .month, .day], from: endDate)
 
-            guard sc.year! <= year, ec.year! >= year else { continue }
+            guard let scYear = sc.year, let ecYear = ec.year,
+                  scYear <= year, ecYear >= year else { continue }
 
-            let firstMonth = sc.year! < year ? 1 : sc.month!
-            let lastMonth = ec.year! > year ? 12 : ec.month!
+            let firstMonth = scYear < year ? 1 : sc.month!
+            let lastMonth = ecYear > year ? 12 : ec.month!
             guard firstMonth >= 1, lastMonth <= 12, firstMonth <= lastMonth else { continue }
 
             for month in firstMonth...lastMonth {

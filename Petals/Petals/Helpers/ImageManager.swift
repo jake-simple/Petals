@@ -10,7 +10,7 @@ enum ImageManager {
         return cache
     }()
 
-    static var imagesDirectory: URL {
+    static let imagesDirectory: URL = {
         // iCloud Drive 컨테이너 우선, 없으면 로컬 Documents
         let dir: URL
         if let icloud = FileManager.default.url(forUbiquityContainerIdentifier: nil)?
@@ -22,7 +22,7 @@ enum ImageManager {
         }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
-    }
+    }()
 
     static func importImage(from url: URL) -> (fileName: String, thumbnail: Data)? {
         guard let image = NSImage(contentsOf: url) else { return nil }
@@ -78,11 +78,10 @@ enum ImageManager {
         guard size.width > maxDim || size.height > maxDim else { return image }
         let scale = min(maxDim / size.width, maxDim / size.height)
         let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-        let result = NSImage(size: newSize)
-        result.lockFocus()
-        image.draw(in: CGRect(origin: .zero, size: newSize))
-        result.unlockFocus()
-        return result
+        return NSImage(size: newSize, flipped: false) { rect in
+            image.draw(in: rect)
+            return true
+        }
     }
 
     static func jpegData(from image: NSImage, quality: CGFloat) -> Data? {

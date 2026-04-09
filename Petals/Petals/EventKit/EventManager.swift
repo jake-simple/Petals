@@ -1,11 +1,13 @@
 import EventKit
 
 @Observable
+@MainActor
 final class EventManager {
     private let store = EKEventStore()
     private(set) var calendars: [EKCalendar] = []
     private(set) var events: [EKEvent] = []
     private(set) var isAuthorized = false
+    private var storeObserverToken: Any?
 
     var selectedCalendarIDs: Set<String> = [] {
         didSet {
@@ -19,6 +21,12 @@ final class EventManager {
         if granted {
             loadCalendars()
             setupNotifications()
+        }
+    }
+
+    deinit {
+        if let token = storeObserverToken {
+            NotificationCenter.default.removeObserver(token)
         }
     }
 
@@ -48,7 +56,13 @@ final class EventManager {
         }
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selectedCals)
-        events = store.events(matching: predicate)
+        let store = self.store
+        Task.detached {
+            let fetched = store.events(matching: predicate)
+            await MainActor.run { [weak self] in
+                self?.events = fetched
+            }
+        }
     }
 
     func createEvent(title: String, startDate: Date, endDate: Date, calendar: EKCalendar,
@@ -76,7 +90,7 @@ final class EventManager {
     }
 
     private func setupNotifications() {
-        NotificationCenter.default.addObserver(
+        storeObserverToken = NotificationCenter.default.addObserver(
             forName: .EKEventStoreChanged,
             object: store,
             queue: nil

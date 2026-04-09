@@ -53,6 +53,7 @@ struct CanvasKeyCommands: ViewModifier {
     }
 
     private func installKeyMonitor() {
+        removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 51 || event.keyCode == 117 {
                 guard !selectedItemIDs.isEmpty else { return event }

@@ -240,6 +240,7 @@ struct ContentView: View {
         }
         .onAppear {
             loadDocument(for: currentYear)
+            if let existing = scrollMonitor { NSEvent.removeMonitor(existing) }
             scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
                 guard !showVisionBoard else { return event }
                 if event.phase == .began {

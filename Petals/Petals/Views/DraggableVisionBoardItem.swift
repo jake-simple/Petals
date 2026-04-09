@@ -2,15 +2,7 @@ import AppKit
 import SwiftUI
 import SwiftData
 
-struct DraggableVisionBoardItem: View, Equatable {
-    static func == (lhs: DraggableVisionBoardItem, rhs: DraggableVisionBoardItem) -> Bool {
-        lhs.item.persistentModelID == rhs.item.persistentModelID
-        && lhs.scale == rhs.scale
-        && lhs.isSelected == rhs.isSelected
-        && lhs.multipleSelected == rhs.multipleSelected
-        && lhs.multiDragOffset == rhs.multiDragOffset
-    }
-
+struct DraggableVisionBoardItem: View {
     @Bindable var item: VisionBoardItem
     let scale: CGFloat
     let isSelected: Bool

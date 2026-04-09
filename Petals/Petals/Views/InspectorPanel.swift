@@ -48,6 +48,9 @@ struct InspectorPanel: View {
         .formStyle(.grouped)
         .frame(width: 260)
         .padding(.vertical, 8)
+        .onDisappear {
+            fontPanelTarget.onChange = nil
+        }
     }
 
     // MARK: - Image

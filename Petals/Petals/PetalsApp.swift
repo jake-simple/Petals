@@ -83,7 +83,7 @@ struct PetalsApp: App {
             let orphans = (try? context.fetch(orphanDescriptor)) ?? []
             guard !orphans.isEmpty else { return }
             // 첫 번째 보드에 연결
-            var sortedDescriptor = FetchDescriptor<VisionBoard>(sortBy: [SortDescriptor(\VisionBoard.sortIndex)])
+            let sortedDescriptor = FetchDescriptor<VisionBoard>(sortBy: [SortDescriptor(\VisionBoard.sortIndex)])
             defaultBoard = (try? context.fetch(sortedDescriptor))?.first ?? VisionBoard(name: "나의 보드")
             for item in orphans {
                 defaultBoard.appendItem(item)
@@ -98,5 +98,6 @@ struct PetalsApp: App {
                 defaultBoard.appendItem(item)
             }
         }
+        try? context.save()
     }
 }

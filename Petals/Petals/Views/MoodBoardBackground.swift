@@ -8,22 +8,19 @@ struct MoodBoardBackground: View {
             let dotColor = Color(hex: gridLineColor).opacity(0.4)
             let spacing: CGFloat = 20
             let radius: CGFloat = 1.5
+            let diameter = radius * 2
 
+            var path = Path()
             var x: CGFloat = spacing
             while x < size.width {
                 var y: CGFloat = spacing
                 while y < size.height {
-                    context.fill(
-                        Path(ellipseIn: CGRect(
-                            x: x - radius, y: y - radius,
-                            width: radius * 2, height: radius * 2
-                        )),
-                        with: .color(dotColor)
-                    )
+                    path.addEllipse(in: CGRect(x: x - radius, y: y - radius, width: diameter, height: diameter))
                     y += spacing
                 }
                 x += spacing
             }
+            context.fill(path, with: .color(dotColor))
         }
     }
 }

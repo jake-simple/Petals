@@ -350,6 +350,7 @@ struct VisionBoardView: View {
     // MARK: - Event Monitors (scroll + magnify + ⌘+scroll zoom)
 
     private func setupScrollMonitor() {
+        teardownScrollMonitor()
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .magnify]) { event in
             if event.type == .magnify {
                 // 트랙패드 핀치 줌 — 입력 레이트로 부드러운 업데이트
@@ -591,7 +592,8 @@ struct VisionBoardView: View {
                     let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
                     try? ImageManager.jpegData(from: image, quality: 0.9)?.write(to: tempURL)
                     guard let result = ImageManager.importImage(from: tempURL) else { return }
-                    let center = visibleCenter(in: CGSize(width: 1200, height: 800))
+                    try? FileManager.default.removeItem(at: tempURL)
+                    let center = visibleCenter(in: viewSize)
                     let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
                     modelContext.insert(item)
                     board.appendItem(item)

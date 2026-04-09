@@ -263,6 +263,7 @@ struct CanvasLayer: View {
                     try? ImageManager.jpegData(from: image, quality: 0.9)?.write(to: tempURL)
                     guard let result = ImageManager.importImage(from: tempURL),
                           let doc = yearDocument else { return }
+                    try? FileManager.default.removeItem(at: tempURL)
                     let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
                     item.zoomLevel = zoomLevel
                     item.pageIndex = pageIndex
