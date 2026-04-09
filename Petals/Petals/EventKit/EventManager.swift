@@ -7,7 +7,7 @@ final class EventManager {
     private(set) var calendars: [EKCalendar] = []
     private(set) var events: [EKEvent] = []
     private(set) var isAuthorized = false
-    private var storeObserverToken: Any?
+    nonisolated(unsafe) private var storeObserverToken: Any?
 
     var selectedCalendarIDs: Set<String> = [] {
         didSet {
@@ -44,7 +44,7 @@ final class EventManager {
         }
     }
 
-    func fetchEvents(for year: Int) {
+    func fetchEvents(for year: Int) async {
         let cal = Calendar.current
         guard let start = cal.date(from: DateComponents(year: year, month: 1, day: 1)),
               let end = cal.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { return }
@@ -57,12 +57,10 @@ final class EventManager {
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selectedCals)
         let store = self.store
-        Task.detached {
-            let fetched = store.events(matching: predicate)
-            await MainActor.run { [weak self] in
-                self?.events = fetched
-            }
-        }
+        let fetched = await Task.detached {
+            store.events(matching: predicate)
+        }.value
+        events = fetched
     }
 
     func createEvent(title: String, startDate: Date, endDate: Date, calendar: EKCalendar,
@@ -95,7 +93,7 @@ final class EventManager {
             object: store,
             queue: nil
         ) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.loadCalendars()
             }
         }

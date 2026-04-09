@@ -510,8 +510,10 @@ struct ContentView: View {
 
 
     private func reloadEvents() {
-        eventManager.fetchEvents(for: currentYear)
-        recomputeLayout()
+        Task {
+            await eventManager.fetchEvents(for: currentYear)
+            recomputeLayout()
+        }
     }
 
     private func recomputeLayout() {
