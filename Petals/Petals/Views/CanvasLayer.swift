@@ -261,17 +261,15 @@ struct CanvasLayer: View {
 
     private func handleDrop(providers: [NSItemProvider]) {
         for provider in providers {
-            _ = provider.loadDataRepresentation(for: .image) { data, _ in
-                guard let data = data, let image = NSImage(data: data) else { return }
-                Task { @MainActor in
-                    guard let result = ImageManager.importImage(from: image),
-                          let doc = yearDocument else { return }
-                    let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
-                    item.zoomLevel = zoomLevel
-                    item.pageIndex = pageIndex
-                    doc.appendItem(item)
-                    selectedItemIDs = [item.persistentModelID]
-                }
+            Task { @MainActor in
+                guard let data = await provider.loadImageData(),
+                      let result = await ImageManager.importImage(from: data),
+                      let doc = yearDocument else { return }
+                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+                item.zoomLevel = zoomLevel
+                item.pageIndex = pageIndex
+                doc.appendItem(item)
+                selectedItemIDs = [item.persistentModelID]
             }
         }
     }

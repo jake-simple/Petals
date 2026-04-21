@@ -7,10 +7,11 @@ extension Notification.Name {
 }
 
 @Observable
+@MainActor
 final class ClipboardManager {
     var snapshot: CanvasItemSnapshot?
     var showCopyToast = false
-    private var toastWorkItem: DispatchWorkItem?
+    private var toastTask: Task<Void, Never>?
 
     func performCopy(snapshot: CanvasItemSnapshot) {
         self.snapshot = snapshot
@@ -18,13 +19,13 @@ final class ClipboardManager {
     }
 
     func triggerCopyToast() {
-        toastWorkItem?.cancel()
+        toastTask?.cancel()
         showCopyToast = true
-        let work = DispatchWorkItem { [weak self] in
-            withAnimation { self?.showCopyToast = false }
+        toastTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled, let self else { return }
+            withAnimation { self.showCopyToast = false }
         }
-        toastWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
     }
 }
 

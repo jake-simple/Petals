@@ -7,26 +7,11 @@ struct VisionBoardItemView: View {
 
     var body: some View {
         switch CanvasItemType(rawValue: item.type) {
-        case .image: imageContent
+        case .image: ItemImageView(fileName: item.imageFileName, thumbnailData: item.thumbnailData)
         case .text: textContent
         case .sticker: stickerContent
         case .shape: shapeContent
         case .none: Color.clear
-        }
-    }
-
-    // MARK: - Image
-
-    @ViewBuilder
-    private var imageContent: some View {
-        if let fileName = item.imageFileName, let image = ImageManager.loadImage(fileName: fileName) {
-            Image(nsImage: image).resizable().aspectRatio(contentMode: .fill).clipped()
-        } else if let data = item.thumbnailData, let image = NSImage(data: data) {
-            Image(nsImage: image).resizable().aspectRatio(contentMode: .fill).clipped()
-        } else {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(.gray.opacity(0.2))
-                .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
         }
     }
 

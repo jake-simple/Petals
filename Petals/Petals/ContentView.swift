@@ -146,7 +146,7 @@ struct ContentView: View {
             Button {
                 showVisionBoard.toggle()
             } label: {
-                Image(systemName: showVisionBoard ? "calendar" : "rectangle.3.group")
+                Image(systemName: showVisionBoard ? "calendar" : "sparkles.rectangle.stack")
             }
             .help(showVisionBoard ? "캘린더 보기" : "화이트보드 보기")
         }
@@ -390,7 +390,7 @@ struct ContentView: View {
                             Text("\(startMonth)–\(startMonth + monthsPerPage - 1)")
                         }
                     }
-                    .font(.caption.monospacedDigit())
+                    .font(.body.bold().monospacedDigit())
                     .frame(minWidth: 36)
 
                     Button(action: { pageIndex = min(maxPageIndex, pageIndex + 1) }) {
@@ -562,16 +562,15 @@ struct ContentView: View {
     }
 
     private func importImage(from url: URL) {
-        guard url.startAccessingSecurityScopedResource() else { return }
-        defer { url.stopAccessingSecurityScopedResource() }
-
-        guard let result = ImageManager.importImage(from: url),
-              let doc = currentDocument else { return }
-        let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
-        item.zoomLevel = monthsPerPage
-        item.pageIndex = pageIndex
-        doc.appendItem(item)
-        selectedCanvasItemIDs = [item.persistentModelID]
+        Task {
+            guard let result = await ImageManager.importImage(from: url),
+                  let doc = currentDocument else { return }
+            let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+            item.zoomLevel = monthsPerPage
+            item.pageIndex = pageIndex
+            doc.appendItem(item)
+            selectedCanvasItemIDs = [item.persistentModelID]
+        }
     }
 
 

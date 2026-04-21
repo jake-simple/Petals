@@ -43,10 +43,13 @@ struct VisionBoardView: View {
     private let maxScale: CGFloat = 4.0
     private let zoomSteps: [CGFloat] = [0.25, 0.50, 0.75, 1.00, 1.25, 1.50, 2.00, 3.00, 4.00]
 
-    // board.items 변경 시에만 정렬 (제스처 중 body 재평가마다 sort 방지)
-    @State private var sortedItems: [VisionBoardItem] = []
     // cachedWorldBounds 캐시 (아이템 변경 시에만 재계산)
     @State private var cachedWorldBounds: CGRect = .zero
+
+    /// zIndex 오름차순 정렬된 아이템. board.items 변화는 @Bindable 로 자동 반영.
+    private var sortedItems: [VisionBoardItem] {
+        (board.items ?? []).sorted { $0.zIndex < $1.zIndex }
+    }
 
     // 합산 값
     private var currentScale: CGFloat {
@@ -137,8 +140,8 @@ struct VisionBoardView: View {
                                     pasteItem(in: viewSize)
                                 },
                                 onDelete: { deleteItem(item) },
-                                onBringToFront: { item.zIndex = board.nextZIndex; refreshSortedItems() },
-                                onSendToBack: { item.zIndex = board.minZIndex; refreshSortedItems() },
+                                onBringToFront: { item.zIndex = board.nextZIndex },
+                                onSendToBack: { item.zIndex = board.minZIndex },
                                 onMoveAll: { translation in
                                     multiDragOffset = translation
                                 },
@@ -212,12 +215,16 @@ struct VisionBoardView: View {
                 scale = board.viewportScale
                 offsetX = board.viewportOffsetX
                 offsetY = board.viewportOffsetY
-                refreshSortedItems()
+                recalcWorldBounds()
                 clampViewport()
                 setupScrollMonitor()
             }
             .onChange(of: geo.size) { _, newSize in
                 viewSize = newSize
+                recalcWorldBounds()
+                clampViewport()
+            }
+            .onChange(of: board.items?.count ?? 0) { _, _ in
                 recalcWorldBounds()
                 clampViewport()
             }
@@ -250,13 +257,6 @@ struct VisionBoardView: View {
                 if clipboardManager.snapshot != nil { pasteItem(in: viewSize) }
             }
         ))
-    }
-
-    // MARK: - Items Cache
-
-    private func refreshSortedItems() {
-        sortedItems = (board.items ?? []).sorted { $0.zIndex < $1.zIndex }
-        recalcWorldBounds()
     }
 
     // MARK: - Viewport Persistence
@@ -558,7 +558,6 @@ struct VisionBoardView: View {
         let item = VisionBoardItem.newText(at: center, zIndex: board.nextZIndex)
         modelContext.insert(item)
         board.appendItem(item)
-        refreshSortedItems()
         selectedItemIDs = [item.persistentModelID]
     }
 
@@ -567,36 +566,30 @@ struct VisionBoardView: View {
         let item = VisionBoardItem.newSticker(at: center, name, zIndex: board.nextZIndex)
         modelContext.insert(item)
         board.appendItem(item)
-        refreshSortedItems()
         selectedItemIDs = [item.persistentModelID]
     }
 
     private func importImage(from url: URL) {
-        guard url.startAccessingSecurityScopedResource() else { return }
-        defer { url.stopAccessingSecurityScopedResource() }
-
-        guard let result = ImageManager.importImage(from: url) else { return }
-        let center = visibleCenter(in: viewSize)
-        let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
-        modelContext.insert(item)
-        board.appendItem(item)
-        refreshSortedItems()
-        selectedItemIDs = [item.persistentModelID]
+        Task {
+            guard let result = await ImageManager.importImage(from: url) else { return }
+            let center = visibleCenter(in: viewSize)
+            let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+            modelContext.insert(item)
+            board.appendItem(item)
+            selectedItemIDs = [item.persistentModelID]
+        }
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
         for provider in providers {
-            _ = provider.loadDataRepresentation(for: .image) { data, _ in
-                guard let data = data, let image = NSImage(data: data) else { return }
-                Task { @MainActor in
-                    guard let result = ImageManager.importImage(from: image) else { return }
-                    let center = visibleCenter(in: viewSize)
-                    let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
-                    modelContext.insert(item)
-                    board.appendItem(item)
-                    refreshSortedItems()
-                    selectedItemIDs = [item.persistentModelID]
-                }
+            Task { @MainActor in
+                guard let data = await provider.loadImageData(),
+                      let result = await ImageManager.importImage(from: data) else { return }
+                let center = visibleCenter(in: viewSize)
+                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+                modelContext.insert(item)
+                board.appendItem(item)
+                selectedItemIDs = [item.persistentModelID]
             }
         }
     }
@@ -624,7 +617,6 @@ struct VisionBoardView: View {
         }
         modelContext.insert(item)
         board.appendItem(item)
-        refreshSortedItems()
         selectedItemIDs = [item.persistentModelID]
     }
 
@@ -640,11 +632,9 @@ struct VisionBoardView: View {
             try modelContext.save()
         } catch {
             print("Failed to save after deleting vision board item: \(error)")
-            refreshSortedItems()
             return
         }
         if let fileName { ImageManager.deleteImage(fileName: fileName) }
-        refreshSortedItems()
     }
 
     private func deleteSelectedItems() {
@@ -657,14 +647,12 @@ struct VisionBoardView: View {
         for item in selectedItems {
             item.zIndex = board.nextZIndex
         }
-        refreshSortedItems()
     }
 
     private func sendSelectedToBack() {
         for item in selectedItems {
             item.zIndex = board.minZIndex
         }
-        refreshSortedItems()
     }
 
     private func resetViewport() {

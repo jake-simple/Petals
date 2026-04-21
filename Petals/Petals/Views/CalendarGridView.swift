@@ -81,7 +81,7 @@ struct CalendarGridView: View {
                         let monthY = rowY + totalMonthHeight / 2
                         let monthResolved = context.resolve(
                             Text(monthNames[month - 1])
-                                .font(.system(size: eventFontSize, weight: .medium))
+                                .font(.system(size: eventFontSize + 1, weight: .medium))
                                 .foregroundStyle(monthLabelColor)
                         )
                         context.draw(monthResolved, at: CGPoint(x: monthLabelWidth / 2, y: monthY))

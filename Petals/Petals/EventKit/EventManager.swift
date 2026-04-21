@@ -9,6 +9,7 @@ final class EventManager {
     private(set) var isAuthorized = false
     private var loadedYear: Int?
     private var hasRequestedAccess = false
+    @ObservationIgnored
     nonisolated(unsafe) private var storeObserverToken: Any?
 
     var selectedCalendarIDs: Set<String> = [] {
@@ -98,9 +99,9 @@ final class EventManager {
         storeObserverToken = NotificationCenter.default.addObserver(
             forName: .EKEventStoreChanged,
             object: store,
-            queue: nil
+            queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            MainActor.assumeIsolated {
                 self?.loadedYear = nil
                 self?.loadCalendars()
             }

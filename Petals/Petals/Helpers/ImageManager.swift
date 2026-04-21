@@ -1,10 +1,12 @@
 import AppKit
 
-enum ImageManager {
+nonisolated enum ImageManager {
     private static let maxDimension: CGFloat = 2048
     private static let thumbDimension: CGFloat = 200
     private static let thumbQuality: CGFloat = 0.6
-    private static let imageCache: NSCache<NSString, NSImage> = {
+
+    // NSCache 자체는 thread-safe. Sendable 추론 회피용으로 unsafe 명시.
+    nonisolated(unsafe) private static let imageCache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
         cache.countLimit = 50
         return cache
@@ -24,12 +26,25 @@ enum ImageManager {
         return dir
     }()
 
-    static func importImage(from url: URL) -> (fileName: String, thumbnail: Data)? {
-        guard let image = NSImage(contentsOf: url) else { return nil }
-        return importImage(from: image)
+    /// 파일 URL에서 import. security-scoped resource 접근도 내부에서 관리.
+    static func importImage(from url: URL) async -> (fileName: String, thumbnail: Data)? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        return await Task.detached(priority: .userInitiated) {
+            guard let image = NSImage(contentsOf: url) else { return nil }
+            return processImport(from: image)
+        }.value
     }
 
-    static func importImage(from image: NSImage) -> (fileName: String, thumbnail: Data)? {
+    /// 원본 데이터(NSImage가 지원하는 포맷)에서 import.
+    static func importImage(from data: Data) async -> (fileName: String, thumbnail: Data)? {
+        await Task.detached(priority: .userInitiated) {
+            guard let image = NSImage(data: data) else { return nil }
+            return processImport(from: image)
+        }.value
+    }
+
+    private static func processImport(from image: NSImage) -> (fileName: String, thumbnail: Data)? {
         let resized = resize(image, max: maxDimension)
         let fileName = "\(UUID().uuidString).jpg"
         guard let data = jpegData(from: resized, quality: 0.85) else { return nil }
@@ -45,7 +60,6 @@ enum ImageManager {
 
     static func copyImageFile(fileName: String) -> String? {
         let src = imagesDirectory.appendingPathComponent(fileName)
-        guard FileManager.default.fileExists(atPath: src.path) else { return nil }
         let ext = (fileName as NSString).pathExtension
         let newName = "\(UUID().uuidString).\(ext.isEmpty ? "jpg" : ext)"
         let dst = imagesDirectory.appendingPathComponent(newName)
@@ -61,19 +75,25 @@ enum ImageManager {
         try? FileManager.default.removeItem(at: url)
     }
 
-    static func loadImage(fileName: String) -> NSImage? {
+    /// NSCache hit 만 동기적으로 조회. disk read 없음. 플레이스홀더 깜빡임 방지용.
+    static func cachedImage(fileName: String) -> NSImage? {
+        imageCache.object(forKey: fileName as NSString)
+    }
+
+    /// 캐시 조회 후 miss 시 백그라운드에서 디스크 로드. main thread blocking 없음.
+    static func loadImage(fileName: String) async -> NSImage? {
         let key = fileName as NSString
-        if let cached = imageCache.object(forKey: key) {
-            return cached
-        }
-        let url = imagesDirectory.appendingPathComponent(fileName)
-        if let image = NSImage(contentsOf: url) {
-            imageCache.setObject(image, forKey: key)
-            return image
-        }
-        // iCloud에서 아직 다운로드되지 않은 경우 다운로드 요청
-        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-        return nil
+        if let cached = imageCache.object(forKey: key) { return cached }
+        return await Task.detached(priority: .userInitiated) {
+            let url = imagesDirectory.appendingPathComponent(fileName)
+            if let image = NSImage(contentsOf: url) {
+                imageCache.setObject(image, forKey: key)
+                return image
+            }
+            // iCloud에서 아직 다운로드되지 않은 경우 다운로드 요청
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return nil
+        }.value
     }
 
     private static func resize(_ image: NSImage, max maxDim: CGFloat) -> NSImage {
