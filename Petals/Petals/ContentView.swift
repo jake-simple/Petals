@@ -43,6 +43,7 @@ struct ContentView: View {
     @State private var showStickerInput = false
     @State private var scrollMonitor: Any?
     @State private var accumulatedScrollX: CGFloat = 0
+    @State private var fetchTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
 
     private var theme: Theme {
@@ -121,17 +122,16 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.3), value: clipboardManager.showCopyToast)
         .background(ToolbarConfigurator())
         .background {
-            // Cmd+= / Cmd+- 폰트 크기 단축키 (캘린더 모드 전용)
-            // 비전보드 모드에서는 Cmd+=/- 가 뷰포트 줌에 사용되므로 렌더링 제외
+            // 비전보드 모드에서는 Cmd+=/- 가 뷰포트 줌에 사용되므로 제외
             if !showVisionBoard {
                 Group {
                     Button("Increase Font Size") {
-                        eventFontSize = min(eventFontSize + 1, 20)
+                        eventFontSize = min(eventFontSize + 1, AppSettings.eventFontSizeRange.upperBound)
                     }
                     .keyboardShortcut("=", modifiers: .command)
 
                     Button("Decrease Font Size") {
-                        eventFontSize = max(eventFontSize - 1, 6)
+                        eventFontSize = max(eventFontSize - 1, AppSettings.eventFontSizeRange.lowerBound)
                     }
                     .keyboardShortcut("-", modifiers: .command)
                 }
@@ -417,7 +417,7 @@ struct ContentView: View {
                     VStack(spacing: 8) {
                         Text("Font Size: \(Int(eventFontSize))pt")
                             .font(.headline)
-                        Slider(value: $eventFontSize, in: 6...20, step: 1)
+                        Slider(value: $eventFontSize, in: AppSettings.eventFontSizeRange, step: 1)
                             .frame(width: 160)
                     }
                     .padding()
@@ -528,8 +528,10 @@ struct ContentView: View {
 
 
     private func reloadEvents() {
-        Task {
+        fetchTask?.cancel()
+        fetchTask = Task {
             await eventManager.fetchEvents(for: currentYear)
+            guard !Task.isCancelled else { return }
             recomputeLayout()
         }
     }

@@ -56,8 +56,7 @@ final class EventManager {
         }
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selectedCals)
-        let store = self.store
-        let fetched = await Task.detached {
+        let fetched = await Task.detached { [store] in
             store.events(matching: predicate)
         }.value
         events = fetched

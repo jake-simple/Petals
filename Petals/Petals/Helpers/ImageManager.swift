@@ -26,7 +26,10 @@ enum ImageManager {
 
     static func importImage(from url: URL) -> (fileName: String, thumbnail: Data)? {
         guard let image = NSImage(contentsOf: url) else { return nil }
+        return importImage(from: image)
+    }
 
+    static func importImage(from image: NSImage) -> (fileName: String, thumbnail: Data)? {
         let resized = resize(image, max: maxDimension)
         let fileName = "\(UUID().uuidString).jpg"
         guard let data = jpegData(from: resized, quality: 0.85) else { return nil }

@@ -589,10 +589,7 @@ struct VisionBoardView: View {
             _ = provider.loadDataRepresentation(for: .image) { data, _ in
                 guard let data = data, let image = NSImage(data: data) else { return }
                 Task { @MainActor in
-                    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".jpg")
-                    try? ImageManager.jpegData(from: image, quality: 0.9)?.write(to: tempURL)
-                    guard let result = ImageManager.importImage(from: tempURL) else { return }
-                    try? FileManager.default.removeItem(at: tempURL)
+                    guard let result = ImageManager.importImage(from: image) else { return }
                     let center = visibleCenter(in: viewSize)
                     let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
                     modelContext.insert(item)
