@@ -205,12 +205,17 @@ struct CanvasLayer: View {
     // MARK: - Actions
 
     private func deleteItem(_ item: CanvasItem) {
-        if let fileName = item.imageFileName {
-            ImageManager.deleteImage(fileName: fileName)
-        }
+        let fileName = item.imageFileName
         yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
         selectedItemIDs.remove(item.persistentModelID)
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save after deleting canvas item: \(error)")
+            return
+        }
+        if let fileName { ImageManager.deleteImage(fileName: fileName) }
     }
 
     private func deleteSelectedItems() {

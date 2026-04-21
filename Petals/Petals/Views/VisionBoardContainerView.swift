@@ -110,12 +110,7 @@ struct VisionBoardContainerView: View {
     }
 
     private func deleteBoard(_ board: VisionBoard) {
-        for item in board.items ?? [] {
-            if let fileName = item.imageFileName {
-                ImageManager.deleteImage(fileName: fileName)
-            }
-        }
-
+        let fileNames = (board.items ?? []).compactMap(\.imageFileName)
         let wasSelected = selectedBoardID == board.persistentModelID
         modelContext.delete(board)
 
@@ -123,7 +118,15 @@ struct VisionBoardContainerView: View {
             selectedBoardID = boards.first(where: { $0.persistentModelID != board.persistentModelID })?.persistentModelID
         }
 
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save after deleting board: \(error)")
+            return
+        }
+        for fileName in fileNames {
+            ImageManager.deleteImage(fileName: fileName)
+        }
     }
 
     private var boardCreationErrorBinding: Binding<Bool> {

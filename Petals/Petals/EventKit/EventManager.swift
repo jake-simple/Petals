@@ -7,15 +7,20 @@ final class EventManager {
     private(set) var calendars: [EKCalendar] = []
     private(set) var events: [EKEvent] = []
     private(set) var isAuthorized = false
+    private var loadedYear: Int?
+    private var hasRequestedAccess = false
     nonisolated(unsafe) private var storeObserverToken: Any?
 
     var selectedCalendarIDs: Set<String> = [] {
         didSet {
             UserDefaults.standard.set(Array(selectedCalendarIDs), forKey: "selectedCalendarIDs")
+            if oldValue != selectedCalendarIDs { loadedYear = nil }
         }
     }
 
     func requestAccess() async {
+        if hasRequestedAccess { return }
+        hasRequestedAccess = true
         let granted = (try? await store.requestFullAccessToEvents()) ?? false
         isAuthorized = granted
         if granted {
@@ -45,6 +50,7 @@ final class EventManager {
     }
 
     func fetchEvents(for year: Int) async {
+        if loadedYear == year { return }
         let cal = Calendar.current
         guard let start = cal.date(from: DateComponents(year: year, month: 1, day: 1)),
               let end = cal.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { return }
@@ -52,6 +58,7 @@ final class EventManager {
         let selectedCals = calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
         guard !selectedCals.isEmpty else {
             events = []
+            loadedYear = year
             return
         }
 
@@ -60,6 +67,7 @@ final class EventManager {
             store.events(matching: predicate)
         }.value
         events = fetched
+        loadedYear = year
     }
 
     func createEvent(title: String, startDate: Date, endDate: Date, calendar: EKCalendar,
@@ -93,6 +101,7 @@ final class EventManager {
             queue: nil
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                self?.loadedYear = nil
                 self?.loadCalendars()
             }
         }

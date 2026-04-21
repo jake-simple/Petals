@@ -629,15 +629,21 @@ struct VisionBoardView: View {
     }
 
     private func deleteItem(_ item: VisionBoardItem) {
-        if let fileName = item.imageFileName {
-            ImageManager.deleteImage(fileName: fileName)
-        }
+        let fileName = item.imageFileName
         board.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
         selectedItemIDs.remove(item.persistentModelID)
         if selectedItemIDs.isEmpty {
             showInspector = false
         }
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save after deleting vision board item: \(error)")
+            refreshSortedItems()
+            return
+        }
+        if let fileName { ImageManager.deleteImage(fileName: fileName) }
         refreshSortedItems()
     }
 

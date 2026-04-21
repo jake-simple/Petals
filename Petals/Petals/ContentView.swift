@@ -598,15 +598,22 @@ struct ContentView: View {
     }
 
     private func deleteSelectedCanvasItems() {
+        let fileNames = selectedCanvasItems.compactMap(\.imageFileName)
         for item in selectedCanvasItems {
-            if let fileName = item.imageFileName {
-                ImageManager.deleteImage(fileName: fileName)
-            }
             currentDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
             modelContext.delete(item)
         }
         selectedCanvasItemIDs.removeAll()
         showInspector = false
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save after deleting canvas items: \(error)")
+            return
+        }
+        for fileName in fileNames {
+            ImageManager.deleteImage(fileName: fileName)
+        }
     }
 }
 
