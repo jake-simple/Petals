@@ -185,64 +185,103 @@ def _chev(cx, cy, col, d, sw=3.4):
             f'stroke-linecap="round" stroke-linejoin="round"/>')
 
 
-def _icon(name, cx, cy, col, accent):
+def _spark4(cx, cy, r, col):
+    """A four-point sparkle (concave diamond)."""
+    k = 0.3
+    p = (f"{cx},{cy-r} {cx+k*r},{cy-k*r} {cx+r},{cy} {cx+k*r},{cy+k*r} "
+         f"{cx},{cy+r} {cx-k*r},{cy+k*r} {cx-r},{cy} {cx-k*r},{cy-k*r}")
+    return f'<polygon points="{p}" fill="{col}"/>'
+
+
+def _rhombus(cx, cy, hw, hh):
+    return f"{cx-hw},{cy} {cx},{cy-hh} {cx+hw},{cy} {cx},{cy+hh}"
+
+
+def _star_pts(cx, cy, r):
+    p = []
+    for i in range(10):
+        a = -math.pi / 2 + i * math.pi / 5
+        rr = r if i % 2 == 0 else r * 0.42
+        p.append(f"{cx+rr*math.cos(a):.1f},{cy+rr*math.sin(a):.1f}")
+    return " ".join(p)
+
+
+def _icon(name, cx, cy, col, accent, bg="#FFFFFF"):
+    """Toolbar icons drawn to match the SF Symbols used in the app."""
     if name == "mode":  # sparkles.rectangle.stack
-        return (f'<g fill="none" stroke="{col}" stroke-width="2.4">'
-                f'<rect x="{cx-11}" y="{cy-4}" width="20" height="14" rx="3"/>'
-                f'<path d="M{cx-7} {cy-4} v-4 h20 v14 h-4" />'
-                f'<path d="M{cx+6} {cy-9} l1.4 3 3 1.4 -3 1.4 -1.4 3 '
-                f'-1.4 -3 -3 -1.4 3 -1.4 Z" fill="{accent}" stroke="none"/>'
-                f'</g>')
+        return (f'<path d="M{cx-4} {cy-3} L{cx-4} {cy-8} L{cx+10} {cy-8} '
+                f'L{cx+10} {cy+4}" fill="none" stroke="{col}" '
+                f'stroke-width="2.2" stroke-linejoin="round"/>'
+                f'<rect x="{cx-9}" y="{cy-3}" width="14" height="12" '
+                f'rx="2.6" fill="{bg}" stroke="{col}" stroke-width="2.2"/>'
+                f'{_spark4(cx-9, cy-9, 3.9, accent)}'
+                f'{_spark4(cx-2.5, cy-12, 2.1, accent)}')
+    if name == "calendar":  # calendar
+        return (f'<g fill="none" stroke="{col}" stroke-width="2.2" '
+                f'stroke-linejoin="round">'
+                f'<rect x="{cx-11}" y="{cy-9}" width="22" height="20" '
+                f'rx="3.5"/>'
+                f'<line x1="{cx-11}" y1="{cy-3}" x2="{cx+11}" '
+                f'y2="{cy-3}"/></g>')
     if name == "filter":  # line.3.horizontal.decrease.circle
-        return (f'<g stroke="{col}" stroke-width="2.6" stroke-linecap="round">'
-                f'<line x1="{cx-9}" y1="{cy-6}" x2="{cx+9}" y2="{cy-6}"/>'
-                f'<line x1="{cx-6}" y1="{cy}" x2="{cx+6}" y2="{cy}"/>'
-                f'<line x1="{cx-3}" y1="{cy+6}" x2="{cx+3}" y2="{cy+6}"/></g>')
+        return (f'<g fill="none" stroke="{col}" stroke-linecap="round">'
+                f'<circle cx="{cx}" cy="{cy}" r="11.5" stroke-width="2.2"/>'
+                f'<line x1="{cx-6}" y1="{cy-4}" x2="{cx+6}" y2="{cy-4}" '
+                f'stroke-width="2"/>'
+                f'<line x1="{cx-4}" y1="{cy}" x2="{cx+4}" y2="{cy}" '
+                f'stroke-width="2"/>'
+                f'<line x1="{cx-2}" y1="{cy+4}" x2="{cx+2}" y2="{cy+4}" '
+                f'stroke-width="2"/></g>')
     if name == "font":  # textformat.size
-        return (f'<text x="{cx}" y="{cy+8}" font-family="{FONT}" '
-                f'font-size="22" font-weight="700" fill="{col}" '
-                f'text-anchor="middle">Aa</text>')
+        return (f'<g font-family="{FONT}" font-weight="700" fill="{col}" '
+                f'text-anchor="middle">'
+                f'<text x="{cx-4}" y="{cy+8}" font-size="21">A</text>'
+                f'<text x="{cx+8}" y="{cy+8}" font-size="12">A</text></g>')
     if name == "theme":  # paintpalette
-        e = [f'<circle cx="{cx}" cy="{cy}" r="10" fill="none" '
-             f'stroke="{col}" stroke-width="2.4"/>']
-        for i, c in enumerate([accent, "#34A853", "#1A73E8"]):
-            a = -math.pi / 2 + i * 2 * math.pi / 3
-            e.append(f'<circle cx="{cx+5*math.cos(a):.1f}" '
-                     f'cy="{cy+5*math.sin(a):.1f}" r="2.8" fill="{c}"/>')
+        e = [f'<ellipse cx="{cx}" cy="{cy}" rx="12" ry="10.5" fill="{bg}" '
+             f'stroke="{col}" stroke-width="2.2"/>',
+             f'<circle cx="{cx+4.5}" cy="{cy+4.5}" r="2.7" fill="none" '
+             f'stroke="{col}" stroke-width="1.8"/>']
+        dots = [((-5, -3), accent), ((0.5, -5.5), "#34B36B"),
+                ((5.5, -3), "#5B8DEF"), ((-6.5, 2.5), "#F4B400")]
+        for (dx, dy), c in dots:
+            e.append(f'<circle cx="{cx+dx}" cy="{cy+dy}" r="2.1" '
+                     f'fill="{c}"/>')
         return "".join(e)
     if name == "brush":  # paintbrush
-        return (f'<g stroke="{accent}" stroke-width="2.6" fill="none" '
-                f'stroke-linecap="round"><path d="M{cx-8} {cy+8} '
-                f'L{cx+3} {cy-3}"/><path d="M{cx+1} {cy-5} L{cx+8} {cy+2} '
-                f'L{cx+5} {cy+5} Z" fill="{accent}"/></g>')
-    if name == "photo":
-        return (f'<g fill="none" stroke="{col}" stroke-width="2.4">'
-                f'<rect x="{cx-11}" y="{cy-9}" width="22" height="18" rx="3"/>'
-                f'<circle cx="{cx-4}" cy="{cy-3}" r="2.6" fill="{col}"/>'
-                f'<path d="M{cx-11} {cy+6} L{cx-2} {cy-2} L{cx+4} {cy+3} '
-                f'L{cx+8} {cy-1} L{cx+11} {cy+2}"/></g>')
-    if name == "text":
+        return (f'<g stroke="{col}" stroke-linecap="round" '
+                f'stroke-linejoin="round">'
+                f'<line x1="{cx-9}" y1="{cy+9}" x2="{cx+2}" y2="{cy-2}" '
+                f'stroke-width="3.4"/>'
+                f'<path d="M{cx} {cy-4} L{cx+4} {cy} L{cx+11} {cy-7} '
+                f'L{cx+7} {cy-11} Z" fill="{col}" stroke-width="2"/></g>')
+    if name == "photo":  # photo
+        return (f'<g fill="none" stroke="{col}" stroke-width="2.2" '
+                f'stroke-linejoin="round">'
+                f'<rect x="{cx-11}" y="{cy-9}" width="22" height="18" '
+                f'rx="3.5"/>'
+                f'<circle cx="{cx-3.5}" cy="{cy-3}" r="2.7" fill="{col}"/>'
+                f'<path d="M{cx-11} {cy+5} L{cx-3} {cy-2} L{cx+2} {cy+2} '
+                f'L{cx+7} {cy-3} L{cx+11} {cy+1}"/></g>')
+    if name == "text":  # textformat
         return (f'<text x="{cx}" y="{cy+9}" font-family="{FONT}" '
-                f'font-size="26" font-weight="700" fill="{col}" '
-                f'text-anchor="middle">T</text>')
+                f'font-size="25" font-weight="700" fill="{col}" '
+                f'text-anchor="middle">A</text>')
     if name == "sticker":  # star.square.on.square
-        return (f'<g fill="none" stroke="{col}" stroke-width="2.2">'
-                f'<rect x="{cx-10}" y="{cy-6}" width="18" height="18" rx="3"/>'
-                f'<path d="M{cx-6} {cy-10} h16 v16" />'
-                f'<path d="M{cx-2} {cy+1} l1.6 3.3 3.6 0.5 -2.6 2.6 0.6 3.6 '
-                f'-3.2 -1.7 -3.2 1.7 0.6 -3.6 -2.6 -2.6 3.6 -0.5 Z" '
-                f'fill="{accent}" stroke="none"/></g>')
-    if name == "reset":
+        return (f'<g stroke="{col}" stroke-width="2.2" '
+                f'stroke-linejoin="round">'
+                f'<rect x="{cx-4}" y="{cy-4}" width="15" height="15" '
+                f'rx="2.6" fill="{bg}"/>'
+                f'<rect x="{cx-11}" y="{cy-11}" width="15" height="15" '
+                f'rx="2.6" fill="{bg}"/>'
+                f'<polygon points="{_star_pts(cx-3.5, cy-3.5, 5.1)}" '
+                f'fill="{col}" stroke="none"/></g>')
+    if name == "reset":  # arrow.counterclockwise
         return (f'<path d="M{cx+9} {cy-2} A9 9 0 1 0 {cx+9} {cy+3}" '
                 f'fill="none" stroke="{col}" stroke-width="2.6" '
                 f'stroke-linecap="round"/>'
                 f'<path d="M{cx+9} {cy-9} L{cx+9} {cy-1} L{cx+2} {cy-2} Z" '
                 f'fill="{col}"/>')
-    if name == "calendar":
-        return (f'<g fill="none" stroke="{col}" stroke-width="2.4">'
-                f'<rect x="{cx-11}" y="{cy-9}" width="22" height="20" rx="3"/>'
-                f'<line x1="{cx-11}" y1="{cy-3}" x2="{cx+11}" y2="{cy-3}"/>'
-                f'</g>')
     if name in ("plus", "minus"):
         e = [f'<line x1="{cx-8}" y1="{cy}" x2="{cx+8}" y2="{cy}" '
              f'stroke="{col}" stroke-width="2.8" stroke-linecap="round"/>']
@@ -251,20 +290,28 @@ def _icon(name, cx, cy, col, accent):
                      f'stroke="{col}" stroke-width="2.8" '
                      f'stroke-linecap="round"/>')
         return "".join(e)
-    if name == "front":
-        return (f'<g fill="none" stroke="{col}" stroke-width="2.2">'
-                f'<rect x="{cx-10}" y="{cy-10}" width="13" height="13"/>'
-                f'<rect x="{cx-3}" y="{cy-3}" width="13" height="13" '
-                f'fill="{accent}" stroke="{accent}"/></g>')
-    if name == "inspect":
-        return (f'<g stroke="{col}" stroke-width="2.4" stroke-linecap="round">'
-                f'<line x1="{cx-10}" y1="{cy-6}" x2="{cx+10}" y2="{cy-6}"/>'
-                f'<line x1="{cx-10}" y1="{cy}" x2="{cx+10}" y2="{cy}"/>'
-                f'<line x1="{cx-10}" y1="{cy+6}" x2="{cx+10}" y2="{cy+6}"/>'
-                f'<circle cx="{cx-3}" cy="{cy-6}" r="3" fill="#FFF"/>'
-                f'<circle cx="{cx+4}" cy="{cy}" r="3" fill="#FFF"/>'
-                f'<circle cx="{cx-1}" cy="{cy+6}" r="3" fill="#FFF"/></g>')
+    if name in ("front", "back"):  # square.3.layers.3d.{top,bottom}.filled
+        ys = [cy - 7, cy, cy + 7]  # top, mid, bottom (drawn back-to-front)
+        filled = ys[0] if name == "front" else ys[2]
+        out = []
+        for ry in ys:
+            fill = col if ry == filled else bg
+            out.append(f'<polygon points="{_rhombus(cx, ry, 11, 4.7)}" '
+                       f'fill="{fill}" stroke="{col}" stroke-width="2"/>')
+        return "".join(out)
+    if name == "inspect":  # slider.horizontal.3
+        rows = [(cy - 6, cx - 3), (cy, cx + 5), (cy + 6, cx - 6)]
+        out = []
+        for ry, _ in rows:
+            out.append(f'<line x1="{cx-10}" y1="{ry}" x2="{cx+10}" '
+                       f'y2="{ry}" stroke="{col}" stroke-width="2.2" '
+                       f'stroke-linecap="round"/>')
+        for ry, kx in rows:
+            out.append(f'<circle cx="{kx}" cy="{ry}" r="3.4" fill="{bg}" '
+                       f'stroke="{col}" stroke-width="2"/>')
+        return "".join(out)
     return ""
+
 
 
 def toolbar_calendar(x, y, w, h, dark, zoom_sel=0, page_label=None):
@@ -276,12 +323,13 @@ def toolbar_calendar(x, y, w, h, dark, zoom_sel=0, page_label=None):
     else:
         fg, sub = "#3A3A3F", "#86868B"
         seg, segsel, accent = "#E2E2E6", "#FFFFFF", "#FF6B35"
+    btn = "#3A3D52" if dark else "#FFFFFF"
     e = [f'<g font-family="{FONT}">']
 
     # mode toggle (far left)
     mx = x + 26
     e.append(_btn(mx, cy - 22, 44, 44, dark))
-    e.append(_icon("mode", mx + 22, cy, sub, accent))
+    e.append(_icon("mode", mx + 22, cy, sub, accent, btn))
 
     # year navigation
     lx = mx + 70
@@ -327,7 +375,7 @@ def toolbar_calendar(x, y, w, h, dark, zoom_sel=0, page_label=None):
     for ic in ["brush", "theme", "font", "filter"]:
         rx -= 56
         e.append(_btn(rx, cy - 22, 44, 44, dark))
-        e.append(_icon(ic, rx + 22, cy, sub, accent))
+        e.append(_icon(ic, rx + 22, cy, sub, accent, btn))
     e.append("</g>")
     return "".join(e)
 
@@ -336,22 +384,23 @@ def toolbar_whiteboard(x, y, w, h, dark, zoom="100%"):
     """Whiteboard-mode toolbar: mode toggle + zoom, center tools, selection."""
     cy = y + h / 2
     fg, sub, accent = "#3A3A3F", "#86868B", "#FF6B35"
+    btn = "#3A3D52" if dark else "#FFFFFF"
     e = [f'<g font-family="{FONT}">']
 
     # mode toggle + zoom controls (left)
     mx = x + 26
     e.append(_btn(mx, cy - 22, 44, 44, dark))
-    e.append(_icon("mode", mx + 22, cy, sub, accent))
+    e.append(_icon("calendar", mx + 22, cy, sub, accent, btn))
 
     zx = mx + 64
     e.append(_btn(zx, cy - 19, 38, 38, dark))
-    e.append(_icon("minus", zx + 19, cy, sub, accent))
+    e.append(_icon("minus", zx + 19, cy, sub, accent, btn))
     e.append(f'<text x="{zx+78}" y="{cy+8}" font-size="20" font-weight="600" '
              f'fill="{fg}" text-anchor="middle">{zoom}</text>')
     e.append(_btn(zx + 118, cy - 19, 38, 38, dark))
-    e.append(_icon("plus", zx + 137, cy, sub, accent))
+    e.append(_icon("plus", zx + 137, cy, sub, accent, btn))
     e.append(_btn(zx + 164, cy - 19, 38, 38, dark))
-    e.append(_icon("reset", zx + 183, cy, sub, accent))
+    e.append(_icon("reset", zx + 183, cy, sub, accent, btn))
 
     # center tools
     tools = ["photo", "text", "sticker"]
@@ -360,14 +409,14 @@ def toolbar_whiteboard(x, y, w, h, dark, zoom="100%"):
     for i, ic in enumerate(tools):
         bx = cxs + i * tw
         e.append(_btn(bx, cy - 22, 44, 44, dark))
-        e.append(_icon(ic, bx + 22, cy, sub, accent))
+        e.append(_icon(ic, bx + 22, cy, sub, accent, btn))
 
     # selection tools (right, shown because an item is selected)
     rx = x + w - 26
-    for ic in ["front", "inspect"]:
+    for ic in ["back", "front", "inspect"]:
         rx -= 56
         e.append(_btn(rx, cy - 22, 44, 44, dark))
-        e.append(_icon(ic, rx + 22, cy, sub, accent))
+        e.append(_icon(ic, rx + 22, cy, sub, accent, btn))
     e.append("</g>")
     return "".join(e)
 
