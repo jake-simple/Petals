@@ -29,10 +29,10 @@ OUT = os.path.dirname(os.path.abspath(__file__))
 YEAR = 2026
 TODAY = (5, 21)  # 2026-05-21
 
-MONTHS_KR = ["1월", "2월", "3월", "4월", "5월", "6월",
-             "7월", "8월", "9월", "10월", "11월", "12월"]
-# veryShortStandaloneWeekdaySymbols (ko), indexed by Apple weekday-1 (Sun=0)
-WD_KR = ["일", "월", "화", "수", "목", "금", "토"]
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+# veryShortStandaloneWeekdaySymbols (en), indexed by Apple weekday-1 (Sun=0)
+WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"]
 
 # EventKit-style calendar colors
 BLUE, GREEN, RED = "#1A73E8", "#34A853", "#EA4335"
@@ -40,35 +40,35 @@ PURPLE, TEAL, ORANGE, PINK = "#9C27B0", "#00897B", "#FB8C00", "#E91E63"
 
 # (month, startDay, endDay, lane, title, color)
 EVENTS = [
-    (1, 2, 6, 0, "신년 워크숍", BLUE),
-    (1, 14, 16, 1, "디자인 리뷰", TEAL),
-    (1, 22, 28, 0, "프로젝트 A", PURPLE),
-    (2, 3, 9, 0, "출장 · 도쿄", RED),
-    (2, 11, 13, 1, "팀 미팅", GREEN),
-    (2, 18, 25, 0, "분기 마감", PURPLE),
-    (3, 2, 6, 1, "스프린트 12", BLUE),
-    (3, 9, 20, 0, "베타 테스트", TEAL),
-    (3, 24, 31, 1, "봄 캠페인", PINK),
-    (4, 1, 9, 0, "Q2 킥오프", BLUE),
-    (4, 13, 17, 1, "컨퍼런스", ORANGE),
-    (4, 20, 30, 0, "사용자 인터뷰", GREEN),
-    (5, 4, 12, 1, "팀 오프사이트", TEAL),
-    (5, 18, 29, 0, "v2.0 출시 준비", RED),
-    (6, 1, 9, 0, "리테이너", BLUE),
-    (6, 12, 26, 1, "여름 캠페인", ORANGE),
-    (7, 6, 9, 0, "성과 리뷰", PURPLE),
-    (7, 13, 22, 1, "휴가 · 제주", PINK),
-    (8, 3, 19, 0, "리브랜딩", PURPLE),
-    (8, 24, 28, 1, "워크숍", GREEN),
-    (9, 1, 11, 0, "신학기 프로모션", TEAL),
-    (9, 15, 18, 1, "디자인 시스템", BLUE),
-    (10, 5, 16, 0, "v2.0 베타", BLUE),
-    (10, 21, 24, 1, "보안 점검", RED),
-    (11, 2, 6, 1, "연말 기획", GREEN),
-    (11, 23, 30, 0, "블랙 프라이데이", RED),
-    (12, 1, 5, 1, "회고", TEAL),
-    (12, 14, 22, 0, "연말 결산", PURPLE),
-    (12, 24, 31, 1, "겨울 휴가", PINK),
+    (1, 2, 6, 0, "New Year Workshop", BLUE),
+    (1, 14, 16, 1, "Design Review", TEAL),
+    (1, 22, 28, 0, "Project A", PURPLE),
+    (2, 3, 9, 0, "Trip · Tokyo", RED),
+    (2, 11, 13, 1, "Team Sync", GREEN),
+    (2, 18, 25, 0, "Quarter Close", PURPLE),
+    (3, 2, 6, 1, "Sprint 12", BLUE),
+    (3, 9, 20, 0, "Beta Testing", TEAL),
+    (3, 24, 31, 1, "Spring Campaign", PINK),
+    (4, 1, 9, 0, "Q2 Kickoff", BLUE),
+    (4, 13, 17, 1, "Conference", ORANGE),
+    (4, 20, 30, 0, "User Interviews", GREEN),
+    (5, 4, 12, 1, "Team Offsite", TEAL),
+    (5, 18, 29, 0, "v2.0 Launch Prep", RED),
+    (6, 1, 9, 0, "Retainer", BLUE),
+    (6, 12, 26, 1, "Summer Campaign", ORANGE),
+    (7, 6, 9, 0, "Performance Review", PURPLE),
+    (7, 13, 22, 1, "Vacation · Jeju", PINK),
+    (8, 3, 19, 0, "Rebranding", PURPLE),
+    (8, 24, 28, 1, "Workshop", GREEN),
+    (9, 1, 11, 0, "Back-to-School", TEAL),
+    (9, 15, 18, 1, "Design System", BLUE),
+    (10, 5, 16, 0, "v2.0 Beta", BLUE),
+    (10, 21, 24, 1, "Security Audit", RED),
+    (11, 2, 6, 1, "Year-End Planning", GREEN),
+    (11, 23, 30, 0, "Black Friday", RED),
+    (12, 1, 5, 1, "Retrospective", TEAL),
+    (12, 14, 22, 0, "Year-End Review", PURPLE),
+    (12, 24, 31, 1, "Winter Holiday", PINK),
 ]
 
 EVENT_FONT = 17.0      # mirrors AppSettings.eventFontSizeDefault (scaled)
@@ -289,19 +289,19 @@ def toolbar_calendar(x, y, w, h, dark, zoom_sel=0, page_label=None):
     e.append(f'<text x="{lx+46}" y="{cy+11}" font-size="30" '
              f'font-weight="700" fill="{fg}">{YEAR}</text>')
     e.append(_chev(lx + 134, cy, sub, "right"))
-    e.append(_btn(lx + 160, cy - 19, 90, 38, dark))
-    e.append(f'<text x="{lx+205}" y="{cy+8}" font-size="20" fill="{fg}" '
-             f'text-anchor="middle">오늘</text>')
+    e.append(_btn(lx + 160, cy - 19, 96, 38, dark))
+    e.append(f'<text x="{lx+208}" y="{cy+8}" font-size="20" fill="{fg}" '
+             f'text-anchor="middle">Today</text>')
 
     # divider
     e.append(f'<line x1="{lx+274}" y1="{cy-16}" x2="{lx+274}" y2="{cy+16}" '
              f'stroke="{sub}" stroke-width="1.5" opacity="0.5"/>')
 
     # zoom segmented control
-    sx, sw = lx + 296, 270
+    sx, sw = lx + 300, 330
     e.append(f'<rect x="{sx}" y="{cy-21}" width="{sw}" height="42" rx="10" '
              f'fill="{seg}"/>')
-    for i, lab in enumerate(["연별", "분기", "월별"]):
+    for i, lab in enumerate(["Year", "Quarter", "Month"]):
         gw = sw / 3
         gx = sx + i * gw
         if i == zoom_sel:
@@ -464,14 +464,14 @@ def cal_grid(x, y, w, h, theme, months_shown, start_month,
                         f'text-anchor="middle">'
                         f'<tspan fill="{numc}" fill-opacity="{numo}">{day}</tspan>'
                         f'<tspan fill="{wdc}" fill-opacity="{wdo}"> '
-                        f'{WD_KR[wd-1]}</tspan></text>')
+                        f'{WEEKDAYS[wd-1]}</tspan></text>')
             if subrow == 0:
                 month_y = row_y + rows_per_month * row_h / 2
                 e.append(f'<text x="{month_label_w/2:.1f}" '
                          f'y="{month_y+EVENT_FONT*0.4:.1f}" '
                          f'font-family="{FONT}" font-size="{EVENT_FONT+5:.0f}" '
                          f'font-weight="500" fill="{mlab}" '
-                         f'text-anchor="middle">{MONTHS_KR[month-1]}</text>')
+                         f'text-anchor="middle">{MONTHS[month-1]}</text>')
 
     # ---- grid lines --------------------------------------------------------
     for i in range(1, total_rows + 1):
@@ -592,37 +592,8 @@ def photo(x, y, w, h, rot, grad, radius=4, frame=True):
     return f'<g transform="rotate({rot} {cx} {cy})">{inner}</g>'
 
 
-def star(cx, cy, r, col, rot=0):
-    pts = []
-    for i in range(10):
-        a = -math.pi / 2 + i * math.pi / 5
-        rad = r if i % 2 == 0 else r * 0.42
-        pts.append(f"{cx+rad*math.cos(a):.1f},{cy+rad*math.sin(a):.1f}")
-    return (f'<polygon points="{" ".join(pts)}" fill="{col}" '
-            f'transform="rotate({rot} {cx} {cy})"/>')
-
-
-def heart(cx, cy, s, col):
-    return (f'<path d="M{cx} {cy+s*0.75} C{cx-s*1.3} {cy-s*0.3} '
-            f'{cx-s*0.55} {cy-s*0.95} {cx} {cy-s*0.25} '
-            f'C{cx+s*0.55} {cy-s*0.95} {cx+s*1.3} {cy-s*0.3} '
-            f'{cx} {cy+s*0.75} Z" fill="{col}"/>')
-
-
-def flower(cx, cy, r, col, center="#FFD54F"):
-    e = []
-    for i in range(6):
-        a = i * math.pi / 3
-        e.append(f'<circle cx="{cx+r*0.62*math.cos(a):.1f}" '
-                 f'cy="{cy+r*0.62*math.sin(a):.1f}" r="{r*0.46:.1f}" '
-                 f'fill="{col}"/>')
-    e.append(f'<circle cx="{cx}" cy="{cy}" r="{r*0.42:.1f}" fill="{center}"/>')
-    return "".join(e)
-
-
-# Twemoji sticker assets (CC-BY 4.0) — see stickers/ATTRIBUTION.txt.
-# The app renders emoji stickers with the system emoji font; these are the
-# Twemoji equivalents (the emoji set used across the web).
+# Fluent Emoji 3D sticker assets (MIT) — see stickers/ATTRIBUTION.txt.
+# Illustrated sticker graphics by Microsoft, matching the app's sticker layer.
 STK_DIR = os.path.join(OUT, "stickers")
 _STK = {}
 
@@ -737,8 +708,8 @@ NORD = {"backgroundColor": "#ECEFF4", "gridLineColor": "#D8DEE9",
 
 def sc1():
     e = [bg([("0", "#FFEFE4"), ("1", "#FFD8C4")])]
-    e.append(header("1년 전체를 한 화면에",
-                    "스크롤도 줌도 없이 — 올해의 모든 일정을 한눈에",
+    e.append(header("Your Whole Year, One Screen",
+                    "No scrolling, no zooming — every plan at a glance",
                     "#3A2A20", "#9A6A50"))
     win, _ = calendar_window(300, 372, 2280, 1316, MINIMAL, False,
                              12, 1, f"Petals — {YEAR}", 0)
@@ -752,8 +723,8 @@ def sc1():
 
 def sc2():
     e = [bg([("0", "#F4EAFF"), ("1", "#FFE0F0")])]
-    e.append(header("캘린더가 곧 무드보드",
-                    "사진 · 텍스트 · 스티커 · 도형을 캘린더 위 어디든 자유롭게",
+    e.append(header("Your Calendar Becomes a Mood Board",
+                    "Drop photos, text, stickers and shapes anywhere",
                     "#33234A", "#7A5C8E"))
 
     win, geo = calendar_window(300, 372, 2280, 1316, MINIMAL, False,
@@ -772,14 +743,20 @@ def sc2():
     items.append(f'<text x="{cx+cw*0.66:.0f}" y="{cy+ch*0.30:.0f}" '
                  f'font-family="{FONT}" font-size="46" font-weight="700" '
                  f'fill="#6A4FB0" transform="rotate(4 {cx+cw*0.66:.0f} '
-                 f'{cy+ch*0.30:.0f})">꿈을 현실로!</text>')
-    # Twemoji stickers — the cute emoji graphics used across the web
-    items.append(sticker("1f338", cx + cw * 0.085, cy + ch * 0.52, 170, -11))
-    items.append(sticker("1f98b", cx + cw * 0.93, cy + ch * 0.31, 188, 15))
-    items.append(sticker("1f308", cx + cw * 0.45, cy + ch * 0.84, 178, -4))
-    items.append(sticker("1f380", cx + cw * 0.89, cy + ch * 0.79, 138, 13))
-    items.append(sticker("2728", cx + cw * 0.255, cy + ch * 0.205, 118, -9))
-    items.append(sticker("1f353", cx + cw * 0.605, cy + ch * 0.485, 122, 17))
+                 f'{cy+ch*0.30:.0f})">Make it happen!</text>')
+    # Fluent Emoji 3D stickers — illustrated sticker graphics
+    items.append(sticker("cherry_blossom", cx + cw * 0.085,
+                          cy + ch * 0.52, 175, -11))
+    items.append(sticker("butterfly", cx + cw * 0.93,
+                          cy + ch * 0.31, 190, 15))
+    items.append(sticker("rainbow", cx + cw * 0.45,
+                          cy + ch * 0.84, 180, -4))
+    items.append(sticker("ribbon", cx + cw * 0.89,
+                          cy + ch * 0.79, 145, 13))
+    items.append(sticker("sparkles", cx + cw * 0.255,
+                          cy + ch * 0.205, 124, -9))
+    items.append(sticker("strawberry", cx + cw * 0.605,
+                          cy + ch * 0.485, 128, 17))
     # a selected image item with handles
     sx, sy, sw, sh = cx + cw * 0.55, cy + ch * 0.60, 280, 290
     items.append(selection(sx, sy, sw, sh))
@@ -795,8 +772,8 @@ def sc2():
 
 def sc3():
     e = [bg([("0", "#1B1D2E"), ("1", "#10111C")])]
-    e.append(header("9가지 테마, 당신의 분위기대로",
-                    "라이트 · 다크 · 파스텔 · 클래식까지 — 한 번의 탭으로",
+    e.append(header("Nine Themes for Every Mood",
+                    "Light, dark, pastel, classic — switch with a single tap",
                     "#E6EAFF", "#8A93C8"))
     win, _ = calendar_window(300, 348, 2280, 1118, TOKYO, True,
                              12, 1, f"Petals — {YEAR}", 0)
@@ -845,8 +822,8 @@ def sc3():
 
 def sc4():
     e = [bg([("0", "#E2F6EF"), ("1", "#C4E9DD")])]
-    e.append(header("분기로, 월로 — 더 가까이",
-                    "줌 레벨을 바꾸면 레이아웃도 함께 바뀝니다",
+    e.append(header("Zoom In by Quarter or Month",
+                    "Change the zoom level and the layout adapts with it",
                     "#1E3A32", "#4F7A6C"))
     win, _ = calendar_window(300, 372, 2280, 1316, NORD, False,
                              3, 4, f"Petals — {YEAR}", 1, page_label="4–6")
@@ -860,16 +837,16 @@ def sc4():
 
 def sc5():
     e = [bg([("0", "#EAF0FF"), ("1", "#D6E0F5")])]
-    e.append(header("생각을 펼치는 무한 화이트보드",
-                    "캘린더와 별개로, 자유로운 비전보드를 마음껏",
+    e.append(header("An Infinite Whiteboard for Your Ideas",
+                    "A free-form vision board, separate from your calendar",
                     "#23304A", "#5C6E92"))
 
     wx, wy, ww, wh = 300, 360, 2280, 1300
     sbw = 360
 
     # sidebar content
-    boards = ["2026 비전보드", "여행 버킷리스트", "인테리어 아이디어",
-              "독서 기록"]
+    boards = ["2026 Vision Board", "Travel Bucket List", "Home Ideas",
+              "Reading Log"]
     sb = []
     sb.append(f'<g font-family="{FONT}">')
     for i, nm in enumerate(boards):
@@ -887,11 +864,11 @@ def sc5():
               f'stroke="#D2D2D7" stroke-width="1.5"/>')
     sb.append(_icon("plus", wx + 38, by + 14, "#86868B", "#FF6B35"))
     sb.append(f'<text x="{wx+58}" y="{by+22}" font-size="23" '
-              f'fill="#4A4A50">새 보드</text>')
+              f'fill="#4A4A50">New Board</text>')
     sb.append("</g>")
 
     tbar = toolbar_whiteboard(wx + sbw, wy + 54, ww - sbw, 92, False, "100%")
-    _, (cx, cy, cw, ch) = window(wx, wy, ww, wh, False, "화이트보드", "",
+    _, (cx, cy, cw, ch) = window(wx, wy, ww, wh, False, "Whiteboard","",
                                  tbar, sidebar=(sbw, "".join(sb)))
 
     # infinite dotted canvas
@@ -922,14 +899,14 @@ def sc5():
     # big text
     it.append(f'<text x="{cx+cw*0.40:.0f}" y="{cy+ch*0.22:.0f}" '
               f'font-family="{FONT}" font-size="104" font-weight="800" '
-              f'fill="#2B3A67">2026 비전</text>')
+              f'fill="#2B3A67">2026 Vision</text>')
     it.append(f'<text x="{cx+cw*0.07:.0f}" y="{cy+ch*0.52:.0f}" '
               f'font-family="{FONT}" font-size="46" font-weight="700" '
               f'fill="#E0518A" transform="rotate(-6 {cx+cw*0.07:.0f} '
-              f'{cy+ch*0.52:.0f})">건강하게 매일</text>')
+              f'{cy+ch*0.52:.0f})">Stay healthy</text>')
     it.append(f'<text x="{cx+cw*0.62:.0f}" y="{cy+ch*0.84:.0f}" '
               f'font-family="{FONT}" font-size="42" font-weight="600" '
-              f'fill="#3A6B4A">새 프로젝트 런칭!</text>')
+              f'fill="#3A6B4A">Launch the project!</text>')
     # shapes
     it.append(f'<circle cx="{cx+cw*0.50:.0f}" cy="{cy+ch*0.40:.0f}" '
               f'r="78" fill="none" stroke="#4A90D9" stroke-width="6"/>')
@@ -937,11 +914,13 @@ def sc5():
               f'width="160" height="110" fill="#FFD86B" opacity="0.55" '
               f'transform="rotate(10 {cx+cw*0.85+80:.0f} '
               f'{cy+ch*0.20+55:.0f})"/>')
-    # stickers
-    it.append(star(cx + cw * 0.55, cy + ch * 0.66, 52, "#FFC93C", 8))
-    it.append(heart(cx + cw * 0.20, cy + ch * 0.30, 46, "#FF6B8A"))
-    it.append(flower(cx + cw * 0.93, cy + ch * 0.70, 50, "#C77DFF",
-                     "#FFE0A0"))
+    # Fluent Emoji 3D stickers
+    it.append(sticker("glowing_star", cx + cw * 0.55, cy + ch * 0.66, 150, 8))
+    it.append(sticker("sparkling_heart", cx + cw * 0.20,
+                       cy + ch * 0.30, 140, -6))
+    it.append(sticker("sunflower", cx + cw * 0.93, cy + ch * 0.70, 152, 10))
+    it.append(sticker("party_popper", cx + cw * 0.46,
+                       cy + ch * 0.13, 138, -12))
     # selected item with handles
     sx, sy = cx + cw * 0.60, cy + ch * 0.07
     it.append(f'<g transform="rotate(5 {sx+170:.0f} {sy+125:.0f})">'
@@ -952,7 +931,7 @@ def sc5():
     full = (f'<clipPath id="{cid}"><rect x="{cx}" y="{cy}" width="{cw}" '
             f'height="{ch}"/></clipPath>'
             f'<g clip-path="url(#{cid})">{"".join(content)}</g>')
-    svg, _ = window(wx, wy, ww, wh, False, "화이트보드", full, tbar,
+    svg, _ = window(wx, wy, ww, wh, False, "Whiteboard",full, tbar,
                     sidebar=(sbw, "".join(sb)))
     e.append(svg)
     save("05-whiteboard", "".join(e))
@@ -964,8 +943,8 @@ def sc5():
 
 def sc6():
     e = [bg([("0", "#F3ECDC"), ("1", "#E3D6BC")])]
-    e.append(header("Mac을 위해 만들어졌습니다",
-                    "EventKit 연동 · iCloud 동기화 · 네이티브 SwiftUI",
+    e.append(header("Built for Mac",
+                    "EventKit integration · iCloud sync · native SwiftUI",
                     "#3C2A14", "#8A6E44"))
     wx, wy, ww, wh = 300, 340, 2280, 1130
     win, _ = calendar_window(wx, wy, ww, wh, CLASSIC, False,
@@ -973,12 +952,12 @@ def sc6():
     e.append(win)
 
     feats = [
-        ("calendar", "캘린더 연동",
-         "iCloud · Google · Exchange 캘린더를 그대로"),
-        ("cloud", "iCloud 동기화",
-         "모든 Mac에서 꾸민 캘린더가 자동으로"),
-        ("bolt", "네이티브 속도",
-         "SwiftUI · SwiftData로 1초 안에 1년 렌더링"),
+        ("calendar", "Calendar Sync",
+         "All your iCloud, Google & Exchange calendars"),
+        ("cloud", "iCloud Sync",
+         "Your decorated calendar on every Mac"),
+        ("bolt", "Native Speed",
+         "A full year rendered in under a second"),
     ]
     cw2, gap = 700, 40
     total = 3 * cw2 + 2 * gap
