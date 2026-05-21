@@ -11,6 +11,16 @@ struct PetalsApp: App {
             VisionBoard.self,
             VisionBoardItem.self,
         ])
+        if ScreenshotConfig.isActive {
+            // Screenshot mode: clean in-memory store, no CloudKit, no user data.
+            let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+            do {
+                return try ModelContainer(for: schema, configurations: [memoryConfig])
+            } catch {
+                fatalError("Screenshot in-memory ModelContainer failed: \(error)")
+            }
+        }
+
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)
 
         do {
@@ -31,7 +41,13 @@ struct PetalsApp: App {
         WindowGroup {
             ContentView()
                 .environment(clipboardManager)
-                .task { migrateOrphanVisionBoardItems() }
+                .task {
+                    if ScreenshotConfig.isActive {
+                        ScreenshotConfig.seedDemoBoards(in: sharedModelContainer.mainContext)
+                    } else {
+                        migrateOrphanVisionBoardItems()
+                    }
+                }
         }
         .modelContainer(sharedModelContainer)
         .defaultSize(width: 1200, height: 800)

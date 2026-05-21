@@ -6,7 +6,9 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
-    @State private var currentYear = Calendar.current.component(.year, from: Date())
+    @State private var currentYear = ScreenshotConfig.isActive
+        ? ScreenshotConfig.year
+        : Calendar.current.component(.year, from: Date())
     @State private var eventManager = EventManager()
     @State private var currentDocument: YearDocument?
 
@@ -27,11 +29,11 @@ struct ContentView: View {
     @State private var showFontSizePicker = false
 
     // Paging state
-    @State private var monthsPerPage = 12  // 12, 3, 1
+    @State private var monthsPerPage = ScreenshotConfig.zoom ?? 12  // 12, 3, 1
     @State private var pageIndex = 0
 
     // 화이트보드 모드
-    @State private var showVisionBoard = false
+    @State private var showVisionBoard = ScreenshotConfig.startsInWhiteboard
     @State private var selectedVisionBoardID: PersistentIdentifier?
 
     // Canvas state
@@ -47,7 +49,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var theme: Theme {
-        let themeID = currentDocument?.theme ?? "minimal-light"
+        let themeID = ScreenshotConfig.theme ?? currentDocument?.theme ?? "minimal-light"
         return ThemeManager.shared.theme(for: themeID).resolved(for: colorScheme)
     }
 
@@ -121,6 +123,7 @@ struct ContentView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: clipboardManager.showCopyToast)
         .background(ToolbarConfigurator())
+        .background(ScreenshotWindowSizer())
         .background {
             // 비전보드 모드에서는 Cmd+=/- 가 뷰포트 줌에 사용되므로 제외
             if !showVisionBoard {
@@ -253,8 +256,13 @@ struct ContentView: View {
             }
         }
         .task {
-            await eventManager.requestAccess()
-            reloadEvents()
+            if ScreenshotConfig.isActive {
+                eventManager.loadDemoEvents(for: currentYear)
+                recomputeLayout()
+            } else {
+                await eventManager.requestAccess()
+                reloadEvents()
+            }
         }
         .onAppear {
             loadDocument(for: currentYear)
