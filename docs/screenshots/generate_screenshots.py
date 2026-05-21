@@ -581,17 +581,6 @@ def calendar_window(wx, wy, ww, wh, theme, dark, months_shown, start_month,
 # Decoration items (canvas items / vision board items)
 # --------------------------------------------------------------------------
 
-def photo(x, y, w, h, rot, grad, radius=4, frame=True):
-    cx, cy = x + w / 2, y + h / 2
-    inner = (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{radius}" '
-             f'fill="url(#{grad})"/>')
-    if frame:
-        inner = (f'<rect x="{x-9}" y="{y-9}" width="{w+18}" '
-                 f'height="{h+18}" rx="{radius+3}" fill="#FFFFFF" '
-                 f'filter="url(#itemshadow)"/>' + inner)
-    return f'<g transform="rotate({rot} {cx} {cy})">{inner}</g>'
-
-
 # Fluent Emoji 3D sticker assets (MIT) — see stickers/ATTRIBUTION.txt.
 # Illustrated sticker graphics by Microsoft, matching the app's sticker layer.
 STK_DIR = os.path.join(OUT, "stickers")
@@ -610,6 +599,155 @@ def sticker(code, cx, cy, size, rot=0):
             f'<image x="{cx-half}" y="{cy-half}" width="{size}" '
             f'height="{size}" '
             f'href="data:image/png;base64,{_STK[code]}"/></g>')
+
+
+# --------------------------------------------------------------------------
+# SF Symbol-style sticker icons — the app renders SF Symbol stickers via
+# Image(systemName:) tinted with fillColor. These are vector approximations
+# drawn as filled paths (no Apple assets are redistributed).
+# --------------------------------------------------------------------------
+
+def _sf_heart(cx, cy, s, c):
+    return (f'<path d="M{cx} {cy+0.78*s} C{cx-1.35*s} {cy-0.32*s} '
+            f'{cx-0.55*s} {cy-1.02*s} {cx} {cy-0.26*s} '
+            f'C{cx+0.55*s} {cy-1.02*s} {cx+1.35*s} {cy-0.32*s} '
+            f'{cx} {cy+0.78*s} Z" fill="{c}"/>')
+
+
+def _sf_star(cx, cy, s, c):
+    pts = []
+    for i in range(10):
+        a = -math.pi / 2 + i * math.pi / 5
+        r = s if i % 2 == 0 else 0.4 * s
+        pts.append(f"{cx+r*math.cos(a):.1f},{cy+r*math.sin(a):.1f}")
+    return f'<polygon points="{" ".join(pts)}" fill="{c}"/>'
+
+
+def _sf_sun(cx, cy, s, c):
+    e = [f'<circle cx="{cx}" cy="{cy}" r="{0.5*s}" fill="{c}"/>']
+    for i in range(8):
+        a = i * math.pi / 4
+        e.append(f'<line x1="{cx+0.66*s*math.cos(a):.1f}" '
+                 f'y1="{cy+0.66*s*math.sin(a):.1f}" '
+                 f'x2="{cx+s*math.cos(a):.1f}" y2="{cy+s*math.sin(a):.1f}" '
+                 f'stroke="{c}" stroke-width="{0.2*s:.1f}" '
+                 f'stroke-linecap="round"/>')
+    return "".join(e)
+
+
+def _sf_cloud(cx, cy, s, c):
+    return (f'<g fill="{c}">'
+            f'<circle cx="{cx-0.45*s}" cy="{cy+0.12*s}" r="{0.45*s}"/>'
+            f'<circle cx="{cx+0.08*s}" cy="{cy-0.28*s}" r="{0.56*s}"/>'
+            f'<circle cx="{cx+0.55*s}" cy="{cy+0.06*s}" r="{0.42*s}"/>'
+            f'<rect x="{cx-0.45*s}" y="{cy+0.06*s}" width="{1.02*s}" '
+            f'height="{0.46*s}" rx="{0.18*s}"/></g>')
+
+
+def _sf_moon(cx, cy, s, c):
+    return (f'<path d="M{cx+0.32*s} {cy-0.92*s} '
+            f'A{0.92*s} {0.92*s} 0 1 0 {cx+0.32*s} {cy+0.92*s} '
+            f'A{0.74*s} {0.74*s} 0 1 1 {cx+0.32*s} {cy-0.92*s} Z" '
+            f'fill="{c}"/>')
+
+
+def _sf_bolt(cx, cy, s, c):
+    return (f'<polygon points="{cx+0.32*s},{cy-s} {cx-0.55*s},{cy+0.15*s} '
+            f'{cx-0.05*s},{cy+0.15*s} {cx-0.28*s},{cy+s} '
+            f'{cx+0.58*s},{cy-0.2*s} {cx+0.08*s},{cy-0.2*s}" fill="{c}"/>')
+
+
+def _sf_leaf(cx, cy, s, c):
+    return (f'<g><path d="M{cx-0.75*s} {cy+0.78*s} '
+            f'C{cx-0.92*s} {cy-0.55*s} {cx+0.4*s} {cy-0.96*s} '
+            f'{cx+0.82*s} {cy-0.82*s} C{cx+0.72*s} {cy+0.5*s} '
+            f'{cx-0.4*s} {cy+0.92*s} {cx-0.75*s} {cy+0.78*s} Z" fill="{c}"/>'
+            f'<path d="M{cx-0.5*s} {cy+0.52*s} L{cx+0.5*s} {cy-0.52*s}" '
+            f'stroke="#FFFFFF" stroke-width="{0.13*s}" stroke-linecap="round" '
+            f'opacity="0.65"/></g>')
+
+
+def _sf_music(cx, cy, s, c):
+    return (f'<g fill="{c}">'
+            f'<ellipse cx="{cx-0.32*s}" cy="{cy+0.62*s}" rx="{0.4*s}" '
+            f'ry="{0.32*s}" transform="rotate(-20 {cx-0.32*s} '
+            f'{cy+0.62*s})"/>'
+            f'<rect x="{cx+0.01*s}" y="{cy-0.92*s}" width="{0.15*s}" '
+            f'height="{1.5*s}"/>'
+            f'<path d="M{cx+0.01*s} {cy-0.92*s} L{cx+0.72*s} {cy-0.62*s} '
+            f'L{cx+0.72*s} {cy-0.24*s} L{cx+0.16*s} {cy-0.52*s} Z"/></g>')
+
+
+def _sf_camera(cx, cy, s, c):
+    return (f'<g fill="{c}">'
+            f'<path d="M{cx-0.42*s} {cy-0.42*s} l{0.18*s} -{0.32*s} '
+            f'h{0.48*s} l{0.18*s} {0.32*s} Z"/>'
+            f'<rect x="{cx-0.95*s}" y="{cy-0.45*s}" width="{1.9*s}" '
+            f'height="{1.2*s}" rx="{0.2*s}"/>'
+            f'<circle cx="{cx}" cy="{cy+0.22*s}" r="{0.4*s}" '
+            f'fill="#FFFFFF"/>'
+            f'<circle cx="{cx}" cy="{cy+0.22*s}" r="{0.24*s}" '
+            f'fill="{c}"/></g>')
+
+
+def _sf_flame(cx, cy, s, c):
+    return (f'<path d="M{cx} {cy+0.95*s} C{cx-0.85*s} {cy+0.5*s} '
+            f'{cx-0.5*s} {cy-0.4*s} {cx-0.05*s} {cy-0.95*s} '
+            f'C{cx+0.05*s} {cy-0.3*s} {cx+0.45*s} {cy-0.5*s} '
+            f'{cx+0.32*s} {cy-0.92*s} C{cx+0.95*s} {cy-0.2*s} '
+            f'{cx+0.78*s} {cy+0.6*s} {cx} {cy+0.95*s} Z" fill="{c}"/>')
+
+
+def _sf_paw(cx, cy, s, c):
+    e = [f'<g fill="{c}">'
+         f'<ellipse cx="{cx}" cy="{cy+0.42*s}" rx="{0.62*s}" '
+         f'ry="{0.5*s}"/>']
+    for dx, dy in [(-0.6, -0.32), (-0.22, -0.6), (0.22, -0.6), (0.6, -0.32)]:
+        e.append(f'<ellipse cx="{cx+dx*s}" cy="{cy+dy*s}" rx="{0.27*s}" '
+                 f'ry="{0.31*s}"/>')
+    e.append('</g>')
+    return "".join(e)
+
+
+def _sf_sparkles(cx, cy, s, c):
+    def spk(px, py, r):
+        k = 0.3
+        return (f"{px},{py-r} {px+k*r},{py-k*r} {px+r},{py} "
+                f"{px+k*r},{py+k*r} {px},{py+r} {px-k*r},{py+k*r} "
+                f"{px-r},{py} {px-k*r},{py-k*r}")
+    return (f'<g fill="{c}">'
+            f'<polygon points="{spk(cx-0.1*s, cy-0.12*s, 0.95*s)}"/>'
+            f'<polygon points="{spk(cx+0.62*s, cy+0.58*s, 0.4*s)}"/>'
+            f'<polygon points="{spk(cx-0.6*s, cy+0.62*s, 0.32*s)}"/></g>')
+
+
+def _sf_gift(cx, cy, s, c):
+    return (f'<g fill="{c}">'
+            f'<circle cx="{cx-0.2*s}" cy="{cy-0.62*s}" r="{0.22*s}"/>'
+            f'<circle cx="{cx+0.2*s}" cy="{cy-0.62*s}" r="{0.22*s}"/>'
+            f'<rect x="{cx-0.85*s}" y="{cy-0.48*s}" width="{1.7*s}" '
+            f'height="{1.3*s}" rx="{0.1*s}"/>'
+            f'<rect x="{cx-0.13*s}" y="{cy-0.48*s}" width="{0.26*s}" '
+            f'height="{1.3*s}" fill="#FFFFFF" opacity="0.85"/>'
+            f'<rect x="{cx-0.85*s}" y="{cy-0.05*s}" width="{1.7*s}" '
+            f'height="{0.22*s}" fill="#FFFFFF" opacity="0.85"/></g>')
+
+
+_SF = {"heart": _sf_heart, "star": _sf_star, "sun": _sf_sun,
+       "cloud": _sf_cloud, "moon": _sf_moon, "bolt": _sf_bolt,
+       "leaf": _sf_leaf, "music": _sf_music, "camera": _sf_camera,
+       "flame": _sf_flame, "paw": _sf_paw, "sparkles": _sf_sparkles,
+       "gift": _sf_gift}
+
+
+def sf(name, cx, cy, size, color, rot=0):
+    """An SF Symbol-style sticker icon, tinted like the app's sticker layer."""
+    s = size / 2
+    shadow = (f'<ellipse cx="{cx}" cy="{cy+size*0.42}" rx="{size*0.32}" '
+              f'ry="{size*0.09}" fill="#000" opacity="0.13" '
+              f'filter="url(#itemshadow)"/>')
+    return (f'<g transform="rotate({rot} {cx} {cy})">{shadow}'
+            f'{_SF[name](cx, cy, s, color)}</g>')
 
 
 def selection(x, y, w, h, accent="#2B7FFF"):
@@ -638,24 +776,6 @@ def defs():
   <linearGradient id="mbgrad" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#FBFBFC"/>
     <stop offset="1" stop-color="#EFEFF2"/></linearGradient>
-  <linearGradient id="ph1" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#FFB36B"/>
-    <stop offset="1" stop-color="#FF6B6B"/></linearGradient>
-  <linearGradient id="ph2" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#7AA2F7"/>
-    <stop offset="1" stop-color="#9D7CF7"/></linearGradient>
-  <linearGradient id="ph3" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#84E1C8"/>
-    <stop offset="1" stop-color="#4AB8A0"/></linearGradient>
-  <linearGradient id="ph4" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#FFD86B"/>
-    <stop offset="1" stop-color="#FF9E6B"/></linearGradient>
-  <linearGradient id="ph5" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#A0E7A0"/>
-    <stop offset="1" stop-color="#5BB98C"/></linearGradient>
-  <linearGradient id="ph6" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#FF9EC4"/>
-    <stop offset="1" stop-color="#C77DFF"/></linearGradient>
 </defs>'''
 
 
@@ -724,42 +844,57 @@ def sc1():
 def sc2():
     e = [bg([("0", "#F4EAFF"), ("1", "#FFE0F0")])]
     e.append(header("Your Calendar Becomes a Mood Board",
-                    "Drop photos, text, stickers and shapes anywhere",
+                    "Layer stickers, icons and text anywhere on your calendar",
                     "#33234A", "#7A5C8E"))
 
     win, geo = calendar_window(300, 372, 2280, 1316, MINIMAL, False,
                                12, 1, f"Petals — {YEAR}", 0)
-    cx, cy, cw, ch, kx, ky, kw, kh = geo
+    cx, cy, cw, ch = geo[:4]
 
     items = []
-    items.append(photo(cx + cw * 0.07, cy + ch * 0.05, 300, 215, -7, "ph4"))
-    items.append(photo(cx + cw * 0.70, cy + ch * 0.04, 320, 230, 6, "ph2"))
-    items.append(photo(cx + cw * 0.55, cy + ch * 0.60, 280, 290, -5, "ph3"))
-    items.append(f'<text x="{cx+cw*0.29:.0f}" y="{cy+ch*0.50:.0f}" '
-                 f'font-family="{FONT}" font-size="96" font-weight="800" '
+    # text items
+    items.append(f'<text x="{cx+cw*0.30:.0f}" y="{cy+ch*0.52:.0f}" '
+                 f'font-family="{FONT}" font-size="98" font-weight="800" '
                  f'fill="#FF6B6B" text-anchor="middle" '
-                 f'transform="rotate(-5 {cx+cw*0.29:.0f} {cy+ch*0.50:.0f})">'
+                 f'transform="rotate(-5 {cx+cw*0.30:.0f} {cy+ch*0.52:.0f})">'
                  f'2026 GOALS</text>')
-    items.append(f'<text x="{cx+cw*0.66:.0f}" y="{cy+ch*0.30:.0f}" '
+    items.append(f'<text x="{cx+cw*0.66:.0f}" y="{cy+ch*0.275:.0f}" '
                  f'font-family="{FONT}" font-size="46" font-weight="700" '
                  f'fill="#6A4FB0" transform="rotate(4 {cx+cw*0.66:.0f} '
-                 f'{cy+ch*0.30:.0f})">Make it happen!</text>')
-    # Fluent Emoji 3D stickers — illustrated sticker graphics
+                 f'{cy+ch*0.275:.0f})">Make it happen!</text>')
+    # Fluent Emoji 3D stickers
     items.append(sticker("cherry_blossom", cx + cw * 0.085,
-                          cy + ch * 0.52, 175, -11))
-    items.append(sticker("butterfly", cx + cw * 0.93,
-                          cy + ch * 0.31, 190, 15))
-    items.append(sticker("rainbow", cx + cw * 0.45,
-                          cy + ch * 0.84, 180, -4))
-    items.append(sticker("ribbon", cx + cw * 0.89,
-                          cy + ch * 0.79, 145, 13))
-    items.append(sticker("sparkles", cx + cw * 0.255,
-                          cy + ch * 0.205, 124, -9))
-    items.append(sticker("strawberry", cx + cw * 0.605,
-                          cy + ch * 0.485, 128, 17))
-    # a selected image item with handles
-    sx, sy, sw, sh = cx + cw * 0.55, cy + ch * 0.60, 280, 290
-    items.append(selection(sx, sy, sw, sh))
+                          cy + ch * 0.30, 152, -10))
+    items.append(sticker("butterfly", cx + cw * 0.92, cy + ch * 0.205,
+                          168, 14))
+    items.append(sticker("rainbow", cx + cw * 0.495, cy + ch * 0.135,
+                          158, -3))
+    items.append(sticker("strawberry", cx + cw * 0.165, cy + ch * 0.72,
+                          134, 15))
+    items.append(sticker("ribbon", cx + cw * 0.885, cy + ch * 0.80,
+                          132, 12))
+    items.append(sticker("sun_with_face", cx + cw * 0.70, cy + ch * 0.66,
+                          150, -8))
+    # SF Symbol-style sticker icons
+    items.append(sf("heart", cx + cw * 0.405, cy + ch * 0.80, 112,
+                    "#FF5A7A", -6))
+    items.append(sf("star", cx + cw * 0.93, cy + ch * 0.47, 106,
+                    "#FFC23C", 13))
+    items.append(sf("sparkles", cx + cw * 0.245, cy + ch * 0.165, 102,
+                    "#7C5CFF", -8))
+    items.append(sf("cloud", cx + cw * 0.585, cy + ch * 0.85, 118,
+                    "#7AB8FF", 4))
+    items.append(sf("music", cx + cw * 0.075, cy + ch * 0.55, 100,
+                    "#34B36B", -12))
+    items.append(sf("camera", cx + cw * 0.795, cy + ch * 0.40, 110,
+                    "#FF8A3C", 10))
+    items.append(sf("leaf", cx + cw * 0.345, cy + ch * 0.31, 100,
+                    "#3FB98C", 18))
+    # one selected sticker with handles
+    bsz, bcx, bcy = 168, cx + cw * 0.92, cy + ch * 0.205
+    items.append(f'<g transform="rotate(14 {bcx:.1f} {bcy:.1f})">'
+                 + selection(bcx - bsz / 2, bcy - bsz / 2, bsz, bsz)
+                 + '</g>')
 
     e.append(win)
     e.append("".join(items))
@@ -886,45 +1021,48 @@ def sc5():
         yy += step
     content.append(f'<g fill="#000000" opacity="0.16">{"".join(dots)}</g>')
 
-    # vision board items
+    # vision board items — text, emoji stickers and SF Symbol icons
     it = []
-    it.append(photo(cx + cw * 0.06, cy + ch * 0.10, 360, 270, -6, "ph2",
-                    radius=10))
-    it.append(photo(cx + cw * 0.60, cy + ch * 0.07, 340, 250, 5, "ph5",
-                    radius=10))
-    it.append(photo(cx + cw * 0.30, cy + ch * 0.52, 300, 320, 4, "ph6",
-                    radius=10))
-    it.append(photo(cx + cw * 0.66, cy + ch * 0.50, 360, 250, -4, "ph4",
-                    radius=10))
-    # big text
-    it.append(f'<text x="{cx+cw*0.40:.0f}" y="{cy+ch*0.22:.0f}" '
+    it.append(f'<text x="{cx+cw*0.34:.0f}" y="{cy+ch*0.215:.0f}" '
               f'font-family="{FONT}" font-size="104" font-weight="800" '
               f'fill="#2B3A67">2026 Vision</text>')
-    it.append(f'<text x="{cx+cw*0.07:.0f}" y="{cy+ch*0.52:.0f}" '
-              f'font-family="{FONT}" font-size="46" font-weight="700" '
-              f'fill="#E0518A" transform="rotate(-6 {cx+cw*0.07:.0f} '
-              f'{cy+ch*0.52:.0f})">Stay healthy</text>')
-    it.append(f'<text x="{cx+cw*0.62:.0f}" y="{cy+ch*0.84:.0f}" '
-              f'font-family="{FONT}" font-size="42" font-weight="600" '
+    it.append(f'<text x="{cx+cw*0.085:.0f}" y="{cy+ch*0.50:.0f}" '
+              f'font-family="{FONT}" font-size="48" font-weight="700" '
+              f'fill="#E0518A" transform="rotate(-6 {cx+cw*0.085:.0f} '
+              f'{cy+ch*0.50:.0f})">Stay healthy</text>')
+    it.append(f'<text x="{cx+cw*0.565:.0f}" y="{cy+ch*0.85:.0f}" '
+              f'font-family="{FONT}" font-size="44" font-weight="600" '
               f'fill="#3A6B4A">Launch the project!</text>')
-    # shapes
-    it.append(f'<circle cx="{cx+cw*0.50:.0f}" cy="{cy+ch*0.40:.0f}" '
-              f'r="78" fill="none" stroke="#4A90D9" stroke-width="6"/>')
-    it.append(f'<rect x="{cx+cw*0.85:.0f}" y="{cy+ch*0.20:.0f}" '
-              f'width="160" height="110" fill="#FFD86B" opacity="0.55" '
-              f'transform="rotate(10 {cx+cw*0.85+80:.0f} '
-              f'{cy+ch*0.20+55:.0f})"/>')
     # Fluent Emoji 3D stickers
-    it.append(sticker("glowing_star", cx + cw * 0.55, cy + ch * 0.66, 150, 8))
-    it.append(sticker("sparkling_heart", cx + cw * 0.20,
-                       cy + ch * 0.30, 140, -6))
-    it.append(sticker("sunflower", cx + cw * 0.93, cy + ch * 0.70, 152, 10))
-    it.append(sticker("party_popper", cx + cw * 0.46,
-                       cy + ch * 0.13, 138, -12))
-    # selected item with handles
-    sx, sy = cx + cw * 0.60, cy + ch * 0.07
-    it.append(f'<g transform="rotate(5 {sx+170:.0f} {sy+125:.0f})">'
-              + selection(sx, sy, 340, 250) + '</g>')
+    it.append(sticker("party_popper", cx + cw * 0.45, cy + ch * 0.135,
+                       158, -12))
+    it.append(sticker("rainbow", cx + cw * 0.785, cy + ch * 0.205, 168, 6))
+    it.append(sticker("sparkling_heart", cx + cw * 0.205, cy + ch * 0.32,
+                       162, -6))
+    it.append(sticker("glowing_star", cx + cw * 0.545, cy + ch * 0.40,
+                       150, 8))
+    it.append(sticker("rabbit_face", cx + cw * 0.135, cy + ch * 0.74,
+                       172, -4))
+    it.append(sticker("sunflower", cx + cw * 0.90, cy + ch * 0.67, 166, 10))
+    # SF Symbol-style sticker icons
+    it.append(sf("sun", cx + cw * 0.695, cy + ch * 0.55, 132, "#FFB23C", 10))
+    it.append(sf("moon", cx + cw * 0.305, cy + ch * 0.62, 116, "#6C7BD6",
+                 -8))
+    it.append(sf("leaf", cx + cw * 0.865, cy + ch * 0.40, 122, "#3FB98C",
+                 16))
+    it.append(sf("bolt", cx + cw * 0.625, cy + ch * 0.68, 112, "#FF8A3C",
+                 -6))
+    it.append(sf("paw", cx + cw * 0.40, cy + ch * 0.42, 112, "#B07A52", 12))
+    it.append(sf("gift", cx + cw * 0.485, cy + ch * 0.87, 122, "#E0518A",
+                 -4))
+    it.append(sf("music", cx + cw * 0.225, cy + ch * 0.155, 112, "#7C5CFF",
+                 14))
+    it.append(sf("camera", cx + cw * 0.93, cy + ch * 0.86, 116, "#34B36B",
+                 8))
+    # one selected sticker with handles
+    ssz, scx, scy = 150, cx + cw * 0.545, cy + ch * 0.40
+    it.append(f'<g transform="rotate(8 {scx:.1f} {scy:.1f})">'
+              + selection(scx - ssz / 2, scy - ssz / 2, ssz, ssz) + '</g>')
     content.append("".join(it))
 
     cid = uid()
