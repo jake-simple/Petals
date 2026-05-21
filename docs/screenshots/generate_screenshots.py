@@ -19,6 +19,7 @@ Output: 2880x1800 PNG (Mac App Store retina size).
 import datetime
 import math
 import os
+import base64
 
 import cairosvg
 
@@ -619,6 +620,27 @@ def flower(cx, cy, r, col, center="#FFD54F"):
     return "".join(e)
 
 
+# Twemoji sticker assets (CC-BY 4.0) — see stickers/ATTRIBUTION.txt.
+# The app renders emoji stickers with the system emoji font; these are the
+# Twemoji equivalents (the emoji set used across the web).
+STK_DIR = os.path.join(OUT, "stickers")
+_STK = {}
+
+
+def sticker(code, cx, cy, size, rot=0):
+    if code not in _STK:
+        with open(os.path.join(STK_DIR, code + ".png"), "rb") as f:
+            _STK[code] = base64.b64encode(f.read()).decode()
+    half = size / 2
+    return (f'<g transform="rotate({rot} {cx} {cy})">'
+            f'<ellipse cx="{cx}" cy="{cy+size*0.36}" rx="{size*0.40}" '
+            f'ry="{size*0.12}" fill="#000" opacity="0.16" '
+            f'filter="url(#itemshadow)"/>'
+            f'<image x="{cx-half}" y="{cy-half}" width="{size}" '
+            f'height="{size}" '
+            f'href="data:image/png;base64,{_STK[code]}"/></g>')
+
+
 def selection(x, y, w, h, accent="#2B7FFF"):
     """1px accent outline + 8 white circle handles (DraggableVisionBoardItem)."""
     e = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="none" '
@@ -751,11 +773,13 @@ def sc2():
                  f'font-family="{FONT}" font-size="46" font-weight="700" '
                  f'fill="#6A4FB0" transform="rotate(4 {cx+cw*0.66:.0f} '
                  f'{cy+ch*0.30:.0f})">꿈을 현실로!</text>')
-    items.append(flower(cx + cw * 0.10, cy + ch * 0.52, 54, "#FF9EC4"))
-    items.append(star(cx + cw * 0.92, cy + ch * 0.30, 48, "#FFC93C", 12))
-    items.append(heart(cx + cw * 0.46, cy + ch * 0.80, 42, "#FF6B8A"))
-    items.append(flower(cx + cw * 0.88, cy + ch * 0.78, 46, "#9D7CF7",
-                        "#FFE0A0"))
+    # Twemoji stickers — the cute emoji graphics used across the web
+    items.append(sticker("1f338", cx + cw * 0.085, cy + ch * 0.52, 170, -11))
+    items.append(sticker("1f98b", cx + cw * 0.93, cy + ch * 0.31, 188, 15))
+    items.append(sticker("1f308", cx + cw * 0.45, cy + ch * 0.84, 178, -4))
+    items.append(sticker("1f380", cx + cw * 0.89, cy + ch * 0.79, 138, 13))
+    items.append(sticker("2728", cx + cw * 0.255, cy + ch * 0.205, 118, -9))
+    items.append(sticker("1f353", cx + cw * 0.605, cy + ch * 0.485, 122, 17))
     # a selected image item with handles
     sx, sy, sw, sh = cx + cw * 0.55, cy + ch * 0.60, 280, 290
     items.append(selection(sx, sy, sw, sh))
