@@ -200,13 +200,12 @@ struct EventBarLayer: View {
 
     private func barRect(for segment: EventSegment, layout: CalendarLayout, barHeight: CGFloat) -> CGRect {
         let origin = layout.cellOrigin(month: segment.month, day: segment.startDay)
-        let width = CGFloat(segment.endDay - segment.startDay + 1) * layout.cellWidth
-        return CGRect(
-            x: origin.x,
-            y: origin.y + CGFloat(segment.lane) * barHeight,
-            width: width,
-            height: barHeight - 1
-        )
+        let spanDays = CGFloat(segment.endDay - segment.startDay + 1)
+        let width = spanDays * layout.cellWidth
+        let hInset: CGFloat = 1
+        let adjustedWidth = max(0, width - hInset * 2)
+        let y = origin.y + CGFloat(segment.lane) * barHeight
+        return CGRect(x: origin.x + hInset, y: y, width: adjustedWidth, height: barHeight - 1)
     }
 
     private func drawBar(_ segment: EventSegment, layout: CalendarLayout,
@@ -214,7 +213,7 @@ struct EventBarLayer: View {
         let rect = barRect(for: segment, layout: layout, barHeight: barHeight)
         let color = Color(cgColor: segment.event.calendar.cgColor)
 
-        context.fill(Path(roundedRect: rect, cornerRadius: 2), with: .color(color))
+        context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color.opacity(0.4)))
 
         // Title text (clipped to bar)
         let title = segment.event.title ?? ""
@@ -225,9 +224,9 @@ struct EventBarLayer: View {
             let text = ctx.resolve(
                 Text(title)
                     .font(.system(size: fontSize))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.primary.opacity(0.78))
             )
-            ctx.draw(text, at: CGPoint(x: rect.minX + 2, y: rect.midY), anchor: .leading)
+            ctx.draw(text, at: CGPoint(x: rect.minX + 4, y: rect.midY), anchor: .leading)
         }
     }
 
