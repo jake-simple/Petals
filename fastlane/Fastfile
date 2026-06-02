@@ -1,0 +1,63 @@
+default_platform(:mac)
+
+# App Store Connect API 키 — Spendy(DayMoney)와 동일한 팀 키 사용
+app_store_connect_api_key = app_store_connect_api_key(
+  key_id: "LDMZ45D4WV",
+  issuer_id: "18a54441-d89b-48cf-b3b6-c17f85fc41e5",
+  key_filepath: "./fastlane/AuthKey_LDMZ45D4WV.p8"
+)
+
+platform :mac do
+  desc "빌드만 (.pkg 생성, 업로드 없음) — 서명/내보내기 검증용"
+  lane :build do
+    build_mac_app(
+      project: "Petals/Petals.xcodeproj",
+      scheme: "Petals",
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "Petals",
+      export_method: "app-store",
+      clean: true
+    )
+  end
+
+  desc "macOS 바이너리를 빌드해 App Store Connect에 업로드"
+  lane :release do
+    build_mac_app(
+      project: "Petals/Petals.xcodeproj",
+      scheme: "Petals",
+      configuration: "Release",
+      output_directory: "./build",
+      output_name: "Petals",
+      export_method: "app-store",
+      clean: true
+    )
+    upload_to_app_store(
+      skip_binary_upload: false,
+      skip_screenshots: false,
+      overwrite_screenshots: true,
+      skip_metadata: false,
+      force: true,
+      submit_for_review: false,
+      automatic_release: false,
+      run_precheck_before_submit: false,
+      platform: "osx",
+      pkg: "./build/Petals.pkg",
+      screenshots_path: "./fastlane/screenshots"
+    )
+  end
+
+  desc "업로드된 최신 빌드를 App Store 심사에 제출 (수동 출시)"
+  lane :submit_review do
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: true,
+      force: true,
+      submit_for_review: true,
+      automatic_release: false,
+      run_precheck_before_submit: true,
+      platform: "osx"
+    )
+  end
+end

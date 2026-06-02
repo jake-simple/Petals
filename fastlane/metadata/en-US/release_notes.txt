@@ -1,0 +1,5 @@
+The first release of Petals.
+- A yearly calendar that shows all 12 months on one screen
+- A free-form canvas over the calendar (images, text, stickers, shapes)
+- A grid-free whiteboard mode
+- iCloud sync, available in English and Korean

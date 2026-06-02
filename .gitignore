@@ -1,1 +1,11 @@
 xcuserdata/
+
+# fastlane
+build/
+fastlane/.env
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+*.p8
+*.mobileprovision
+*.xcarchive

@@ -1,0 +1,15 @@
+Your whole year on one screen. Meet Petals.
+
+Petals is a macOS yearly calendar that lays out all twelve months in a single window — no scrolling. Drop images, text, stickers, and shapes onto a free-form canvas over the calendar to build your own visual year.
+
+Features
+• Year grid view — see 12 months at once, with 12-month, 3-month, and 1-month zoom.
+• Calendar sync — load every calendar (iCloud, Google, Exchange) as color bars.
+• Event editing — drag a date to create, then view, edit, and delete in a popover.
+• Decorate the canvas — place images, text, stickers, and shapes; move, resize, rotate, reorder, and adjust opacity.
+• Whiteboard mode — an infinite, grid-free canvas for pure ideation.
+• Themes — presets that control the background, grid lines, and accent color.
+• iCloud sync — automatic across your devices.
+• English and Korean, with handy keyboard shortcuts.
+
+Plan your year at a glance and make the calendar your own with Petals.
