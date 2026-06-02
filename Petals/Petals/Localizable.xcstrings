@@ -1,12 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "" : {
-
-    },
-    " %@" : {
-
-    },
+    "" : {},
+    " %@" : {},
     "%@ – %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -24,9 +20,7 @@
         }
       }
     },
-    "%lld" : {
-
-    },
+    "%lld" : {},
     "%lld–%lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -38,9 +32,7 @@
         }
       }
     },
-    "%lld%%" : {
-
-    },
+    "%lld%%" : {},
     "%lld°" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -63,9 +55,7 @@
         }
       }
     },
-    "%lldpt" : {
-
-    },
+    "%lldpt" : {},
     "+%lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1629,6 +1619,94 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OK"
+          }
+        }
+      }
+    },
+    "Make the year your own" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "나만의 한 해를 만드세요"
+          }
+        }
+      }
+    },
+    "Turn on the canvas and design your own visual calendar." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캔버스를 켜고 나만의 비주얼 캘린더를 만들어 보세요."
+          }
+        }
+      }
+    },
+    "Decorate your calendar with images, text, stickers, and shapes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이미지·텍스트·스티커·도형으로 달력을 꾸미세요"
+          }
+        }
+      }
+    },
+    "Whiteboard mode — an infinite canvas with multiple boards" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "화이트보드 모드 — 여러 보드를 갖춘 무한 캔버스"
+          }
+        }
+      }
+    },
+    "Restore Purchase" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구매 복원"
+          }
+        }
+      }
+    },
+    "Couldn't reach the App Store. Please try again later." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요."
+          }
+        }
+      }
+    },
+    "Unlock Premium — %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프리미엄 잠금해제 — %@"
+          }
+        }
+      }
+    },
+    "Unlock Premium" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프리미엄 잠금해제"
           }
         }
       }
