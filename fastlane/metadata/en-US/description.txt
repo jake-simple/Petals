@@ -10,6 +10,5 @@ Features
 • Whiteboard mode — an infinite, grid-free canvas for pure ideation.
 • Themes — presets that control the background, grid lines, and accent color.
 • iCloud sync — automatic across your devices.
-• English and Korean, with handy keyboard shortcuts.
 
 Plan your year at a glance and make the calendar your own with Petals.
