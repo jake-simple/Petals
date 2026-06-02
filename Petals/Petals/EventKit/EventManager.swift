@@ -46,8 +46,8 @@ final class EventManager {
         if let stored = UserDefaults.standard.array(forKey: "selectedCalendarIDs") as? [String] {
             selectedCalendarIDs = Set(stored)
         } else {
-            // First launch: select all
-            selectedCalendarIDs = Set(calendars.map(\.calendarIdentifier))
+            // First launch: none selected
+            selectedCalendarIDs = []
         }
     }
 

@@ -412,7 +412,7 @@ struct ContentView: View {
         ToolbarItem(placement: .primaryAction) {
             HStack(spacing: 4) {
                 Button(action: { showCalendarFilter.toggle() }) {
-                    Label("Calendars", systemImage: "line.3.horizontal.decrease.circle")
+                    Label("Calendars", systemImage: "calendar")
                 }
                 .popover(isPresented: $showCalendarFilter) {
                     CalendarFilterView(eventManager: eventManager)
