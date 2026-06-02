@@ -37,7 +37,7 @@ struct PaywallView: View {
                     isPurchasing = true
                     await premium.purchase()
                     isPurchasing = false
-                    if premium.isPremium { dismiss() }
+                    // dismiss는 .onChange(of: premium.isPremium)가 담당
                 }
             } label: {
                 Text(buyButtonTitle)
@@ -50,7 +50,7 @@ struct PaywallView: View {
             Button("Restore Purchase") {
                 Task {
                     await premium.restore()
-                    if premium.isPremium { dismiss() }
+                    // dismiss는 .onChange(of: premium.isPremium)가 담당
                 }
             }
             .buttonStyle(.plain)
