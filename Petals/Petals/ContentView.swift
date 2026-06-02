@@ -36,6 +36,10 @@ struct ContentView: View {
     @State private var showVisionBoard = ScreenshotConfig.startsInWhiteboard
     @State private var selectedVisionBoardID: PersistentIdentifier?
 
+    // Premium gating
+    @Environment(PremiumStore.self) private var premium
+    @State private var showPaywall = false
+
     // Canvas state
     @State private var isCanvasEditMode = false
     @State private var selectedCanvasItemIDs: Set<PersistentIdentifier> = []
@@ -110,6 +114,9 @@ struct ContentView: View {
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .overlay(alignment: .bottom) {
             if clipboardManager.showCopyToast {
                 Text("복사됨")
@@ -447,8 +454,17 @@ struct ContentView: View {
                     )
                 }
 
-                // Canvas edit mode toggle
-                Toggle(isOn: $isCanvasEditMode) {
+                // Canvas edit mode toggle (premium gated)
+                Toggle(isOn: Binding(
+                    get: { isCanvasEditMode },
+                    set: { newValue in
+                        if newValue && !premium.isPremium {
+                            showPaywall = true          // 진입 차단 + 페이월
+                        } else {
+                            isCanvasEditMode = newValue
+                        }
+                    }
+                )) {
                     Label("Canvas", systemImage: "paintbrush")
                 }
                 .toggleStyle(.button)
