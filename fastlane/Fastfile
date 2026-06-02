@@ -47,6 +47,20 @@ platform :mac do
     )
   end
 
+  desc "메타데이터만 App Store Connect에 업로드 (바이너리/스크린샷 제외)"
+  lane :upload_metadata do
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      skip_metadata: false,
+      force: true,
+      submit_for_review: false,
+      automatic_release: false,
+      run_precheck_before_submit: false,
+      platform: "osx"
+    )
+  end
+
   desc "업로드된 최신 빌드를 App Store 심사에 제출 (수동 출시)"
   lane :submit_review do
     upload_to_app_store(

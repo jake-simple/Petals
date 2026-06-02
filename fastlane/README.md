@@ -31,6 +31,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 macOS 바이너리를 빌드해 App Store Connect에 업로드
 
+### mac upload_metadata
+
+```sh
+[bundle exec] fastlane mac upload_metadata
+```
+
+메타데이터만 App Store Connect에 업로드 (바이너리/스크린샷 제외)
+
 ### mac submit_review
 
 ```sh
