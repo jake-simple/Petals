@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct PetalsApp: App {
     @State private var clipboardManager = ClipboardManager()
+    @State private var premiumStore = PremiumStore()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             YearDocument.self,
@@ -41,6 +42,7 @@ struct PetalsApp: App {
         WindowGroup {
             ContentView()
                 .environment(clipboardManager)
+                .environment(premiumStore)
                 .task {
                     if ScreenshotConfig.isActive {
                         ScreenshotConfig.seedDemoBoards(in: sharedModelContainer.mainContext)
