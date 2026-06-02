@@ -154,7 +154,11 @@ struct ContentView: View {
     private var modeToggleToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
             Button {
-                showVisionBoard.toggle()
+                if !showVisionBoard && !premium.isPremium {
+                    showPaywall = true              // 화이트보드 진입 차단 + 페이월
+                } else {
+                    showVisionBoard.toggle()        // 진입 또는 캘린더 복귀
+                }
             } label: {
                 Image(systemName: showVisionBoard ? "calendar" : "sparkles.rectangle.stack")
             }
