@@ -10,7 +10,7 @@ struct PaywallView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // 미리보기 이미지 (에셋 카탈로그에 추가, 후속 Task)
+            // 캔버스로 꾸민 달력 미리보기
             Image("PaywallPreview")
                 .resizable()
                 .scaledToFit()
