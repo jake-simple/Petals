@@ -7,6 +7,7 @@ struct EventBarLayer: View {
     let overflows: [Int: [Int: Int]]
     let maxEventRows: Int
     let eventFontSize: CGFloat
+    let theme: Theme
     var startMonth: Int = 1
     var monthsShown: Int = 12
     let onEventTap: (EKEvent, CGRect) -> Void
@@ -224,7 +225,7 @@ struct EventBarLayer: View {
             let text = ctx.resolve(
                 Text(title)
                     .font(.system(size: fontSize))
-                    .foregroundStyle(Color.primary.opacity(0.78))
+                    .foregroundStyle(theme.eventTextColor.opacity(0.78))
             )
             ctx.draw(text, at: CGPoint(x: rect.minX + 4, y: rect.midY), anchor: .leading)
         }

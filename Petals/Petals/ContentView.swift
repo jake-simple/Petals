@@ -193,6 +193,7 @@ struct ContentView: View {
                         overflows: visibleOverflows,
                         maxEventRows: maxEventRows,
                         eventFontSize: CGFloat(eventFontSize),
+                        theme: theme,
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
                         onEventTap: { event, rect in

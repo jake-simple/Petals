@@ -21,6 +21,11 @@ struct Theme: Codable, Identifiable, Sendable {
     var fontName: String?
     var dark: ThemeColors?
 
+    /// 배경 밝기에 맞춘 이벤트 텍스트 색상 (밝은 배경=검정, 어두운 배경=흰색)
+    var eventTextColor: Color {
+        Color(hex: backgroundColor).isLight ? .black : .white
+    }
+
     func resolved(for colorScheme: ColorScheme) -> Theme {
         guard colorScheme == .dark, let dark else { return self }
         var copy = self
@@ -77,6 +82,13 @@ extension Color {
             green: Double((rgbValue & 0x00FF00) >> 8) / 255.0,
             blue: Double((rgbValue & 0x0000FF)) / 255.0
         )
+    }
+
+    /// 배경색으로 쓰기 적합한지 판별 (perceived luminance 기준)
+    var isLight: Bool {
+        guard let srgb = NSColor(self).usingColorSpace(.sRGB) else { return true }
+        let luminance = 0.299 * srgb.redComponent + 0.587 * srgb.greenComponent + 0.114 * srgb.blueComponent
+        return luminance > 0.6
     }
 
     func toHex() -> String {
