@@ -23,7 +23,7 @@ struct EventBarLayer: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let layout = CalendarLayout(size: proxy.size, monthsShown: monthsShown, startMonth: startMonth)
+            let layout = CalendarLayout(size: proxy.size, monthsShown: monthsShown, startMonth: startMonth, year: year)
 
             Canvas { context, size in
                 let barHeight = eventBarHeight(layout: layout)
@@ -51,14 +51,21 @@ struct EventBarLayer: View {
                 for (month, days) in badgeCounts {
                     for (day, count) in days {
                         let origin = layout.cellOrigin(month: month, day: day)
-                        let badgeY = origin.y + CGFloat(rows) * barHeight
-                        let remainingHeight = layout.cellHeight - CGFloat(rows) * barHeight
                         let text = context.resolve(
                             Text("+\(count)")
                                 .font(.system(size: eventFontSize - 2, weight: .medium))
                                 .foregroundStyle(.secondary)
                         )
-                        context.draw(text, at: CGPoint(x: origin.x + layout.cellWidth / 2, y: badgeY + remainingHeight * 0.4))
+                        if layout.weekdayMode {
+                            // 분기/월별: 날짜 숫자 바로 왼쪽
+                            let dayText = context.resolve(CalendarGridView.dayNumberText(day, fontSize: eventFontSize))
+                            let dayWidth = dayText.measure(in: CGSize(width: layout.cellWidth, height: layout.perMonthLabelHeight)).width
+                            let badgeX = origin.x + layout.cellWidth - CalendarLayout.dayLabelInset - dayWidth - 4
+                            context.draw(text, at: CGPoint(x: badgeX, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .trailing)
+                        } else {
+                            // 연별: 날짜 라벨 영역 좌측 끝
+                            context.draw(text, at: CGPoint(x: origin.x + CalendarLayout.dayLabelInset, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .leading)
+                        }
                     }
                 }
 
@@ -73,31 +80,24 @@ struct EventBarLayer: View {
                 // Drag selection highlight (includes day label area)
                 if let start = dragStart, let end = dragEnd,
                    start.month != end.month || start.day != end.day {
-                    let cal = Calendar.current
                     let isStartFirst = start.month < end.month || (start.month == end.month && start.day <= end.day)
                     let first = isStartFirst ? start : end
                     let last = isStartFirst ? end : start
 
-                    var m = first.month
-                    var d = first.day
-                    while m < last.month || (m == last.month && d <= last.day) {
-                        guard m >= 1, m <= 12 else { break }
-                        let dim = cal.range(of: .day, in: .month,
-                            for: cal.date(from: DateComponents(year: year, month: m, day: 1))!)!.count
-                        if d > dim { m += 1; d = 1; continue }
+                    for m in first.month...last.month where m >= 1 && m <= 12 {
+                        let dim = layout.daysInMonth(m)
+                        let sDay = (m == first.month) ? first.day : 1
+                        let eDay = (m == last.month) ? min(last.day, dim) : dim
+                        guard sDay <= eDay else { continue }
 
-                        let subrow = (d - 1) / layout.daysPerRow
-                        let lastInSubrow = min(dim, (subrow + 1) * layout.daysPerRow)
-                        let segEnd = (m == last.month) ? min(last.day, lastInSubrow) : lastInSubrow
-
-                        let origin = layout.cellOrigin(month: m, day: d)
-                        let width = CGFloat(segEnd - d + 1) * layout.cellWidth
-                        let rect = CGRect(x: origin.x, y: origin.y - layout.perMonthLabelHeight,
-                                          width: width, height: layout.rowHeight)
-                        context.fill(Path(rect), with: .color(.accentColor.opacity(0.2)))
-                        context.stroke(Path(rect), with: .color(.accentColor), lineWidth: 1)
-
-                        if segEnd >= dim { m += 1; d = 1 } else { d = segEnd + 1 }
+                        for run in layout.rowRuns(month: m, startDay: sDay, endDay: eDay) {
+                            let origin = layout.cellOrigin(month: m, day: run.startDay)
+                            let width = CGFloat(run.endDay - run.startDay + 1) * layout.cellWidth
+                            let rect = CGRect(x: origin.x, y: origin.y - layout.perMonthLabelHeight,
+                                              width: width, height: layout.rowHeight)
+                            context.fill(Path(rect), with: .color(.accentColor.opacity(0.2)))
+                            context.stroke(Path(rect), with: .color(.accentColor), lineWidth: 1)
+                        }
                     }
                 }
             }

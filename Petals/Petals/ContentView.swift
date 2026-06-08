@@ -65,34 +65,22 @@ struct ContentView: View {
     private var startMonth: Int { pageIndex * monthsPerPage + 1 }
     private var maxPageIndex: Int { (12 / monthsPerPage) - 1 }
 
-    private var daysPerRow: Int {
-        switch monthsPerPage {
-        case 1, 3: return 8
-        default: return 31
-        }
-    }
-
-    /// Segments filtered to visible months and split at subrow boundaries.
+    /// Segments filtered to visible months and split at visual row boundaries.
     private var visibleSegments: [EventSegment] {
         let endMonth = startMonth + monthsPerPage - 1
-        let dpr = daysPerRow
+        let layout = CalendarLayout(size: .zero, monthsShown: monthsPerPage, startMonth: startMonth, year: currentYear)
         var result: [EventSegment] = []
         for seg in segments {
             guard seg.month >= startMonth, seg.month <= endMonth else { continue }
-            // Split segment at subrow boundaries
-            var day = seg.startDay
-            while day <= seg.endDay {
-                let rowEnd = ((day - 1) / dpr + 1) * dpr
-                let segEnd = min(seg.endDay, rowEnd)
+            for run in layout.rowRuns(month: seg.month, startDay: seg.startDay, endDay: seg.endDay) {
                 result.append(EventSegment(
-                    id: "\(seg.id)_\(day)",
+                    id: "\(seg.id)_\(run.startDay)",
                     event: seg.event,
                     month: seg.month,
-                    startDay: day,
-                    endDay: segEnd,
+                    startDay: run.startDay,
+                    endDay: run.endDay,
                     lane: seg.lane
                 ))
-                day = segEnd + 1
             }
         }
         return result
