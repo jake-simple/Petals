@@ -5,7 +5,12 @@ cd "$(dirname "$0")"
 
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
-for f in 01-year 02-themes 03-zoom 04-whiteboard 05-mac; do
+# Render the given scene basenames, or the default English set if none passed.
+# e.g. ./render.sh 01-year.ko 02-themes.ko  → renders the Korean scenes.
+FILES=("$@")
+[ ${#FILES[@]} -eq 0 ] && FILES=(01-year 02-themes 03-zoom 04-whiteboard 05-mac)
+
+for f in "${FILES[@]}"; do
   "$CHROME" \
     --headless=new \
     --disable-gpu \

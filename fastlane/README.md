@@ -39,6 +39,14 @@ macOS 바이너리를 빌드해 App Store Connect에 업로드
 
 메타데이터만 App Store Connect에 업로드 (바이너리/스크린샷 제외)
 
+### mac upload_listing
+
+```sh
+[bundle exec] fastlane mac upload_listing
+```
+
+메타데이터 + 스크린샷 업로드 (바이너리 제외, 심사 제출 안 함)
+
 ### mac submit_review
 
 ```sh

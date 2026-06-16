@@ -36,6 +36,10 @@ struct ContentView: View {
     @State private var showVisionBoard = ScreenshotConfig.startsInWhiteboard
     @State private var selectedVisionBoardID: PersistentIdentifier?
 
+    // Premium gating
+    @Environment(PremiumStore.self) private var premium
+    @State private var showPaywall = false
+
     // Canvas state
     @State private var isCanvasEditMode = false
     @State private var selectedCanvasItemIDs: Set<PersistentIdentifier> = []
@@ -61,34 +65,22 @@ struct ContentView: View {
     private var startMonth: Int { pageIndex * monthsPerPage + 1 }
     private var maxPageIndex: Int { (12 / monthsPerPage) - 1 }
 
-    private var daysPerRow: Int {
-        switch monthsPerPage {
-        case 1, 3: return 8
-        default: return 31
-        }
-    }
-
-    /// Segments filtered to visible months and split at subrow boundaries.
+    /// Segments filtered to visible months and split at visual row boundaries.
     private var visibleSegments: [EventSegment] {
         let endMonth = startMonth + monthsPerPage - 1
-        let dpr = daysPerRow
+        let layout = CalendarLayout(size: .zero, monthsShown: monthsPerPage, startMonth: startMonth, year: currentYear)
         var result: [EventSegment] = []
         for seg in segments {
             guard seg.month >= startMonth, seg.month <= endMonth else { continue }
-            // Split segment at subrow boundaries
-            var day = seg.startDay
-            while day <= seg.endDay {
-                let rowEnd = ((day - 1) / dpr + 1) * dpr
-                let segEnd = min(seg.endDay, rowEnd)
+            for run in layout.rowRuns(month: seg.month, startDay: seg.startDay, endDay: seg.endDay) {
                 result.append(EventSegment(
-                    id: "\(seg.id)_\(day)",
+                    id: "\(seg.id)_\(run.startDay)",
                     event: seg.event,
                     month: seg.month,
-                    startDay: day,
-                    endDay: segEnd,
+                    startDay: run.startDay,
+                    endDay: run.endDay,
                     lane: seg.lane
                 ))
-                day = segEnd + 1
             }
         }
         return result
@@ -110,6 +102,9 @@ struct ContentView: View {
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .overlay(alignment: .bottom) {
             if clipboardManager.showCopyToast {
                 Text("복사됨")
@@ -147,7 +142,11 @@ struct ContentView: View {
     private var modeToggleToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
             Button {
-                showVisionBoard.toggle()
+                if !showVisionBoard && !premium.isPremium {
+                    showPaywall = true              // 화이트보드 진입 차단 + 페이월
+                } else {
+                    showVisionBoard.toggle()        // 진입 또는 캘린더 복귀
+                }
             } label: {
                 Image(systemName: showVisionBoard ? "calendar" : "sparkles.rectangle.stack")
             }
@@ -182,6 +181,7 @@ struct ContentView: View {
                         overflows: visibleOverflows,
                         maxEventRows: maxEventRows,
                         eventFontSize: CGFloat(eventFontSize),
+                        theme: theme,
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
                         onEventTap: { event, rect in
@@ -295,9 +295,11 @@ struct ContentView: View {
             reloadEvents()
             selectedCanvasItemIDs.removeAll()
         }
-        .onChange(of: monthsPerPage) { oldValue, newValue in
-            let current = pageIndex * oldValue + 1
-            pageIndex = newValue < 12 ? (current - 1) / newValue : 0
+        .onChange(of: monthsPerPage) { _, newValue in
+            let now = Date()
+            currentYear = Calendar.current.component(.year, from: now)
+            let month = Calendar.current.component(.month, from: now)
+            pageIndex = (month - 1) / newValue
             selectedCanvasItemIDs.removeAll()
         }
         .onChange(of: pageIndex) {
@@ -447,8 +449,17 @@ struct ContentView: View {
                     )
                 }
 
-                // Canvas edit mode toggle
-                Toggle(isOn: $isCanvasEditMode) {
+                // Canvas edit mode toggle (premium gated)
+                Toggle(isOn: Binding(
+                    get: { isCanvasEditMode },
+                    set: { newValue in
+                        if newValue && !premium.isPremium {
+                            showPaywall = true          // 진입 차단 + 페이월
+                        } else {
+                            isCanvasEditMode = newValue
+                        }
+                    }
+                )) {
                     Label("Canvas", systemImage: "paintbrush")
                 }
                 .toggleStyle(.button)

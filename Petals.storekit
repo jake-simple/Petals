@@ -1,0 +1,47 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyURL" : "",
+        "policyText" : ""
+      }
+    ]
+  },
+  "identifier" : "20B6B086-0112-4A25-BAFE-01226ED6A5ED",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "434AF1DB-4512-4753-9FDA-37F3D1AFAF53",
+      "localizations" : [
+        {
+          "description" : "Unlock canvas decoration and whiteboard mode.",
+          "displayName" : "Petals Premium",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "캔버스 꾸미기와 화이트보드 모드를 잠금해제합니다.",
+          "displayName" : "Petals 프리미엄",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.onessa.petals.premium",
+      "referenceName" : "Petals Premium",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
