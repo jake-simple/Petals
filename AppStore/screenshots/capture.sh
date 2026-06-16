@@ -10,8 +10,13 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
+# Locale: SHOT_LANG=ko captures a Korean UI into captures/ko/ for the Korean
+# App Store. Default (en) is unchanged — English UI into captures/.
+SHOT_LANG="${SHOT_LANG:-en}"
+
 APP="/tmp/petals-dd/Build/Products/Debug/Petals.app"
 OUT="captures"
+[ "$SHOT_LANG" = "ko" ] && OUT="captures/ko"
 PROC="Petals.app/Contents/MacOS/Petals"
 DOMAIN="com.idealapp.Petals"
 BACKUP="/tmp/petals-prefs-backup.plist"
@@ -63,12 +68,15 @@ capture() {
   kill_all
   defaults delete "$DOMAIN" 2>/dev/null || true   # clean window geometry
 
-  local envargs=(--env PETALS_SHOT=1)
+  local envargs=(--env PETALS_SHOT=1 --env "PETALS_SHOT_LANG=$SHOT_LANG")
   local kv
   for kv in "$@"; do envargs+=(--env "$kv"); done
 
   # `open` is the reliable GUI launch; direct binary exec fails to make a window.
-  open -n "${envargs[@]}" "$APP" --args -AppleLanguages '(en)' -AppleLocale en_US
+  # Force the App Store target locale so toolbar/month labels render in that language.
+  local applang='(en)' applocale=en_US
+  [ "$SHOT_LANG" = "ko" ] && applang='(ko)' && applocale=ko_KR
+  open -n "${envargs[@]}" "$APP" --args -AppleLanguages "$applang" -AppleLocale "$applocale"
 
   local wid="" tries=0
   while [ "$tries" -lt 25 ]; do

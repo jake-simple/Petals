@@ -110,13 +110,14 @@ final class EventManager {
     }
 
     private static func makeDemoCalendars(store: EKEventStore) -> [EKCalendar] {
-        let specs: [(String, (Double, Double, Double))] = [
-            ("Work",     (0.99, 0.27, 0.21)),
-            ("Personal", (0.00, 0.48, 1.00)),
-            ("Travel",   (0.20, 0.78, 0.35)),
-            ("Health",   (1.00, 0.58, 0.00)),
-            ("Family",   (0.69, 0.32, 0.87)),
+        let titles = ScreenshotConfig.isKorean
+            ? ["업무", "개인", "여행", "건강", "가족"]
+            : ["Work", "Personal", "Travel", "Health", "Family"]
+        let colors: [(Double, Double, Double)] = [
+            (0.99, 0.27, 0.21), (0.00, 0.48, 1.00), (0.20, 0.78, 0.35),
+            (1.00, 0.58, 0.00), (0.69, 0.32, 0.87),
         ]
+        let specs = Array(zip(titles, colors))
         return specs.map { title, rgb in
             let calendar = EKCalendar(for: .event, eventStore: store)
             calendar.title = title
@@ -126,14 +127,23 @@ final class EventManager {
     }
 
     private static func makeDemoEvents(year: Int, calendars: [EKCalendar], store: EKEventStore) -> [EKEvent] {
-        let titles = [
-            "Product launch", "Team offsite", "Sprint planning", "Design review",
-            "Conference", "Vacation", "Q3 roadmap", "Release 2.0", "User research",
-            "Marketing push", "Beta program", "Onboarding week", "All-hands",
-            "Hiring round", "Workshop", "Retrospective", "Strategy sync",
-            "Field trip", "Launch prep", "Customer visit", "Code freeze",
-            "Annual review", "Spring break", "Demo day",
-        ]
+        let titles = ScreenshotConfig.isKorean
+            ? [
+                "제품 출시", "팀 워크숍", "스프린트 계획", "디자인 리뷰",
+                "컨퍼런스", "휴가", "3분기 로드맵", "2.0 출시", "사용자 리서치",
+                "마케팅 캠페인", "베타 프로그램", "온보딩 주간", "전사 회의",
+                "채용 라운드", "워크숍", "회고", "전략 미팅",
+                "현장 견학", "출시 준비", "고객 미팅", "코드 프리즈",
+                "연간 리뷰", "봄 휴가", "데모 데이",
+            ]
+            : [
+                "Product launch", "Team offsite", "Sprint planning", "Design review",
+                "Conference", "Vacation", "Q3 roadmap", "Release 2.0", "User research",
+                "Marketing push", "Beta program", "Onboarding week", "All-hands",
+                "Hiring round", "Workshop", "Retrospective", "Strategy sync",
+                "Field trip", "Launch prep", "Customer visit", "Code freeze",
+                "Annual review", "Spring break", "Demo day",
+            ]
         let cal = Calendar.current
         var rng = SeededGenerator(seed: 0x5045_5441_4C53) // "PETALS"
         var result: [EKEvent] = []

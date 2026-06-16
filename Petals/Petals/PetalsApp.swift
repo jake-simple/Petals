@@ -3,6 +3,9 @@ import SwiftData
 
 @main
 struct PetalsApp: App {
+    /// 메인 창 식별자. 메뉴에서 닫힌 창을 다시 열 때 사용.
+    static let mainWindowID = "main"
+
     @State private var clipboardManager = ClipboardManager()
     @State private var premiumStore = PremiumStore()
     var sharedModelContainer: ModelContainer = {
@@ -39,7 +42,7 @@ struct PetalsApp: App {
     }()
 
     var body: some Scene {
-        WindowGroup {
+        Window("Petals", id: Self.mainWindowID) {
             ContentView()
                 .environment(clipboardManager)
                 .environment(premiumStore)
@@ -55,7 +58,7 @@ struct PetalsApp: App {
         .defaultSize(width: 1200, height: 800)
         .windowResizability(.contentMinSize)
         .commands {
-            CommandGroup(replacing: .newItem) {}
+            PetalsWindowCommands()
             CommandGroup(replacing: .pasteboard) {
                 Button("복사") {
                     NotificationCenter.default.post(name: .performCopy, object: nil)
@@ -103,5 +106,20 @@ struct PetalsApp: App {
             }
         }
         try? context.save()
+    }
+}
+
+/// 메인 창을 닫은 뒤에도 메뉴에서 다시 열 수 있도록 하는 커맨드.
+/// (App Store 가이드라인 4: 메인 창 재오픈 메뉴 항목 요구사항 대응)
+private struct PetalsWindowCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .newItem) {
+            Button("Petals 창 열기") {
+                openWindow(id: PetalsApp.mainWindowID)
+            }
+            .keyboardShortcut("n", modifiers: [.command])
+        }
     }
 }

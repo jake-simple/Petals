@@ -12,6 +12,14 @@ enum ScreenshotConfig {
 
     static var isActive: Bool { env["PETALS_SHOT"] == "1" }
 
+    /// Target App Store locale for demo content, e.g. "ko". Defaults to "en".
+    static var lang: String {
+        guard let value = env["PETALS_SHOT_LANG"], !value.isEmpty else { return "en" }
+        return value
+    }
+
+    static var isKorean: Bool { lang == "ko" }
+
     /// Theme id override, e.g. "tokyo-night". Falls back to the document theme.
     static var theme: String? {
         guard let value = env["PETALS_SHOT_THEME"], !value.isEmpty else { return nil }
@@ -37,7 +45,9 @@ enum ScreenshotConfig {
     /// Seeds a few demo vision boards so the whiteboard sidebar looks populated.
     @MainActor
     static func seedDemoBoards(in context: ModelContext) {
-        let names = ["2026 Vision Board", "Travel Bucket List", "Watercolors", "Reading Log"]
+        let names = isKorean
+            ? ["2026 비전 보드", "여행 버킷리스트", "수채화 노트", "독서 기록"]
+            : ["2026 Vision Board", "Travel Bucket List", "Watercolors", "Reading Log"]
         for (index, name) in names.enumerated() {
             context.insert(VisionBoard(name: name, sortIndex: index))
         }

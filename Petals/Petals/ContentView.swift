@@ -295,9 +295,11 @@ struct ContentView: View {
             reloadEvents()
             selectedCanvasItemIDs.removeAll()
         }
-        .onChange(of: monthsPerPage) { oldValue, newValue in
-            let current = pageIndex * oldValue + 1
-            pageIndex = newValue < 12 ? (current - 1) / newValue : 0
+        .onChange(of: monthsPerPage) { _, newValue in
+            let now = Date()
+            currentYear = Calendar.current.component(.year, from: now)
+            let month = Calendar.current.component(.month, from: now)
+            pageIndex = (month - 1) / newValue
             selectedCanvasItemIDs.removeAll()
         }
         .onChange(of: pageIndex) {
