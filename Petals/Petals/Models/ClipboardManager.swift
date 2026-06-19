@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
 extension Notification.Name {
     static let performCopy = Notification.Name("performCopy")
@@ -9,13 +10,49 @@ extension Notification.Name {
 @Observable
 @MainActor
 final class ClipboardManager {
-    var snapshot: CanvasItemSnapshot?
+    /// 앱 내부에서 복사한 캔버스 아이템들 (여러 개 지원)
+    var snapshots: [CanvasItemSnapshot] = []
     var showCopyToast = false
     private var toastTask: Task<Void, Never>?
 
-    func performCopy(snapshot: CanvasItemSnapshot) {
-        self.snapshot = snapshot
+    /// 내부 복사 시점의 시스템 페이스트보드 changeCount.
+    /// 이후 시스템 changeCount가 달라졌으면 외부에서 더 최근에 복사한 것으로 본다.
+    private var copyChangeCount: Int = -1
+
+    func performCopy(snapshots: [CanvasItemSnapshot]) {
+        guard !snapshots.isEmpty else { return }
+        self.snapshots = snapshots
+        self.copyChangeCount = NSPasteboard.general.changeCount
         triggerCopyToast()
+    }
+
+    // MARK: - System Pasteboard
+
+    /// 시스템 클립보드에 캔버스로 붙여넣을 수 있는 이미지/텍스트가 있는지
+    var systemPasteboardHasContent: Bool {
+        NSPasteboard.general.canReadObject(forClasses: [NSImage.self], options: nil)
+            || systemString() != nil
+    }
+
+    /// 붙여넣기 가능한 콘텐츠(내부 스냅샷 또는 시스템 클립보드)가 있는지
+    var hasPasteableContent: Bool {
+        !snapshots.isEmpty || systemPasteboardHasContent
+    }
+
+    /// 내부 복사 이후 외부에서 더 최근에 복사가 일어났으면 시스템 클립보드를 우선한다.
+    var shouldUseSystemPasteboard: Bool {
+        guard systemPasteboardHasContent else { return false }
+        if snapshots.isEmpty { return true }
+        return NSPasteboard.general.changeCount != copyChangeCount
+    }
+
+    func systemImage() -> NSImage? {
+        NSPasteboard.general.readObjects(forClasses: [NSImage.self], options: nil)?.first as? NSImage
+    }
+
+    func systemString() -> String? {
+        guard let s = NSPasteboard.general.string(forType: .string), !s.isEmpty else { return nil }
+        return s
     }
 
     func triggerCopyToast() {
