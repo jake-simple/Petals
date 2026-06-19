@@ -101,7 +101,7 @@ struct VisionBoardContainerView: View {
             return
         }
         let maxSort = boards.map(\.sortIndex).max() ?? 0
-        let board = VisionBoard(name: "새 보드", sortIndex: maxSort + 1)
+        let board = VisionBoard(name: String(localized: "새 보드"), sortIndex: maxSort + 1)
         modelContext.insert(board)
 
         do {
@@ -163,13 +163,13 @@ private struct BoardRow: View {
                 .focused($textFieldFocused)
                 .onSubmit {
                     if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
-                        board.name = "새 보드"
+                        board.name = String(localized: "새 보드")
                     }
                     editingBoardID = nil
                 }
                 .onExitCommand {
                     if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
-                        board.name = "새 보드"
+                        board.name = String(localized: "새 보드")
                     }
                     editingBoardID = nil
                 }

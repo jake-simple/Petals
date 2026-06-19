@@ -91,13 +91,13 @@ struct PetalsApp: App {
             guard !orphans.isEmpty else { return }
             // 첫 번째 보드에 연결
             let sortedDescriptor = FetchDescriptor<VisionBoard>(sortBy: [SortDescriptor(\VisionBoard.sortIndex)])
-            defaultBoard = (try? context.fetch(sortedDescriptor))?.first ?? VisionBoard(name: "나의 보드")
+            defaultBoard = (try? context.fetch(sortedDescriptor))?.first ?? VisionBoard(name: String(localized: "나의 보드"))
             for item in orphans {
                 defaultBoard.appendItem(item)
             }
         } else {
             // 보드가 없으면 기본 보드 생성
-            defaultBoard = VisionBoard(name: "나의 보드", sortIndex: 0)
+            defaultBoard = VisionBoard(name: String(localized: "나의 보드"), sortIndex: 0)
             context.insert(defaultBoard)
 
             let allItems = (try? context.fetch(FetchDescriptor<VisionBoardItem>())) ?? []
