@@ -50,6 +50,10 @@ struct CanvasItemSnapshot {
     let absoluteWidth: Double?
     let absoluteHeight: Double?
 
+    // 비전보드 절대 위치 (여러 개 붙여넣기 시 배치 유지용)
+    let absoluteX: Double?
+    let absoluteY: Double?
+
     init(from item: CanvasItem, containerSize: CGSize) {
         self.type = item.type
         self.relativeX = item.relativeX
@@ -75,6 +79,8 @@ struct CanvasItemSnapshot {
         self.cornerRadius = item.cornerRadius
         self.absoluteWidth = item.relativeWidth * containerSize.width
         self.absoluteHeight = item.relativeHeight * containerSize.height
+        self.absoluteX = nil
+        self.absoluteY = nil
     }
 
     init(from item: VisionBoardItem) {
@@ -102,6 +108,8 @@ struct CanvasItemSnapshot {
         self.cornerRadius = item.cornerRadius
         self.absoluteWidth = item.width
         self.absoluteHeight = item.height
+        self.absoluteX = item.x
+        self.absoluteY = item.y
     }
 
     /// 스냅샷의 콘텐츠 프로퍼티를 대상 아이템에 적용

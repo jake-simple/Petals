@@ -102,11 +102,8 @@ struct VisionBoardView: View {
                     Color.clear
                         .contentShape(Rectangle())
                         .contextMenu {
-                            Button("붙여넣기") {
-                                let viewSize = viewSize
-                                pasteItem(in: viewSize)
-                            }
-                            .disabled(clipboardManager.snapshot == nil)
+                            Button("붙여넣기") { handlePaste(in: viewSize) }
+                                .disabled(!clipboardManager.hasPasteableContent)
                         }
 
                     ForEach(sortedItems) { item in
@@ -133,14 +130,8 @@ struct VisionBoardView: View {
                                     }
                                 },
                                 showInspector: $showInspector,
-                                onCopy: {
-                                    let snapshot = CanvasItemSnapshot(from: item)
-                                    clipboardManager.performCopy(snapshot: snapshot)
-                                },
-                                onPaste: {
-                                    let viewSize = viewSize
-                                    pasteItem(in: viewSize)
-                                },
+                                onCopy: { copyItems(actedOn: item) },
+                                onPaste: { handlePaste(in: viewSize) },
                                 onDelete: { deleteItem(item) },
                                 onBringToFront: { item.zIndex = board.nextZIndex },
                                 onSendToBack: { item.zIndex = board.minZIndex },
@@ -251,13 +242,10 @@ struct VisionBoardView: View {
             showInspector: $showInspector,
             onDelete: { deleteSelectedItems() },
             onCopy: {
-                guard let item = selectedItems.first else { return }
-                let snapshot = CanvasItemSnapshot(from: item)
-                clipboardManager.performCopy(snapshot: snapshot)
+                let snaps = selectedItems.map { CanvasItemSnapshot(from: $0) }
+                clipboardManager.performCopy(snapshots: snaps)
             },
-            onPaste: {
-                if clipboardManager.snapshot != nil { pasteItem(in: viewSize) }
-            }
+            onPaste: { handlePaste(in: viewSize) }
         ))
     }
 
@@ -605,35 +593,97 @@ struct VisionBoardView: View {
         }
     }
 
-    private func pasteItem(in viewSize: CGSize) {
-        guard let snap = clipboardManager.snapshot else { return }
-        let itemType = CanvasItemType(rawValue: snap.type) ?? .text
-        // 무료: 이미지/스티커는 붙여넣기 차단 (텍스트만 허용)
-        if itemType != .text && !premium.isPremium {
+    /// 우클릭 복사: 우클릭한 아이템이 다중 선택에 포함돼 있으면 선택 전체를, 아니면 그 아이템만 복사.
+    private func copyItems(actedOn item: VisionBoardItem) {
+        let targets = selectedItemIDs.contains(item.persistentModelID) && selectedItemIDs.count > 1
+            ? selectedItems : [item]
+        clipboardManager.performCopy(snapshots: targets.map { CanvasItemSnapshot(from: $0) })
+    }
+
+    private func handlePaste(in viewSize: CGSize) {
+        if clipboardManager.shouldUseSystemPasteboard {
+            pasteFromSystem(in: viewSize)
+        } else {
+            pasteSnapshots(clipboardManager.snapshots, in: viewSize)
+        }
+    }
+
+    /// 내부 복사한 스냅샷들을 상대 배치를 유지한 채, 그룹 중심을 화면 중앙에 맞춰 붙여넣는다.
+    private func pasteSnapshots(_ snaps: [CanvasItemSnapshot], in viewSize: CGSize) {
+        guard !snaps.isEmpty else { return }
+        // 무료: 텍스트 외(이미지/스티커/도형)가 하나라도 있으면 차단
+        if !premium.isPremium && snaps.contains(where: { CanvasItemType(rawValue: $0.type) != .text }) {
             onRequestPaywall()
             return
         }
         let center = visibleCenter(in: viewSize)
-        let offset: Double = 20
-        let w = snap.absoluteWidth ?? 200
-        let h = snap.absoluteHeight ?? 200
-        let item = VisionBoardItem(type: itemType,
-                                   x: center.x - w / 2 + offset,
-                                   y: center.y - h / 2 + offset,
-                                   width: w,
-                                   height: h,
-                                   rotation: snap.rotation,
-                                   zIndex: board.nextZIndex,
-                                   opacity: snap.opacity)
-        snap.applyContent(to: item)
-        // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-        if let original = snap.imageFileName,
-           let copied = ImageManager.copyImageFile(fileName: original) {
-            item.imageFileName = copied
+        let rects = snaps.map { snap in
+            CGRect(x: snap.absoluteX ?? 0, y: snap.absoluteY ?? 0,
+                   width: snap.absoluteWidth ?? 200, height: snap.absoluteHeight ?? 200)
         }
-        modelContext.insert(item)
-        board.appendItem(item)
-        selectedItemIDs = [item.persistentModelID]
+        let groupMinX = rects.map(\.minX).min() ?? 0
+        let groupMinY = rects.map(\.minY).min() ?? 0
+        let bboxW = (rects.map(\.maxX).max() ?? 0) - groupMinX
+        let bboxH = (rects.map(\.maxY).max() ?? 0) - groupMinY
+        let startX = center.x - bboxW / 2
+        let startY = center.y - bboxH / 2
+
+        var nextZ = board.nextZIndex
+        var newIDs: Set<PersistentIdentifier> = []
+        for snap in snaps {
+            let itemType = CanvasItemType(rawValue: snap.type) ?? .text
+            let w = snap.absoluteWidth ?? 200
+            let h = snap.absoluteHeight ?? 200
+            let dx = (snap.absoluteX ?? 0) - groupMinX
+            let dy = (snap.absoluteY ?? 0) - groupMinY
+            let item = VisionBoardItem(type: itemType,
+                                       x: startX + dx,
+                                       y: startY + dy,
+                                       width: w,
+                                       height: h,
+                                       rotation: snap.rotation,
+                                       zIndex: nextZ,
+                                       opacity: snap.opacity)
+            nextZ += 1
+            snap.applyContent(to: item)
+            // 이미지 복사 시 파일을 복제하여 독립 참조 유지
+            if let original = snap.imageFileName,
+               let copied = ImageManager.copyImageFile(fileName: original) {
+                item.imageFileName = copied
+            }
+            modelContext.insert(item)
+            board.appendItem(item)
+            newIDs.insert(item.persistentModelID)
+        }
+        selectedItemIDs = newIDs
+        recalcWorldBounds()
+    }
+
+    /// 다른 앱에서 복사한 시스템 클립보드의 이미지/텍스트를 붙여넣는다.
+    private func pasteFromSystem(in viewSize: CGSize) {
+        let center = visibleCenter(in: viewSize)
+        // 이미지 우선
+        if let image = clipboardManager.systemImage(), let data = image.tiffRepresentation {
+            guard premium.isPremium else { onRequestPaywall(); return }
+            Task { @MainActor in
+                guard let result = await ImageManager.importImage(from: data) else { return }
+                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+                modelContext.insert(item)
+                board.appendItem(item)
+                selectedItemIDs = [item.persistentModelID]
+                recalcWorldBounds()
+            }
+            return
+        }
+        // 텍스트 (무료 사용자도 허용)
+        if let str = clipboardManager.systemString() {
+            let item = VisionBoardItem.newText(at: center, zIndex: board.nextZIndex)
+            item.text = str
+            modelContext.insert(item)
+            board.appendItem(item)
+            selectedItemIDs = [item.persistentModelID]
+            recalcWorldBounds()
+        }
     }
 
     private func deleteItem(_ item: VisionBoardItem) {

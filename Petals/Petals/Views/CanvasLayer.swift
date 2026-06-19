@@ -32,8 +32,8 @@ struct CanvasLayer: View {
                 Color.white.opacity(0.001)
                     .contentShape(Rectangle())
                     .contextMenu {
-                        Button("붙여넣기") { pasteItem() }
-                            .disabled(clipboardManager.snapshot == nil)
+                        Button("붙여넣기") { handlePaste() }
+                            .disabled(!clipboardManager.hasPasteableContent)
                     }
 
                 ForEach(sortedItems) { item in
@@ -56,11 +56,8 @@ struct CanvasLayer: View {
                             }
                         },
                         showInspector: $showInspector,
-                        onCopy: {
-                            let snapshot = CanvasItemSnapshot(from: item, containerSize: proxy.size)
-                            clipboardManager.performCopy(snapshot: snapshot)
-                        },
-                        onPaste: { pasteItem() },
+                        onCopy: { copyItems(actedOn: item, containerSize: proxy.size) },
+                        onPaste: { handlePaste() },
                         onDelete: { deleteItem(item) },
                         onBringToFront: { bringToFront(item) },
                         onSendToBack: { sendToBack(item) },
@@ -128,13 +125,10 @@ struct CanvasLayer: View {
             showInspector: $showInspector,
             onDelete: { deleteSelectedItems() },
             onCopy: {
-                guard let item = selectedItems.first else { return }
-                let snapshot = CanvasItemSnapshot(from: item, containerSize: containerSize)
-                clipboardManager.performCopy(snapshot: snapshot)
+                let snaps = selectedItems.map { CanvasItemSnapshot(from: $0, containerSize: containerSize) }
+                clipboardManager.performCopy(snapshots: snaps)
             },
-            onPaste: {
-                if clipboardManager.snapshot != nil { pasteItem() }
-            }
+            onPaste: { handlePaste() }
         ))
     }
 
@@ -236,34 +230,87 @@ struct CanvasLayer: View {
         item.zIndex = doc.minZIndex
     }
 
-    private func pasteItem() {
-        guard let snap = clipboardManager.snapshot, let doc = yearDocument else { return }
-        let itemType = CanvasItemType(rawValue: snap.type) ?? .text
-        // 무료: 이미지/스티커는 붙여넣기 차단 (텍스트만 허용)
-        if itemType != .text && !premium.isPremium {
+    /// 우클릭 복사: 우클릭한 아이템이 다중 선택에 포함돼 있으면 선택 전체를, 아니면 그 아이템만 복사.
+    private func copyItems(actedOn item: CanvasItem, containerSize size: CGSize) {
+        let targets = selectedItemIDs.contains(item.persistentModelID) && selectedItemIDs.count > 1
+            ? selectedItems : [item]
+        let snaps = targets.map { CanvasItemSnapshot(from: $0, containerSize: size) }
+        clipboardManager.performCopy(snapshots: snaps)
+    }
+
+    private func handlePaste() {
+        if clipboardManager.shouldUseSystemPasteboard {
+            pasteFromSystem()
+        } else {
+            pasteSnapshots(clipboardManager.snapshots)
+        }
+    }
+
+    /// 내부 복사한 스냅샷들을 상대 배치를 유지한 채 붙여넣는다.
+    private func pasteSnapshots(_ snaps: [CanvasItemSnapshot]) {
+        guard let doc = yearDocument, !snaps.isEmpty else { return }
+        // 무료: 텍스트 외(이미지/스티커/도형)가 하나라도 있으면 차단
+        if !premium.isPremium && snaps.contains(where: { CanvasItemType(rawValue: $0.type) != .text }) {
             onRequestPaywall()
             return
         }
-        let relW = (snap.absoluteWidth ?? snap.relativeWidth * containerSize.width) / containerSize.width
-        let relH = (snap.absoluteHeight ?? snap.relativeHeight * containerSize.height) / containerSize.height
-        let item = CanvasItem(type: itemType,
-                              relativeX: 0.4 + Double.random(in: -0.02...0.02),
-                              relativeY: 0.4 + Double.random(in: -0.02...0.02),
-                              relativeWidth: relW,
-                              relativeHeight: relH,
-                              rotation: snap.rotation,
-                              opacity: snap.opacity,
-                              zoomLevel: zoomLevel,
-                              pageIndex: pageIndex)
-        snap.applyContent(to: item)
-        // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-        if let original = snap.imageFileName,
-           let copied = ImageManager.copyImageFile(fileName: original) {
-            item.imageFileName = copied
+        let offset = 0.02
+        var nextZ = doc.nextZIndex
+        var newIDs: Set<PersistentIdentifier> = []
+        for snap in snaps {
+            let itemType = CanvasItemType(rawValue: snap.type) ?? .text
+            let relW = (snap.absoluteWidth ?? snap.relativeWidth * containerSize.width) / containerSize.width
+            let relH = (snap.absoluteHeight ?? snap.relativeHeight * containerSize.height) / containerSize.height
+            let baseX = min(max(snap.relativeX + offset, 0), 0.95)
+            let baseY = min(max(snap.relativeY + offset, 0), 0.95)
+            let item = CanvasItem(type: itemType,
+                                  relativeX: baseX,
+                                  relativeY: baseY,
+                                  relativeWidth: relW,
+                                  relativeHeight: relH,
+                                  rotation: snap.rotation,
+                                  opacity: snap.opacity,
+                                  zoomLevel: zoomLevel,
+                                  pageIndex: pageIndex)
+            snap.applyContent(to: item)
+            // 이미지 복사 시 파일을 복제하여 독립 참조 유지
+            if let original = snap.imageFileName,
+               let copied = ImageManager.copyImageFile(fileName: original) {
+                item.imageFileName = copied
+            }
+            item.zIndex = nextZ
+            nextZ += 1
+            doc.appendItem(item)
+            newIDs.insert(item.persistentModelID)
         }
-        item.zIndex = doc.nextZIndex
-        doc.appendItem(item)
-        selectedItemIDs = [item.persistentModelID]
+        selectedItemIDs = newIDs
+    }
+
+    /// 다른 앱에서 복사한 시스템 클립보드의 이미지/텍스트를 붙여넣는다.
+    private func pasteFromSystem() {
+        // 이미지 우선
+        if let image = clipboardManager.systemImage(), let data = image.tiffRepresentation {
+            guard premium.isPremium else { onRequestPaywall(); return }
+            Task { @MainActor in
+                guard let result = await ImageManager.importImage(from: data),
+                      let doc = yearDocument else { return }
+                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+                item.zoomLevel = zoomLevel
+                item.pageIndex = pageIndex
+                doc.appendItem(item)
+                selectedItemIDs = [item.persistentModelID]
+            }
+            return
+        }
+        // 텍스트 (무료 사용자도 허용)
+        if let str = clipboardManager.systemString(), let doc = yearDocument {
+            let item = CanvasItem.newText(zIndex: doc.nextZIndex)
+            item.text = str
+            item.zoomLevel = zoomLevel
+            item.pageIndex = pageIndex
+            doc.appendItem(item)
+            selectedItemIDs = [item.persistentModelID]
+        }
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
