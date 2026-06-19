@@ -36,7 +36,7 @@ struct EventDetailPopover: View {
                         .fill(calendarColor)
                         .frame(width: 8, height: 8)
                     Text(event.calendar.title)
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                 }
 
@@ -44,10 +44,10 @@ struct EventDetailPopover: View {
                 if let start = event.startDate, let end = event.endDate {
                     HStack(spacing: 6) {
                         Image(systemName: "clock")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         Text(formattedDateRange(start: start, end: end))
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -56,11 +56,46 @@ struct EventDetailPopover: View {
                 if event.hasRecurrenceRules, let rule = event.recurrenceRules?.first {
                     HStack(spacing: 6) {
                         Image(systemName: "repeat")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         Text(recurrenceDescription(rule))
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Location
+                if let location = event.location, !location.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Text(location)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // URL
+                if let url = event.url {
+                    HStack(spacing: 6) {
+                        Image(systemName: "link")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                        Link(url.absoluteString, destination: url)
+                            .font(.callout)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+
+                // Participants
+                if let attendees = event.attendees, !attendees.isEmpty {
+                    Divider()
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(attendees.sortedByStatus(), id: \.self) { participant in
+                            ParticipantRow(participant: participant)
+                        }
                     }
                 }
 
@@ -69,7 +104,7 @@ struct EventDetailPopover: View {
                     Divider()
                     ScrollView {
                         Text(notes)
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }

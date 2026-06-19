@@ -14,6 +14,9 @@ struct EventEditorSheet: View {
     @State private var endDate = Date()
     @State private var isAllDay = true
     @State private var notes = ""
+    @State private var location = ""
+    @State private var url = ""
+    @State private var attendees: [EKParticipant] = []
     @State private var selectedCalendarID: String = ""
     @State private var errorMessage: String?
 
@@ -69,6 +72,40 @@ struct EventEditorSheet: View {
                     }
                 }
 
+                labeledTextField("Location", text: $location) {
+                    let trimmed = location.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !trimmed.isEmpty {
+                        Button {
+                            openInMaps(query: trimmed)
+                        } label: {
+                            Image(systemName: "map")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(LocalizedStringKey("Open in Maps"))
+                    }
+                }
+
+                labeledTextField("URL", text: $url) {
+                    let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let link = normalizedURL(from: trimmed) {
+                        Button {
+                            NSWorkspace.shared.open(link)
+                        } label: {
+                            Image(systemName: "link")
+                        }
+                        .buttonStyle(.borderless)
+                        .help(LocalizedStringKey("Open in Browser"))
+                    }
+                }
+
+                if !attendees.isEmpty {
+                    Section("Participants") {
+                        ForEach(attendees, id: \.self) { participant in
+                            ParticipantRow(participant: participant)
+                        }
+                    }
+                }
+
                 Section("Notes") {
                     TextEditor(text: $notes)
                         .frame(minHeight: 100)
@@ -97,6 +134,9 @@ struct EventEditorSheet: View {
             endDate = event.endDate ?? Date()
             isAllDay = event.isAllDay
             notes = event.notes ?? ""
+            location = event.location ?? ""
+            url = event.url?.absoluteString ?? ""
+            attendees = (event.attendees ?? []).sortedByStatus()
             selectedCalendarID = event.calendar?.calendarIdentifier ?? ""
         } else {
             if let s = initialStartDate { startDate = s }
@@ -160,6 +200,11 @@ struct EventEditorSheet: View {
             return
         }
 
+        let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        let locationValue = trimmedLocation.isEmpty ? nil : trimmedLocation
+        let urlValue = normalizedURL(from: trimmedURL)
+
         do {
             if let event = existingEvent {
                 event.title = title
@@ -167,6 +212,8 @@ struct EventEditorSheet: View {
                 event.endDate = endDate
                 event.isAllDay = isAllDay
                 event.notes = notes.isEmpty ? nil : notes
+                event.location = locationValue
+                event.url = urlValue
                 event.calendar = cal
                 try eventManager.updateEvent(event)
             } else {
@@ -176,7 +223,9 @@ struct EventEditorSheet: View {
                     endDate: endDate,
                     calendar: cal,
                     notes: notes.isEmpty ? nil : notes,
-                    isAllDay: isAllDay
+                    isAllDay: isAllDay,
+                    location: locationValue,
+                    url: urlValue
                 )
             }
             onSave()
@@ -184,5 +233,34 @@ struct EventEditorSheet: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func labeledTextField<Trailing: View>(
+        _ label: LocalizedStringKey,
+        text: Binding<String>,
+        @ViewBuilder trailing: () -> Trailing
+    ) -> some View {
+        LabeledContent(label) {
+            HStack(spacing: 4) {
+                TextField("", text: text, prompt: Text(label))
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                trailing()
+            }
+        }
+    }
+
+    private func openInMaps(query: String) {
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+              let url = URL(string: "http://maps.apple.com/?q=\(encoded)") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    private func normalizedURL(from raw: String) -> URL? {
+        guard !raw.isEmpty else { return nil }
+        if let url = URL(string: raw), let scheme = url.scheme, !scheme.isEmpty {
+            return url
+        }
+        return URL(string: "https://\(raw)")
     }
 }

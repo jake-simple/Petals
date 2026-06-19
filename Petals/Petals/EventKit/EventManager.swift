@@ -74,7 +74,8 @@ final class EventManager {
     }
 
     func createEvent(title: String, startDate: Date, endDate: Date, calendar: EKCalendar,
-                     notes: String? = nil, isAllDay: Bool = true) throws {
+                     notes: String? = nil, isAllDay: Bool = true,
+                     location: String? = nil, url: URL? = nil) throws {
         let event = EKEvent(eventStore: store)
         event.title = title
         event.startDate = startDate
@@ -82,6 +83,8 @@ final class EventManager {
         event.calendar = calendar
         event.notes = notes
         event.isAllDay = isAllDay
+        event.location = location
+        event.url = url
         try store.save(event, span: .thisEvent)
     }
 
