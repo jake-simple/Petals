@@ -3,8 +3,10 @@ import SwiftData
 
 struct VisionBoardContainerView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(PremiumStore.self) private var premium
     @Query(sort: \VisionBoard.sortIndex) private var boards: [VisionBoard]
     @Binding var selectedBoardID: PersistentIdentifier?
+    var onRequestPaywall: () -> Void = {}
     @State private var editingBoardID: PersistentIdentifier?
     @State private var boardCreationError: String?
     @FocusState private var listFocused: Bool
@@ -19,7 +21,7 @@ struct VisionBoardContainerView: View {
             sidebar
         } detail: {
             if let board = selectedBoard {
-                VisionBoardView(board: board)
+                VisionBoardView(board: board, onRequestPaywall: onRequestPaywall)
                     .id(board.persistentModelID)
             } else {
                 ContentUnavailableView("보드를 선택하세요",
@@ -93,8 +95,13 @@ struct VisionBoardContainerView: View {
     }
 
     private func addBoard() {
+        // 무료: 보드 1개 한도 (추가 생성 차단 + 페이월)
+        if !premium.isPremium && boards.count >= 1 {
+            onRequestPaywall()
+            return
+        }
         let maxSort = boards.map(\.sortIndex).max() ?? 0
-        let board = VisionBoard(name: "새 보드", sortIndex: maxSort + 1)
+        let board = VisionBoard(name: String(localized: "새 보드"), sortIndex: maxSort + 1)
         modelContext.insert(board)
 
         do {
@@ -156,13 +163,13 @@ private struct BoardRow: View {
                 .focused($textFieldFocused)
                 .onSubmit {
                     if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
-                        board.name = "새 보드"
+                        board.name = String(localized: "새 보드")
                     }
                     editingBoardID = nil
                 }
                 .onExitCommand {
                     if board.name.trimmingCharacters(in: .whitespaces).isEmpty {
-                        board.name = "새 보드"
+                        board.name = String(localized: "새 보드")
                     }
                     editingBoardID = nil
                 }
