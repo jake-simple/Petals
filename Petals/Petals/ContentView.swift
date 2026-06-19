@@ -102,6 +102,10 @@ struct ContentView: View {
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
+        .inspector(isPresented: $showCalendarFilter) {
+            CalendarFilterView(eventManager: eventManager)
+                .inspectorColumnWidth(min: 220, ideal: 280, max: 400)
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
@@ -415,9 +419,6 @@ struct ContentView: View {
             HStack(spacing: 4) {
                 Button(action: { showCalendarFilter.toggle() }) {
                     Label("Calendars", systemImage: "calendar")
-                }
-                .popover(isPresented: $showCalendarFilter) {
-                    CalendarFilterView(eventManager: eventManager)
                 }
 
                 Button(action: { showFontSizePicker.toggle() }) {

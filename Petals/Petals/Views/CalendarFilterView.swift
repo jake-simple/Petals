@@ -18,37 +18,69 @@ struct CalendarFilterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Calendars")
-                .font(.headline)
+            HStack {
+                Text("Calendars")
+                    .font(.headline)
+                Spacer()
+                Button("Select All", action: selectAll)
+                    .disabled(allSelected)
+                Button("Select None", action: selectNone)
+                    .disabled(eventManager.selectedCalendarIDs.isEmpty)
+            }
+            .buttonStyle(.link)
+            .font(.subheadline)
 
-            ForEach(groupedCalendars, id: \.sourceID) { group in
-                Text(group.sourceTitle)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 4)
+            Divider()
 
-                ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
-                    Toggle(isOn: binding(for: calendar)) {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color(cgColor: calendar.cgColor))
-                                .frame(width: 10, height: 10)
-                            Text(calendar.title)
-                                .lineLimit(1)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(groupedCalendars, id: \.sourceID) { group in
+                        Text(group.sourceTitle)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 4)
+
+                        ForEach(group.calendars, id: \.calendarIdentifier) { calendar in
+                            Toggle(isOn: binding(for: calendar)) {
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(Color(cgColor: calendar.cgColor))
+                                        .frame(width: 10, height: 10)
+                                    Text(calendar.title)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .toggleStyle(.checkbox)
                         }
                     }
-                    .toggleStyle(.checkbox)
-                }
-            }
 
-            if eventManager.calendars.isEmpty {
-                Text("No calendars available")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                    if eventManager.calendars.isEmpty {
+                        Text("No calendars available")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding()
-        .frame(minWidth: 200)
+    }
+
+    private var allCalendarIDs: Set<String> {
+        Set(eventManager.calendars.map(\.calendarIdentifier))
+    }
+
+    private var allSelected: Bool {
+        !eventManager.calendars.isEmpty
+            && allCalendarIDs.isSubset(of: eventManager.selectedCalendarIDs)
+    }
+
+    private func selectAll() {
+        eventManager.selectedCalendarIDs = allCalendarIDs
+    }
+
+    private func selectNone() {
+        eventManager.selectedCalendarIDs = []
     }
 
     private func binding(for calendar: EKCalendar) -> Binding<Bool> {
