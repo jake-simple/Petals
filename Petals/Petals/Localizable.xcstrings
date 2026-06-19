@@ -1116,6 +1116,17 @@
         }
       }
     },
+    "Select All" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전체 선택"
+          }
+        }
+      }
+    },
     "Select Font…" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1123,6 +1134,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "글꼴 선택…"
+          }
+        }
+      }
+    },
+    "Select None" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "전체 해제"
           }
         }
       }

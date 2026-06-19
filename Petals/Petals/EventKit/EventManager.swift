@@ -38,7 +38,8 @@ final class EventManager {
     }
 
     func loadCalendars() {
-        calendars = store.calendars(for: .event).sorted { $0.title < $1.title }
+        calendars = store.calendars(for: .event)
+            .sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
         restoreSelectedIDs()
     }
 
