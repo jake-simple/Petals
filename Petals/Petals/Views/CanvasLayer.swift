@@ -5,11 +5,13 @@ import UniformTypeIdentifiers
 struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
+    @Environment(PremiumStore.self) private var premium
     var yearDocument: YearDocument?
     var zoomLevel: Int = 12
     var pageIndex: Int = 0
     @Binding var selectedItemIDs: Set<PersistentIdentifier>
     @Binding var showInspector: Bool
+    var onRequestPaywall: () -> Void = {}
 
     @State private var containerSize: CGSize = CGSize(width: 900, height: 600)
     @State private var marqueeRect: CGRect?
@@ -237,6 +239,11 @@ struct CanvasLayer: View {
     private func pasteItem() {
         guard let snap = clipboardManager.snapshot, let doc = yearDocument else { return }
         let itemType = CanvasItemType(rawValue: snap.type) ?? .text
+        // 무료: 이미지/스티커는 붙여넣기 차단 (텍스트만 허용)
+        if itemType != .text && !premium.isPremium {
+            onRequestPaywall()
+            return
+        }
         let relW = (snap.absoluteWidth ?? snap.relativeWidth * containerSize.width) / containerSize.width
         let relH = (snap.absoluteHeight ?? snap.relativeHeight * containerSize.height) / containerSize.height
         let item = CanvasItem(type: itemType,
@@ -260,6 +267,11 @@ struct CanvasLayer: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
+        // 무료: 이미지 드래그앤드랍 차단
+        guard premium.isPremium else {
+            onRequestPaywall()
+            return
+        }
         for provider in providers {
             Task { @MainActor in
                 guard let data = await provider.loadImageData(),

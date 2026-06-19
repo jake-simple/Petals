@@ -5,7 +5,9 @@ import UniformTypeIdentifiers
 struct VisionBoardView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
+    @Environment(PremiumStore.self) private var premium
     @Bindable var board: VisionBoard
+    var onRequestPaywall: () -> Void = {}
 
     // 실시간 뷰포트 (렌더링에 사용)
     @State private var scale: CGFloat = 1.0
@@ -506,7 +508,9 @@ struct VisionBoardView: View {
         // 가운데: 도구
         ToolbarItem(placement: .principal) {
             HStack(spacing: 4) {
-                Button(action: { showImagePicker = true }) {
+                Button(action: {
+                    if premium.isPremium { showImagePicker = true } else { onRequestPaywall() }
+                }) {
                     Label("Image", systemImage: "photo")
                 }
 
@@ -514,7 +518,9 @@ struct VisionBoardView: View {
                     Label("Text", systemImage: "textformat")
                 }
 
-                Button(action: { showStickerInput.toggle() }) {
+                Button(action: {
+                    if premium.isPremium { showStickerInput.toggle() } else { onRequestPaywall() }
+                }) {
                     Label("Sticker", systemImage: "star.square.on.square")
                 }
                 .sheet(isPresented: $showStickerInput) {
@@ -581,6 +587,11 @@ struct VisionBoardView: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
+        // 무료: 이미지 드래그앤드랍 차단
+        guard premium.isPremium else {
+            onRequestPaywall()
+            return
+        }
         for provider in providers {
             Task { @MainActor in
                 guard let data = await provider.loadImageData(),
@@ -596,9 +607,14 @@ struct VisionBoardView: View {
 
     private func pasteItem(in viewSize: CGSize) {
         guard let snap = clipboardManager.snapshot else { return }
+        let itemType = CanvasItemType(rawValue: snap.type) ?? .text
+        // 무료: 이미지/스티커는 붙여넣기 차단 (텍스트만 허용)
+        if itemType != .text && !premium.isPremium {
+            onRequestPaywall()
+            return
+        }
         let center = visibleCenter(in: viewSize)
         let offset: Double = 20
-        let itemType = CanvasItemType(rawValue: snap.type) ?? .text
         let w = snap.absoluteWidth ?? 200
         let h = snap.absoluteHeight ?? 200
         let item = VisionBoardItem(type: itemType,
