@@ -100,6 +100,58 @@ final class EventManager {
         store.defaultCalendarForNewEvents
     }
 
+    // MARK: - On This Day
+
+    func fetchEventsForDate(_ date: Date) -> [EKEvent] {
+        let cal = Calendar.current
+        guard let start = cal.startOfDay(for: date) as Date?,
+              let end = cal.date(byAdding: .day, value: 1, to: start) else { return [] }
+        let cals = selectedCalendarIDs.isEmpty ? nil : calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
+        guard cals == nil || !cals!.isEmpty else { return [] }
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: cals)
+        return store.events(matching: predicate)
+    }
+
+    func fetchOnThisDay(
+        for date: Date,
+        yearsBack: Int = 25,
+        onBatchComplete: @MainActor @Sendable ([(year: Int, events: [EKEvent])]) -> Void
+    ) async {
+        let cal = Calendar.current
+        let month = cal.component(.month, from: date)
+        let day = cal.component(.day, from: date)
+        let currentYear = cal.component(.year, from: date)
+
+        let batchSize = 4
+        for batchStart in stride(from: 1, through: yearsBack, by: batchSize) {
+            guard !Task.isCancelled else { return }
+            let batchEnd = min(batchStart + batchSize - 1, yearsBack)
+
+            var batchResults: [(year: Int, events: [EKEvent])] = []
+            for offset in batchStart...batchEnd {
+                let targetYear = currentYear - offset
+                var components = DateComponents()
+                components.year = targetYear
+                components.month = month
+                components.day = day
+                guard let targetDate = cal.date(from: components),
+                      let start = cal.date(bySettingHour: 0, minute: 0, second: 0, of: targetDate),
+                      let end = cal.date(byAdding: .day, value: 1, to: start) else { continue }
+                let cals = selectedCalendarIDs.isEmpty ? nil : calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
+                guard cals == nil || !cals!.isEmpty else { continue }
+                let predicate = store.predicateForEvents(withStart: start, end: end, calendars: cals)
+                let fetched = store.events(matching: predicate)
+                if !fetched.isEmpty {
+                    batchResults.append((year: targetYear, events: fetched))
+                }
+            }
+
+            if !batchResults.isEmpty {
+                await onBatchComplete(batchResults.sorted { $0.year > $1.year })
+            }
+        }
+    }
+
     // MARK: - Demo data (screenshot mode)
 
     /// Populates the manager with synthetic demo calendars + events for

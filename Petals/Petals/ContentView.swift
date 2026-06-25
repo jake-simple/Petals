@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var currentDocument: YearDocument?
 
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
+    @AppStorage("collapseTopArea") private var collapseTopArea = false
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
     @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
 
@@ -207,6 +208,7 @@ struct ContentView: View {
                     if let event = selectedEvent {
                         EventDetailPopover(
                             event: event,
+                            eventManager: eventManager,
                             onEdit: {
                                 showEventDetail = false
                                 editorContext = EventEditorContext(existingEvent: event)
@@ -218,7 +220,7 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
-            .padding(.top, geo.size.height * 0.18)
+            .padding(.top, collapseTopArea ? 16 : geo.size.height * 0.18)
             .padding(.bottom, 16)
             .allowsHitTesting(!isCanvasEditMode)
             // Canvas layer (편집/표시 모드 동일한 좌표계)
@@ -415,6 +417,11 @@ struct ContentView: View {
 
         ToolbarItem(placement: .primaryAction) {
             HStack(spacing: 4) {
+                Button(action: { collapseTopArea.toggle() }) {
+                    Label("Top Area", systemImage: collapseTopArea ? "rectangle.tophalf.inset.filled" : "rectangle.topthird.inset.filled")
+                }
+                .help(collapseTopArea ? "상단 영역 보이기" : "상단 영역 숨기기")
+
                 Button(action: { showCalendarFilter.toggle() }) {
                     Label("Calendars", systemImage: "calendar")
                 }
