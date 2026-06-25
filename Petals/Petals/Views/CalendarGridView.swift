@@ -156,12 +156,18 @@ struct CalendarGridView: View {
         let gridColor = Color(hex: theme.gridLineColor)
         let dayLabelColor = Color(hex: theme.dayLabelColor)
         let monthLabelColor = Color(hex: theme.monthLabelColor)
+        // 셀마다 동일한 색상을 매번 Color(hex:) 파싱하지 않도록 루프 밖에서 1회 계산.
+        let sundayColor = Color(hex: theme.todayLineColor)
+        let saturdayColor = Color(hex: "3B82F6")
+        let inactiveShade = gridColor.opacity(0.08)
+        let weekendShade = theme.weekendColor.map { Color(hex: $0).opacity(0.5) }
         var locCal = calendar
         locCal.locale = Locale(identifier: Locale.preferredLanguages.first ?? "en")
         let weekdaySymbols = locCal.veryShortStandaloneWeekdaySymbols
         let monthNames = locCal.shortMonthSymbols
 
         let endMonth = startMonth + monthsShown - 1
+        let weekdayTable = Self.weekdays(forYear: year)
 
         for month in startMonth...endMonth {
             let days = layout.daysInMonth(month)
@@ -174,11 +180,10 @@ struct CalendarGridView: View {
             for day in 1...31 where day <= days {
                 let col = day - 1
                 let colX = monthLabelWidth + CGFloat(col) * cellWidth
-                let date = makeDate(month: month, day: day)
-                let wd = calendar.component(.weekday, from: date)
+                let wd = weekdayTable[month - 1][day - 1]
                 let sym = weekdaySymbols[wd - 1]
                 // 일요일(강조색), 토요일(파란색), 그 외 기본색
-                let weekendAccent: Color? = wd == 1 ? Color(hex: theme.todayLineColor) : (wd == 7 ? Color(hex: "3B82F6") : nil)
+                let weekendAccent: Color? = wd == 1 ? sundayColor : (wd == 7 ? saturdayColor : nil)
                 let numColor = weekendAccent?.opacity(0.7) ?? dayLabelColor
                 let wdColor = weekendAccent?.opacity(0.7) ?? dayLabelColor.opacity(0.6)
                 let label = Self.dayNumberText(day, fontSize: eventFontSize).foregroundStyle(numColor)
@@ -193,11 +198,11 @@ struct CalendarGridView: View {
                 let colX = monthLabelWidth + CGFloat(col) * cellWidth
                 let rect = CGRect(x: colX, y: eventY, width: cellWidth, height: cellHeight)
                 if day > days {
-                    context.fill(Path(rect), with: .color(Color(hex: theme.gridLineColor).opacity(0.08)))
-                } else if let weekendHex = theme.weekendColor {
-                    let weekday = calendar.component(.weekday, from: makeDate(month: month, day: day))
+                    context.fill(Path(rect), with: .color(inactiveShade))
+                } else if let weekendShade {
+                    let weekday = weekdayTable[month - 1][day - 1]
                     if weekday == 1 || weekday == 7 {
-                        context.fill(Path(rect), with: .color(Color(hex: weekendHex).opacity(0.5)))
+                        context.fill(Path(rect), with: .color(weekendShade))
                     }
                 }
             }
@@ -213,7 +218,7 @@ struct CalendarGridView: View {
         }
 
         // Grid lines
-        let boundaryColor = Color(hex: theme.dayLabelColor).opacity(0.3)
+        let boundaryColor = dayLabelColor.opacity(0.3)
         let boundaryStyle: (Color, CGFloat) = (boundaryColor, 0.9)
 
         for i in 0...totalRows where i != 0 {
@@ -234,8 +239,27 @@ struct CalendarGridView: View {
         }
     }
 
-    private func makeDate(month: Int, day: Int) -> Date {
-        calendar.date(from: DateComponents(year: year, month: month, day: day))!
+    /// (year, month, day) → 요일(1=일 … 7=토). size에 무관하므로 연도별로 한 번만 계산해 캐시.
+    /// `weekdays[month-1][day-1]`, 해당 월에 없는 날(day > 일수)은 0.
+    private static var weekdayCache: [Int: [[Int]]] = [:]
+
+    private static func weekdays(forYear year: Int) -> [[Int]] {
+        if let cached = weekdayCache[year] { return cached }
+        let cal = Calendar.current
+        var table: [[Int]] = []
+        table.reserveCapacity(12)
+        for month in 1...12 {
+            let firstDate = cal.date(from: DateComponents(year: year, month: month, day: 1))!
+            let firstWeekday = cal.component(.weekday, from: firstDate)   // 1=일 … 7=토
+            let days = cal.range(of: .day, in: .month, for: firstDate)?.count ?? 31
+            var row = [Int](repeating: 0, count: 31)
+            for day in 1...days {
+                row[day - 1] = (firstWeekday - 1 + (day - 1)) % 7 + 1
+            }
+            table.append(row)
+        }
+        weekdayCache[year] = table
+        return table
     }
 }
 
