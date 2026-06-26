@@ -3,10 +3,8 @@ import SwiftData
 
 struct VisionBoardContainerView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(PremiumStore.self) private var premium
     @Query(sort: \VisionBoard.sortIndex) private var boards: [VisionBoard]
     @Binding var selectedBoardID: PersistentIdentifier?
-    var onRequestPaywall: () -> Void = {}
     @State private var editingBoardID: PersistentIdentifier?
     @State private var boardCreationError: String?
     @FocusState private var listFocused: Bool
@@ -21,7 +19,7 @@ struct VisionBoardContainerView: View {
             sidebar
         } detail: {
             if let board = selectedBoard {
-                VisionBoardView(board: board, onRequestPaywall: onRequestPaywall)
+                VisionBoardView(board: board)
                     .id(board.persistentModelID)
             } else {
                 ContentUnavailableView("보드를 선택하세요",
@@ -95,11 +93,6 @@ struct VisionBoardContainerView: View {
     }
 
     private func addBoard() {
-        // 무료: 보드 1개 한도 (추가 생성 차단 + 페이월)
-        if !premium.isPremium && boards.count >= 1 {
-            onRequestPaywall()
-            return
-        }
         let maxSort = boards.map(\.sortIndex).max() ?? 0
         let board = VisionBoard(name: String(localized: "새 보드"), sortIndex: maxSort + 1)
         modelContext.insert(board)
@@ -155,7 +148,12 @@ private struct BoardRow: View {
     @Binding var editingBoardID: PersistentIdentifier?
     var onSelect: () -> Void
     var onDelete: () -> Void
+    @Environment(\.openWindow) private var openWindow
     @FocusState private var textFieldFocused: Bool
+
+    private func openInNewWindow() {
+        openWindow(id: PetalsApp.boardWindowID, value: board.persistentModelID)
+    }
 
     var body: some View {
         if editingBoardID == board.persistentModelID {
@@ -179,10 +177,17 @@ private struct BoardRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 2)
                 .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    openInNewWindow()
+                }
                 .onTapGesture {
                     onSelect()
                 }
                 .contextMenu {
+                    Button("새 창에서 열기") {
+                        openInNewWindow()
+                    }
+                    Divider()
                     Button("이름 변경") {
                         onSelect()
                         editingBoardID = board.persistentModelID

@@ -37,10 +37,6 @@ struct ContentView: View {
     @State private var showVisionBoard = ScreenshotConfig.startsInWhiteboard
     @State private var selectedVisionBoardID: PersistentIdentifier?
 
-    // Premium gating
-    @Environment(PremiumStore.self) private var premium
-    @State private var showPaywall = false
-
     // Canvas state
     @State private var isCanvasEditMode = false
     @State private var selectedCanvasItemIDs: Set<PersistentIdentifier> = []
@@ -96,8 +92,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if showVisionBoard {
-                VisionBoardContainerView(selectedBoardID: $selectedVisionBoardID,
-                                         onRequestPaywall: { showPaywall = true })
+                VisionBoardContainerView(selectedBoardID: $selectedVisionBoardID)
                     .toolbar { modeToggleToolbar }
             } else {
                 calendarBody
@@ -107,9 +102,6 @@ struct ContentView: View {
         .inspector(isPresented: $showCalendarFilter) {
             CalendarFilterView(eventManager: eventManager)
                 .inspectorColumnWidth(min: 220, ideal: 280, max: 400)
-        }
-        .sheet(isPresented: $showPaywall) {
-            PaywallView()
         }
         .overlay(alignment: .bottom) {
             if clipboardManager.showCopyToast {
@@ -148,7 +140,7 @@ struct ContentView: View {
     private var modeToggleToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
             Button {
-                showVisionBoard.toggle()            // 무료도 진입 가능 (삽입 시점에 게이팅)
+                showVisionBoard.toggle()
             } label: {
                 Image(systemName: showVisionBoard ? "calendar" : "sparkles.rectangle.stack")
             }
@@ -231,8 +223,7 @@ struct ContentView: View {
                         zoomLevel: monthsPerPage,
                         pageIndex: pageIndex,
                         selectedItemIDs: $selectedCanvasItemIDs,
-                        showInspector: $showInspector,
-                        onRequestPaywall: { showPaywall = true }
+                        showInspector: $showInspector
                     )
                 } else {
                     canvasDisplayLayer
@@ -455,7 +446,7 @@ struct ContentView: View {
                     )
                 }
 
-                // Canvas edit mode toggle (무료도 진입 가능 — 삽입 시점에 게이팅)
+                // Canvas edit mode toggle
                 Toggle(isOn: $isCanvasEditMode) {
                     Label("Canvas", systemImage: "paintbrush")
                 }
@@ -474,9 +465,7 @@ struct ContentView: View {
 
     @ViewBuilder
     private var canvasToolButtons: some View {
-        Button(action: {
-            if premium.isPremium { showImagePicker = true } else { showPaywall = true }
-        }) {
+        Button(action: { showImagePicker = true }) {
             Label("Image", systemImage: "photo")
         }
         Button(action: {
@@ -484,9 +473,7 @@ struct ContentView: View {
         }) {
             Label("Text", systemImage: "textformat")
         }
-        Button(action: {
-            if premium.isPremium { showStickerInput.toggle() } else { showPaywall = true }
-        }) {
+        Button(action: { showStickerInput.toggle() }) {
             Label("Sticker", systemImage: "star.square.on.square")
         }
         .sheet(isPresented: $showStickerInput) {

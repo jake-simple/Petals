@@ -5,9 +5,7 @@ import UniformTypeIdentifiers
 struct VisionBoardView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
-    @Environment(PremiumStore.self) private var premium
     @Bindable var board: VisionBoard
-    var onRequestPaywall: () -> Void = {}
 
     // 실시간 뷰포트 (렌더링에 사용)
     @State private var scale: CGFloat = 1.0
@@ -496,9 +494,7 @@ struct VisionBoardView: View {
         // 가운데: 도구
         ToolbarItem(placement: .principal) {
             HStack(spacing: 4) {
-                Button(action: {
-                    if premium.isPremium { showImagePicker = true } else { onRequestPaywall() }
-                }) {
+                Button(action: { showImagePicker = true }) {
                     Label("Image", systemImage: "photo")
                 }
 
@@ -506,9 +502,7 @@ struct VisionBoardView: View {
                     Label("Text", systemImage: "textformat")
                 }
 
-                Button(action: {
-                    if premium.isPremium { showStickerInput.toggle() } else { onRequestPaywall() }
-                }) {
+                Button(action: { showStickerInput.toggle() }) {
                     Label("Sticker", systemImage: "star.square.on.square")
                 }
                 .sheet(isPresented: $showStickerInput) {
@@ -575,11 +569,6 @@ struct VisionBoardView: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
-        // 무료: 이미지 드래그앤드랍 차단
-        guard premium.isPremium else {
-            onRequestPaywall()
-            return
-        }
         for provider in providers {
             Task { @MainActor in
                 guard let data = await provider.loadImageData(),
@@ -611,11 +600,6 @@ struct VisionBoardView: View {
     /// 내부 복사한 스냅샷들을 상대 배치를 유지한 채, 그룹 중심을 화면 중앙에 맞춰 붙여넣는다.
     private func pasteSnapshots(_ snaps: [CanvasItemSnapshot], in viewSize: CGSize) {
         guard !snaps.isEmpty else { return }
-        // 무료: 텍스트 외(이미지/스티커/도형)가 하나라도 있으면 차단
-        if !premium.isPremium && snaps.contains(where: { CanvasItemType(rawValue: $0.type) != .text }) {
-            onRequestPaywall()
-            return
-        }
         let center = visibleCenter(in: viewSize)
         let rects = snaps.map { snap in
             CGRect(x: snap.absoluteX ?? 0, y: snap.absoluteY ?? 0,
@@ -664,7 +648,6 @@ struct VisionBoardView: View {
         let center = visibleCenter(in: viewSize)
         // 이미지 우선
         if let image = clipboardManager.systemImage(), let data = image.tiffRepresentation {
-            guard premium.isPremium else { onRequestPaywall(); return }
             Task { @MainActor in
                 guard let result = await ImageManager.importImage(from: data) else { return }
                 let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
@@ -675,7 +658,7 @@ struct VisionBoardView: View {
             }
             return
         }
-        // 텍스트 (무료 사용자도 허용)
+        // 텍스트
         if let str = clipboardManager.systemString() {
             let item = VisionBoardItem.newText(at: center, zIndex: board.nextZIndex)
             item.text = str

@@ -5,13 +5,11 @@ import UniformTypeIdentifiers
 struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
-    @Environment(PremiumStore.self) private var premium
     var yearDocument: YearDocument?
     var zoomLevel: Int = 12
     var pageIndex: Int = 0
     @Binding var selectedItemIDs: Set<PersistentIdentifier>
     @Binding var showInspector: Bool
-    var onRequestPaywall: () -> Void = {}
 
     @State private var containerSize: CGSize = CGSize(width: 900, height: 600)
     @State private var marqueeRect: CGRect?
@@ -249,11 +247,6 @@ struct CanvasLayer: View {
     /// 내부 복사한 스냅샷들을 상대 배치를 유지한 채 붙여넣는다.
     private func pasteSnapshots(_ snaps: [CanvasItemSnapshot]) {
         guard let doc = yearDocument, !snaps.isEmpty else { return }
-        // 무료: 텍스트 외(이미지/스티커/도형)가 하나라도 있으면 차단
-        if !premium.isPremium && snaps.contains(where: { CanvasItemType(rawValue: $0.type) != .text }) {
-            onRequestPaywall()
-            return
-        }
         let offset = 0.02
         var nextZ = doc.nextZIndex
         var newIDs: Set<PersistentIdentifier> = []
@@ -290,7 +283,6 @@ struct CanvasLayer: View {
     private func pasteFromSystem() {
         // 이미지 우선
         if let image = clipboardManager.systemImage(), let data = image.tiffRepresentation {
-            guard premium.isPremium else { onRequestPaywall(); return }
             Task { @MainActor in
                 guard let result = await ImageManager.importImage(from: data),
                       let doc = yearDocument else { return }
@@ -302,7 +294,7 @@ struct CanvasLayer: View {
             }
             return
         }
-        // 텍스트 (무료 사용자도 허용)
+        // 텍스트
         if let str = clipboardManager.systemString(), let doc = yearDocument {
             let item = CanvasItem.newText(zIndex: doc.nextZIndex)
             item.text = str
@@ -314,11 +306,6 @@ struct CanvasLayer: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) {
-        // 무료: 이미지 드래그앤드랍 차단
-        guard premium.isPremium else {
-            onRequestPaywall()
-            return
-        }
         for provider in providers {
             Task { @MainActor in
                 guard let data = await provider.loadImageData(),
