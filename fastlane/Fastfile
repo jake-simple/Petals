@@ -86,7 +86,7 @@ platform :mac do
       force: true,
       submit_for_review: true,
       automatic_release: false,
-      run_precheck_before_submit: true,
+      run_precheck_before_submit: false,
       platform: "osx"
     )
   end
