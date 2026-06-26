@@ -6,6 +6,9 @@ struct PetalsApp: App {
     /// 메인 창 식별자. 메뉴에서 닫힌 창을 다시 열 때 사용.
     static let mainWindowID = "main"
 
+    /// 화이트보드 전용 창 식별자. 보드를 새 창에서 열 때 사용.
+    static let boardWindowID = "board"
+
     @State private var clipboardManager = ClipboardManager()
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -69,6 +72,28 @@ struct PetalsApp: App {
             }
         }
 
+        // 화이트보드를 메인 창과 별개의 창에서 열기 위한 값 기반 씬.
+        // 같은 보드를 다시 열면 새 창을 만들지 않고 기존 창을 활성화한다.
+        WindowGroup("화이트보드", id: Self.boardWindowID, for: PersistentIdentifier.self) { $boardID in
+            BoardWindowScene(boardID: boardID)
+                .environment(clipboardManager)
+        }
+        .modelContainer(sharedModelContainer)
+        .defaultSize(width: 1000, height: 700)
+        .windowResizability(.contentMinSize)
+        .commands {
+            CommandGroup(replacing: .pasteboard) {
+                Button("복사") {
+                    NotificationCenter.default.post(name: .performCopy, object: nil)
+                }
+                .keyboardShortcut("c", modifiers: .command)
+                Button("붙여넣기") {
+                    NotificationCenter.default.post(name: .performPaste, object: nil)
+                }
+                .keyboardShortcut("v", modifiers: .command)
+            }
+        }
+
         Settings {
             SettingsView()
         }
@@ -104,6 +129,28 @@ struct PetalsApp: App {
             }
         }
         try? context.save()
+    }
+}
+
+/// 화이트보드 보드를 단독 창에서 보여주는 씬.
+/// `PersistentIdentifier`로 보드를 조회하며, 보드 이름을 창 제목으로 사용한다.
+private struct BoardWindowScene: View {
+    @Query(sort: \VisionBoard.sortIndex) private var boards: [VisionBoard]
+    let boardID: PersistentIdentifier?
+
+    private var board: VisionBoard? {
+        boards.first { $0.persistentModelID == boardID }
+    }
+
+    var body: some View {
+        if let board {
+            VisionBoardView(board: board)
+                .navigationTitle(board.name)
+        } else {
+            ContentUnavailableView("보드를 찾을 수 없습니다",
+                                   systemImage: "rectangle.3.group",
+                                   description: Text("이 보드가 삭제되었을 수 있습니다."))
+        }
     }
 }
 

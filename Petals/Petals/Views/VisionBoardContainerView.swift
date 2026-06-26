@@ -148,7 +148,12 @@ private struct BoardRow: View {
     @Binding var editingBoardID: PersistentIdentifier?
     var onSelect: () -> Void
     var onDelete: () -> Void
+    @Environment(\.openWindow) private var openWindow
     @FocusState private var textFieldFocused: Bool
+
+    private func openInNewWindow() {
+        openWindow(id: PetalsApp.boardWindowID, value: board.persistentModelID)
+    }
 
     var body: some View {
         if editingBoardID == board.persistentModelID {
@@ -172,10 +177,17 @@ private struct BoardRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 2)
                 .contentShape(Rectangle())
+                .onTapGesture(count: 2) {
+                    openInNewWindow()
+                }
                 .onTapGesture {
                     onSelect()
                 }
                 .contextMenu {
+                    Button("새 창에서 열기") {
+                        openInNewWindow()
+                    }
+                    Divider()
                     Button("이름 변경") {
                         onSelect()
                         editingBoardID = board.persistentModelID
