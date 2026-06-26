@@ -94,6 +94,10 @@ struct CanvasKeyCommands: ViewModifier {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.keyCode == 51 || event.keyCode == 117 {
+                // 텍스트 편집 중이면 글자 삭제가 우선되도록 이벤트를 그대로 통과시킨다.
+                if let responder = NSApp.keyWindow?.firstResponder, responder is NSText {
+                    return event
+                }
                 guard !selectedItemIDs.isEmpty else { return event }
                 onDelete()
                 return nil
