@@ -4,11 +4,15 @@ struct CalendarGridView: View {
     let year: Int
     let theme: Theme
     let showTodayLine: Bool
+    var dimPastDates: Bool = false
     let eventFontSize: CGFloat
     var startMonth: Int = 1
     var monthsShown: Int = 12
 
     private let calendar = Calendar.current
+
+    /// 과거 날짜 셀 위에 덮는 베일 불투명도 — 배경색으로 덮어 날짜를 흐리게 만든다.
+    private static let pastVeilOpacity: Double = 0.55
 
     var body: some View {
         Canvas { context, size in
@@ -27,6 +31,21 @@ struct CalendarGridView: View {
     /// 날짜 숫자 Text (분기/월 셀, 연별 라벨, +N 배지 폭 측정이 모두 같은 폰트를 공유).
     static func dayNumberText(_ day: Int, fontSize: CGFloat) -> Text {
         Text("\(day)").font(.system(size: fontSize, weight: .semibold))
+    }
+
+    /// 표시 연도의 (월, 일)이 오늘 이전인지. 오늘 당일은 과거로 보지 않는다(today line이 강조).
+    private func isPast(month: Int, day: Int, today: (year: Int, month: Int, day: Int)) -> Bool {
+        if year != today.year { return year < today.year }
+        if month != today.month { return month < today.month }
+        return day < today.day
+    }
+
+    /// (todayYear, todayMonth, todayDay) — dimPastDates가 켜졌을 때만 사용.
+    private func todayComponents() -> (year: Int, month: Int, day: Int)? {
+        guard dimPastDates else { return nil }
+        let c = calendar.dateComponents([.year, .month, .day], from: Date())
+        guard let y = c.year, let m = c.month, let d = c.day else { return nil }
+        return (y, m, d)
     }
 
     private func drawTodayHighlight(context: inout GraphicsContext, layout: CalendarLayout) {
@@ -81,6 +100,8 @@ struct CalendarGridView: View {
         // MARK: Cells (weekend shading, inactive cells, day numbers, month labels)
         let weekendShade = theme.weekendColor.map { Color(hex: $0).opacity(0.5) }
         let inactiveShade = gridColor.opacity(0.08)
+        let today = todayComponents()
+        let pastVeil = Color(hex: theme.backgroundColor).opacity(Self.pastVeilOpacity)
         for info in layout.months {
             for subrow in 0..<info.weeks {
                 let visualRow = info.startRow + subrow
@@ -105,6 +126,11 @@ struct CalendarGridView: View {
                     let numColor = weekdayColor(col)
                     let resolved = context.resolve(Self.dayNumberText(day, fontSize: eventFontSize).foregroundStyle(numColor))
                     context.draw(resolved, at: CGPoint(x: colX + cellWidth - CalendarLayout.dayLabelInset, y: rowY + labelStrip * 0.5), anchor: .trailing)
+
+                    if let today, isPast(month: info.month, day: day, today: today) {
+                        let rect = CGRect(x: colX, y: rowY, width: cellWidth, height: rowHeight)
+                        context.fill(Path(rect), with: .color(pastVeil))
+                    }
                 }
             }
 
@@ -168,6 +194,8 @@ struct CalendarGridView: View {
 
         let endMonth = startMonth + monthsShown - 1
         let weekdayTable = Self.weekdays(forYear: year)
+        let today = todayComponents()
+        let pastVeil = Color(hex: theme.backgroundColor).opacity(Self.pastVeilOpacity)
 
         for month in startMonth...endMonth {
             let days = layout.daysInMonth(month)
@@ -204,6 +232,13 @@ struct CalendarGridView: View {
                     if weekday == 1 || weekday == 7 {
                         context.fill(Path(rect), with: .color(weekendShade))
                     }
+                }
+
+                // 과거 셀(날짜 라벨 + 이벤트 영역 전체)을 배경색으로 덮어 흐리게.
+                if day <= days, let today,
+                   isPast(month: month, day: day, today: today) {
+                    let fullCell = CGRect(x: colX, y: rowY, width: cellWidth, height: rowHeight)
+                    context.fill(Path(fullCell), with: .color(pastVeil))
                 }
             }
 
@@ -268,6 +303,7 @@ struct CalendarGridView: View {
         year: Calendar.current.component(.year, from: Date()),
         theme: ThemeManager.shared.themes.first ?? ThemeManager.shared.theme(for: "minimal-light"),
         showTodayLine: true,
+        dimPastDates: true,
         eventFontSize: AppSettings.eventFontSizeDefault
     )
     .frame(width: 1100, height: 700)

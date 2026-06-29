@@ -13,6 +13,7 @@ struct ContentView: View {
     @State private var currentDocument: YearDocument?
 
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
+    @AppStorage("dimPastDates") private var dimPastDates = AppSettings.dimPastDatesDefault
     @AppStorage("collapseTopArea") private var collapseTopArea = false
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
     @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
@@ -163,6 +164,7 @@ struct ContentView: View {
                     // Z1: Grid + today line
                     CalendarGridView(
                         year: currentYear, theme: theme, showTodayLine: showTodayLine,
+                        dimPastDates: dimPastDates,
                         eventFontSize: CGFloat(eventFontSize),
                         startMonth: startMonth, monthsShown: monthsPerPage
                     )

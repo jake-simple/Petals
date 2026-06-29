@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
+    @AppStorage("dimPastDates") private var dimPastDates = AppSettings.dimPastDatesDefault
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
     @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
 
@@ -28,6 +29,7 @@ struct SettingsView: View {
         Form {
             Section(String(localized: "Display")) {
                 Toggle(String(localized: "Show Today Line"), isOn: $showTodayLine)
+                Toggle(String(localized: "Dim Past Dates"), isOn: $dimPastDates)
                 Stepper(String(localized: "Max Event Rows: \(maxEventRows)"), value: $maxEventRows, in: 1...10)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(String(localized: "Event Font Size: \(Int(eventFontSize))pt"))
