@@ -11,7 +11,8 @@ struct EventBarLayer: View {
     var startMonth: Int = 1
     var monthsShown: Int = 12
     let onEventTap: (EKEvent, CGRect) -> Void
-    let onEmptyTap: (Int, Int) -> Void  // (month, day)
+    let onEmptyTap: (Int, Int) -> Void  // (month, day) — 더블탭: 그날 일정 시트
+    let onNewEvent: (Int, Int) -> Void  // (month, day) — 우클릭 메뉴: 새 이벤트
     let onDragCreate: (Int, Int, Int, Int) -> Void  // (startMonth, startDay, endMonth, endDay)
     var onEventDelete: ((EKEvent, EKSpan) -> Void)?
 
@@ -71,9 +72,7 @@ struct EventBarLayer: View {
 
                 // Selected cell border (includes day label area)
                 if let sel = selectedCell, dragStart == nil {
-                    let origin = layout.cellOrigin(month: sel.month, day: sel.day)
-                    let rect = CGRect(x: origin.x, y: origin.y - layout.perMonthLabelHeight,
-                                      width: layout.cellWidth, height: layout.rowHeight)
+                    let rect = layout.fullCellRect(month: sel.month, day: sel.day)
                     context.stroke(Path(rect.insetBy(dx: 1, dy: 1)), with: .color(.accentColor), lineWidth: 2)
                 }
 
@@ -117,24 +116,25 @@ struct EventBarLayer: View {
                     }
                 }
                 .contextMenu {
-                    if let loc = hoverLocation,
-                       let segment = hitTest(at: loc, layout: layout, barHeight: eventBarHeight(layout: layout)) {
-                        if segment.event.hasRecurrenceRules {
+                    if let loc = hoverLocation {
+                        if let segment = hitTest(at: loc, layout: layout, barHeight: eventBarHeight(layout: layout)) {
                             Button(role: .destructive) {
                                 onEventDelete?(segment.event, .thisEvent)
                             } label: {
-                                Label("This Event Only", systemImage: "trash")
+                                Label(segment.event.hasRecurrenceRules ? "This Event Only" : "Delete", systemImage: "trash")
                             }
-                            Button(role: .destructive) {
-                                onEventDelete?(segment.event, .futureEvents)
-                            } label: {
-                                Label("All Future Events", systemImage: "trash")
+                            if segment.event.hasRecurrenceRules {
+                                Button(role: .destructive) {
+                                    onEventDelete?(segment.event, .futureEvents)
+                                } label: {
+                                    Label("All Future Events", systemImage: "trash")
+                                }
                             }
-                        } else {
-                            Button(role: .destructive) {
-                                onEventDelete?(segment.event, .thisEvent)
+                        } else if let cell = layout.cellAt(loc) {
+                            Button {
+                                onNewEvent(cell.month, cell.day)
                             } label: {
-                                Label("Delete", systemImage: "trash")
+                                Label("새 이벤트", systemImage: "plus")
                             }
                         }
                     }
@@ -166,7 +166,7 @@ struct EventBarLayer: View {
                                     let now = Date()
                                     if let sel = selectedCell, sel.month == cell.month, sel.day == cell.day,
                                        let last = lastTapTime, now.timeIntervalSince(last) < 0.4 {
-                                        // Double tap → create event
+                                        // Double tap → 그날 일정 시트
                                         selectedCell = nil
                                         lastTapTime = nil
                                         onEmptyTap(cell.month, cell.day)

@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 struct CalendarLayout: Sendable {
     let size: CGSize
@@ -95,6 +96,13 @@ struct CalendarLayout: Sendable {
             x: monthLabelWidth + CGFloat(pos.col) * cellWidth,
             y: headerHeight + CGFloat(pos.row) * rowHeight + perMonthLabelHeight
         )
+    }
+
+    /// Full cell rect including the day-label strip — used for selection borders and popover anchors.
+    func fullCellRect(month: Int, day: Int) -> CGRect {
+        let origin = cellOrigin(month: month, day: day)
+        return CGRect(x: origin.x, y: origin.y - perMonthLabelHeight,
+                      width: cellWidth, height: rowHeight)
     }
 
     func cellAt(_ point: CGPoint) -> (month: Int, day: Int)? {

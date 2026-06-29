@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var selectedEvent: EKEvent?
     @State private var showEventDetail = false
     @State private var eventPopoverAnchor: CGRect = .zero
+    @State private var showDayDetail = false
+    @State private var dayDetailDate = Date()
     @State private var editorContext: EventEditorContext?
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
@@ -186,6 +188,11 @@ struct ContentView: View {
                             showEventDetail = true
                         },
                         onEmptyTap: { month, day in
+                            let cal = Calendar.current
+                            dayDetailDate = cal.date(from: DateComponents(year: currentYear, month: month, day: day)) ?? Date()
+                            showDayDetail = true
+                        },
+                        onNewEvent: { month, day in
                             openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
                         },
                         onDragCreate: { startMonth, startDay, endMonth, endDay in
@@ -202,13 +209,19 @@ struct ContentView: View {
                     if let event = selectedEvent {
                         EventDetailPopover(
                             event: event,
-                            eventManager: eventManager,
                             onEdit: {
                                 showEventDetail = false
                                 editorContext = EventEditorContext(existingEvent: event)
                             }
                         )
                     }
+                }
+                .sheet(isPresented: $showDayDetail) {
+                    DayEventsPopover(
+                        date: dayDetailDate,
+                        eventManager: eventManager,
+                        onSaved: { reloadEvents() }
+                    )
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 6))

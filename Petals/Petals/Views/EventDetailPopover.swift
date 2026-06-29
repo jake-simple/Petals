@@ -9,10 +9,7 @@ private struct OnThisDayYearGroup: Identifiable {
 
 struct EventDetailPopover: View {
     let event: EKEvent
-    let eventManager: EventManager
     let onEdit: () -> Void
-
-    @State private var onThisDayGroups: [OnThisDayYearGroup] = []
 
     private var calendarColor: Color {
         Color(cgColor: event.calendar.cgColor)
@@ -94,8 +91,6 @@ struct EventDetailPopover: View {
                                 .foregroundStyle(.secondary)
                             Link(url.absoluteString, destination: url)
                                 .font(.callout)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
                         }
                     }
 
@@ -117,62 +112,11 @@ struct EventDetailPopover: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
-
-                    // On This Day
-                    if !onThisDayGroups.isEmpty {
-                        onThisDaySection
-                    }
                 }
                 .padding()
             }
         }
-        .frame(width: 280)
-        .task(id: event.eventIdentifier) {
-            await loadOnThisDay()
-        }
-    }
-
-    private var onThisDaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-
-            Label(String(localized: "이날의 기록"), systemImage: "clock.arrow.circlepath")
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            ForEach(onThisDayGroups) { group in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(yearsAgoLabel(group.year))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tertiary)
-
-                    ForEach(group.events, id: \.eventIdentifier) { e in
-                        OnThisDayEventRow(event: e)
-                    }
-                }
-            }
-        }
-    }
-
-    private func yearsAgoLabel(_ year: Int) -> String {
-        guard let start = event.startDate else { return "\(year)" }
-        let currentYear = Calendar.current.component(.year, from: start)
-        let diff = currentYear - year
-        if diff == 1 {
-            return String(localized: "1년 전, \(year)년")
-        } else {
-            return String(localized: "\(diff)년 전, \(year)년")
-        }
-    }
-
-    private func loadOnThisDay() async {
-        guard let date = event.startDate else { return }
-        onThisDayGroups = []
-        await eventManager.fetchOnThisDay(for: date) { batch in
-            let newGroups = batch.map { OnThisDayYearGroup(year: $0.year, events: $0.events) }
-            onThisDayGroups.append(contentsOf: newGroups)
-            onThisDayGroups.sort { $0.year > $1.year }
-        }
+        .frame(width: 320).frame(minHeight: 240)
     }
 
     private func recurrenceDescription(_ rule: EKRecurrenceRule) -> String {
@@ -228,6 +172,166 @@ struct EventDetailPopover: View {
     }
 }
 
+// MARK: - Day Events Popover
+
+/// 날짜를 더블클릭하면 뜨는 "그날의 모든 일정" 목록. 일정을 누르면 편집 시트가 이 시트 위에 뜬다.
+struct DayEventsPopover: View {
+    let date: Date
+    let eventManager: EventManager
+    let onSaved: () -> Void
+
+    @State private var onThisDayGroups: [OnThisDayYearGroup] = []
+    @State private var editorContext: EventEditorContext?
+    @Environment(\.dismiss) private var dismiss
+
+    /// 해당 날짜에 걸치는 일정 — 종일 먼저, 그다음 시작 시각순. eventManager가 갱신되면 자동 반영.
+    private var dayEvents: [EKEvent] {
+        let cal = Calendar.current
+        let startOfDay = cal.startOfDay(for: date)
+        guard let endOfDay = cal.date(byAdding: .day, value: 1, to: startOfDay) else { return [] }
+        return eventManager.events
+            .filter { ev in
+                guard let s = ev.startDate, let e = ev.endDate else { return false }
+                return s < endOfDay && e > startOfDay
+            }
+            .sorted { a, b in
+                if a.isAllDay != b.isAllDay { return a.isAllDay }
+                return (a.startDate ?? .distantPast) < (b.startDate ?? .distantPast)
+            }
+    }
+
+    var body: some View {
+        listView
+            .frame(minWidth: 420, minHeight: 600)
+            .sheet(item: $editorContext) { ctx in
+                EventEditorSheet(
+                    eventManager: eventManager,
+                    existingEvent: ctx.existingEvent,
+                    initialStartDate: ctx.startDate,
+                    initialEndDate: ctx.endDate,
+                    onSave: onSaved
+                )
+            }
+    }
+
+    private var listView: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(date.formatted(date: .complete, time: .omitted))
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Button {
+                    editorContext = EventEditorContext(startDate: date, endDate: date)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "새 이벤트"))
+                if #available(macOS 26.0, *) {
+                    Button(role: .close) { dismiss() }
+                } else {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.hierarchical)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding()
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if dayEvents.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "calendar.badge.plus")
+                                .font(.largeTitle)
+                                .foregroundStyle(.tertiary)
+                            Text(String(localized: "일정 없음"))
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, onThisDayGroups.isEmpty ? 60 : 24)
+                    } else {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(dayEvents, id: \.eventIdentifier) { event in
+                                Button {
+                                    editorContext = EventEditorContext(existingEvent: event)
+                                } label: {
+                                    OnThisDayEventRow(event: event)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    if !onThisDayGroups.isEmpty {
+                        onThisDaySection
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .task(id: date) {
+            await loadOnThisDay()
+        }
+    }
+
+    private var onThisDaySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Divider()
+
+            Label(String(localized: "이날의 기록"), systemImage: "clock.arrow.circlepath")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ForEach(onThisDayGroups) { group in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(yearsAgoLabel(group.year))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+
+                    ForEach(group.events, id: \.eventIdentifier) { e in
+                        Button {
+                            editorContext = EventEditorContext(existingEvent: e)
+                        } label: {
+                            OnThisDayEventRow(event: e)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func yearsAgoLabel(_ year: Int) -> String {
+        let currentYear = Calendar.current.component(.year, from: date)
+        let diff = currentYear - year
+        if diff == 1 {
+            return String(localized: "1년 전, \(year)년")
+        } else {
+            return String(localized: "\(diff)년 전, \(year)년")
+        }
+    }
+
+    private func loadOnThisDay() async {
+        onThisDayGroups = []
+        await eventManager.fetchOnThisDay(for: date) { batch in
+            let newGroups = batch.map { OnThisDayYearGroup(year: $0.year, events: $0.events) }
+            onThisDayGroups.append(contentsOf: newGroups)
+            onThisDayGroups.sort { $0.year > $1.year }
+        }
+    }
+
+}
+
 // MARK: - On This Day Event Row
 
 private struct OnThisDayEventRow: View {
@@ -252,7 +356,6 @@ private struct OnThisDayEventRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(event.title ?? String(localized: "Untitled"))
                     .font(.callout)
-                    .lineLimit(1)
 
                 if !event.isAllDay, let start = event.startDate {
                     Text(start.formatted(date: .omitted, time: .shortened))

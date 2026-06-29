@@ -49,18 +49,25 @@ struct ParticipantRow: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if let email = emailAddress, email != displayName {
+                    Text(email)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
     }
 
     private var displayName: String {
         if let name = participant.name, !name.isEmpty { return name }
+        return emailAddress ?? participant.url.absoluteString
+    }
+
+    private var emailAddress: String? {
         let urlString = participant.url.absoluteString
-        if urlString.hasPrefix("mailto:") {
-            let email = String(urlString.dropFirst("mailto:".count))
-            if !email.isEmpty { return email }
-        }
-        return urlString
+        guard urlString.hasPrefix("mailto:") else { return nil }
+        let email = String(urlString.dropFirst("mailto:".count))
+        return email.isEmpty ? nil : email
     }
 
     private var statusIconAndColor: (icon: String, color: Color) {
