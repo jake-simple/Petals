@@ -166,7 +166,6 @@ struct ContentView: View {
                     // Z1: Grid + today line
                     CalendarGridView(
                         year: currentYear, theme: theme, showTodayLine: showTodayLine,
-                        dimPastDates: dimPastDates,
                         eventFontSize: CGFloat(eventFontSize),
                         startMonth: startMonth, monthsShown: monthsPerPage
                     )
@@ -204,6 +203,15 @@ struct ContentView: View {
                         }
                     )
                     .allowsHitTesting(!isCanvasEditMode)
+
+                    // Z3: 지난 날짜 흐림 — 그리드·이벤트 바 위에 덮어 전부 흐리게
+                    if dimPastDates {
+                        PastDatesVeil(
+                            year: currentYear, theme: theme,
+                            startMonth: startMonth, monthsShown: monthsPerPage
+                        )
+                        .allowsHitTesting(false)
+                    }
                 }
                 .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
                     if let event = selectedEvent {

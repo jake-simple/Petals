@@ -202,7 +202,8 @@ struct DayEventsPopover: View {
 
     var body: some View {
         listView
-            .frame(minWidth: 420, minHeight: 600)
+            .frame(width: 420)
+            .frame(minHeight: 600)
             .sheet(item: $editorContext) { ctx in
                 EventEditorSheet(
                     eventManager: eventManager,
