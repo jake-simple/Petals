@@ -4,7 +4,9 @@ struct SettingsView: View {
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
     @AppStorage("dimPastDates") private var dimPastDates = AppSettings.dimPastDatesDefault
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
-    @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeYearly") private var eventFontSizeYearly = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeQuarterly") private var eventFontSizeQuarterly = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeMonthly") private var eventFontSizeMonthly = AppSettings.eventFontSizeDefault
 
     @State private var selectedTab: SettingsTab = .display
 
@@ -22,7 +24,7 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.display)
         }
-        .frame(width: 450, height: 300)
+        .frame(width: 450, height: 380)
     }
 
     private var displayTab: some View {
@@ -31,9 +33,24 @@ struct SettingsView: View {
                 Toggle(String(localized: "Show Today Line"), isOn: $showTodayLine)
                 Toggle(String(localized: "Dim Past Dates"), isOn: $dimPastDates)
                 Stepper(String(localized: "Max Event Rows: \(maxEventRows)"), value: $maxEventRows, in: 1...10)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(localized: "Event Font Size: \(Int(eventFontSize))pt"))
-                    Slider(value: $eventFontSize, in: AppSettings.eventFontSizeRange, step: 1)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "Event Font Size"))
+                        .font(.subheadline)
+                    HStack {
+                        Text("연별").frame(width: 36, alignment: .leading)
+                        Slider(value: $eventFontSizeYearly, in: AppSettings.eventFontSizeRange, step: 1)
+                        Text("\(Int(eventFontSizeYearly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("분기").frame(width: 36, alignment: .leading)
+                        Slider(value: $eventFontSizeQuarterly, in: AppSettings.eventFontSizeRange, step: 1)
+                        Text("\(Int(eventFontSizeQuarterly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("월별").frame(width: 36, alignment: .leading)
+                        Slider(value: $eventFontSizeMonthly, in: AppSettings.eventFontSizeRange, step: 1)
+                        Text("\(Int(eventFontSizeMonthly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
+                    }
                 }
             }
         }

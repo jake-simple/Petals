@@ -16,7 +16,9 @@ struct ContentView: View {
     @AppStorage("dimPastDates") private var dimPastDates = AppSettings.dimPastDatesDefault
     @AppStorage("collapseTopArea") private var collapseTopArea = false
     @AppStorage("maxEventRows") private var maxEventRows = AppSettings.maxEventRowsDefault
-    @AppStorage("eventFontSize") private var eventFontSize = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeYearly") private var eventFontSizeYearly = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeQuarterly") private var eventFontSizeQuarterly = AppSettings.eventFontSizeDefault
+    @AppStorage("eventFontSizeMonthly") private var eventFontSizeMonthly = AppSettings.eventFontSizeDefault
 
     // Cached layout (recomputed only on data change)
     @State private var segments: [EventSegment] = []
@@ -55,6 +57,23 @@ struct ContentView: View {
     private var theme: Theme {
         let themeID = ScreenshotConfig.theme ?? currentDocument?.theme ?? "minimal-light"
         return ThemeManager.shared.theme(for: themeID).resolved(for: colorScheme)
+    }
+
+    private var currentFontSize: Double {
+        switch monthsPerPage {
+        case 12: return eventFontSizeYearly
+        case 3: return eventFontSizeQuarterly
+        default: return eventFontSizeMonthly
+        }
+    }
+
+    private func setCurrentFontSize(_ value: Double) {
+        let clamped = max(AppSettings.eventFontSizeRange.lowerBound, min(AppSettings.eventFontSizeRange.upperBound, value))
+        switch monthsPerPage {
+        case 12: eventFontSizeYearly = clamped
+        case 3: eventFontSizeQuarterly = clamped
+        default: eventFontSizeMonthly = clamped
+        }
     }
 
     private var selectedCanvasItems: [CanvasItem] {
@@ -125,12 +144,12 @@ struct ContentView: View {
             if !showVisionBoard {
                 Group {
                     Button("Increase Font Size") {
-                        eventFontSize = min(eventFontSize + 1, AppSettings.eventFontSizeRange.upperBound)
+                        setCurrentFontSize(currentFontSize + 1)
                     }
                     .keyboardShortcut("=", modifiers: .command)
 
                     Button("Decrease Font Size") {
-                        eventFontSize = max(eventFontSize - 1, AppSettings.eventFontSizeRange.lowerBound)
+                        setCurrentFontSize(currentFontSize - 1)
                     }
                     .keyboardShortcut("-", modifiers: .command)
                 }
@@ -166,7 +185,7 @@ struct ContentView: View {
                     // Z1: Grid + today line
                     CalendarGridView(
                         year: currentYear, theme: theme, showTodayLine: showTodayLine,
-                        eventFontSize: CGFloat(eventFontSize),
+                        eventFontSize: CGFloat(currentFontSize),
                         startMonth: startMonth, monthsShown: monthsPerPage
                     )
                     .allowsHitTesting(false)
@@ -177,7 +196,7 @@ struct ContentView: View {
                         segments: visibleSegments,
                         overflows: visibleOverflows,
                         maxEventRows: maxEventRows,
-                        eventFontSize: CGFloat(eventFontSize),
+                        eventFontSize: CGFloat(currentFontSize),
                         theme: theme,
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
@@ -444,11 +463,19 @@ struct ContentView: View {
                     Label("Font Size", systemImage: "textformat.size")
                 }
                 .popover(isPresented: $showFontSizePicker) {
-                    VStack(spacing: 8) {
-                        Text("Font Size: \(Int(eventFontSize))pt")
+                    VStack(alignment: .leading, spacing: 8) {
+                        let modeName = monthsPerPage == 12 ? String(localized: "연별") : monthsPerPage == 3 ? String(localized: "분기") : String(localized: "월별")
+                        Text("\(modeName) Font Size: \(Int(currentFontSize))pt")
                             .font(.headline)
-                        Slider(value: $eventFontSize, in: AppSettings.eventFontSizeRange, step: 1)
-                            .frame(width: 160)
+                        Slider(
+                            value: Binding(
+                                get: { currentFontSize },
+                                set: { setCurrentFontSize($0) }
+                            ),
+                            in: AppSettings.eventFontSizeRange,
+                            step: 1
+                        )
+                        .frame(width: 160)
                     }
                     .padding()
                 }
