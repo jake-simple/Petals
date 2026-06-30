@@ -1,2 +1,3 @@
-- Open any whiteboard in its own window (double-click or right-click)
-- Performance improvements and bug fixes
+- New option to dim past dates, so upcoming events stand out
+- Double-click any date to instantly view that day's events
+- Set font size independently for Yearly, Quarterly, and Monthly views
