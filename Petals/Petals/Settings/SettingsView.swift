@@ -34,7 +34,7 @@ struct SettingsView: View {
                 Toggle(String(localized: "Dim Past Dates"), isOn: $dimPastDates)
                 Stepper(String(localized: "Max Event Rows: \(maxEventRows)"), value: $maxEventRows, in: 1...10)
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(String(localized: "Event Font Size"))
+                    Text("이벤트 글자 크기")
                         .font(.subheadline)
                     HStack {
                         Text("연별").frame(width: 36, alignment: .leading)

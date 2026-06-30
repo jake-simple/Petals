@@ -1982,6 +1982,17 @@
     "이날의 기록" : {
 
     },
+    "이벤트 글자 크기" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event Font Size"
+          }
+        }
+      }
+    },
     "이름 변경" : {
       "localizations" : {
         "en" : {

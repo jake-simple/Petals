@@ -464,8 +464,7 @@ struct ContentView: View {
                 }
                 .popover(isPresented: $showFontSizePicker) {
                     VStack(alignment: .leading, spacing: 8) {
-                        let modeName = monthsPerPage == 12 ? String(localized: "연별") : monthsPerPage == 3 ? String(localized: "분기") : String(localized: "월별")
-                        Text("\(modeName) Font Size: \(Int(currentFontSize))pt")
+                        Text(String(format: String(localized: "Font Size: %lldpt"), Int(currentFontSize)))
                             .font(.headline)
                         Slider(
                             value: Binding(
