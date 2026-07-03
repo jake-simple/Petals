@@ -87,8 +87,8 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld년 전, %2$lld년"
+            "state" : "translated",
+            "value" : "%1$lld years ago, %2$lld"
           }
         }
       }
@@ -105,7 +105,14 @@
       }
     },
     "1년 전, %lld년" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 year ago, %lld"
+          }
+        }
+      }
     },
     "Accessibility" : {
       "extractionState" : "manual",
@@ -1715,6 +1722,16 @@
         }
       }
     },
+    "기록 없음" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Records"
+          }
+        }
+      }
+    },
     "나의 보드" : {
       "localizations" : {
         "en" : {
@@ -1893,7 +1910,14 @@
       }
     },
     "새 이벤트" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Event"
+          }
+        }
+      }
     },
     "새 창에서 열기" : {
       "extractionState" : "manual",
@@ -1980,15 +2004,11 @@
       }
     },
     "이날의 기록" : {
-
-    },
-    "이벤트 글자 크기" : {
-      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Event Font Size"
+            "value" : "On This Day"
           }
         }
       }
@@ -2003,8 +2023,26 @@
         }
       }
     },
+    "이벤트 글자 크기" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Event Font Size"
+          }
+        }
+      }
+    },
     "일정 없음" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Events"
+          }
+        }
+      }
     },
     "카테고리" : {
       "localizations" : {

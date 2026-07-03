@@ -181,6 +181,8 @@ struct DayEventsPopover: View {
     let onSaved: () -> Void
 
     @State private var onThisDayGroups: [OnThisDayYearGroup] = []
+    @State private var isLoadingOnThisDay = false
+    @State private var didLoadOnThisDay = false
     @State private var editorContext: EventEditorContext?
     @Environment(\.dismiss) private var dismiss
 
@@ -203,7 +205,7 @@ struct DayEventsPopover: View {
     var body: some View {
         listView
             .frame(width: 420)
-            .frame(minHeight: 600)
+            .frame(height: 600)
             .sheet(item: $editorContext) { ctx in
                 EventEditorSheet(
                     eventManager: eventManager,
@@ -258,7 +260,7 @@ struct DayEventsPopover: View {
                                 .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, onThisDayGroups.isEmpty ? 60 : 24)
+                        .padding(.vertical, 40)
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
                             ForEach(dayEvents, id: \.eventIdentifier) { event in
@@ -272,16 +274,11 @@ struct DayEventsPopover: View {
                         }
                     }
 
-                    if !onThisDayGroups.isEmpty {
-                        onThisDaySection
-                    }
+                    onThisDaySection
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }
-        .task(id: date) {
-            await loadOnThisDay()
         }
     }
 
@@ -289,14 +286,32 @@ struct DayEventsPopover: View {
         VStack(alignment: .leading, spacing: 12) {
             Divider()
 
-            Label(String(localized: "이날의 기록"), systemImage: "clock.arrow.circlepath")
-                .font(.callout.weight(.semibold))
-                .foregroundStyle(.secondary)
+            Button {
+                guard !isLoadingOnThisDay, !didLoadOnThisDay else { return }
+                Task { await loadOnThisDay() }
+            } label: {
+                HStack(spacing: 6) {
+                    Label(String(localized: "이날의 기록"), systemImage: "clock.arrow.circlepath")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    if isLoadingOnThisDay {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else if !didLoadOnThisDay {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
 
             ForEach(onThisDayGroups) { group in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(yearsAgoLabel(group.year))
-                        .font(.caption.weight(.semibold))
+                        .font(.callout.weight(.semibold))
                         .foregroundStyle(.tertiary)
 
                     ForEach(group.events, id: \.eventIdentifier) { e in
@@ -308,6 +323,12 @@ struct DayEventsPopover: View {
                         .buttonStyle(.plain)
                     }
                 }
+            }
+
+            if didLoadOnThisDay, onThisDayGroups.isEmpty {
+                Text(String(localized: "기록 없음"))
+                    .font(.callout)
+                    .foregroundStyle(.tertiary)
             }
         }
     }
@@ -323,12 +344,15 @@ struct DayEventsPopover: View {
     }
 
     private func loadOnThisDay() async {
+        isLoadingOnThisDay = true
         onThisDayGroups = []
         await eventManager.fetchOnThisDay(for: date) { batch in
             let newGroups = batch.map { OnThisDayYearGroup(year: $0.year, events: $0.events) }
             onThisDayGroups.append(contentsOf: newGroups)
             onThisDayGroups.sort { $0.year > $1.year }
         }
+        isLoadingOnThisDay = false
+        didLoadOnThisDay = true
     }
 
 }
@@ -356,11 +380,11 @@ private struct OnThisDayEventRow: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(event.title ?? String(localized: "Untitled"))
-                    .font(.callout)
+                    .font(.body)
 
                 if !event.isAllDay, let start = event.startDate {
                     Text(start.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                 }
             }
