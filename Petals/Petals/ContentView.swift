@@ -28,8 +28,7 @@ struct ContentView: View {
     @State private var selectedEvent: EKEvent?
     @State private var showEventDetail = false
     @State private var eventPopoverAnchor: CGRect = .zero
-    @State private var showDayDetail = false
-    @State private var dayDetailDate = Date()
+    @State private var dayDetailContext: DayDetailContext?
     @State private var editorContext: EventEditorContext?
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
@@ -207,8 +206,8 @@ struct ContentView: View {
                         },
                         onEmptyTap: { month, day in
                             let cal = Calendar.current
-                            dayDetailDate = cal.date(from: DateComponents(year: currentYear, month: month, day: day)) ?? Date()
-                            showDayDetail = true
+                            let date = cal.date(from: DateComponents(year: currentYear, month: month, day: day)) ?? Date()
+                            dayDetailContext = DayDetailContext(date: date)
                         },
                         onNewEvent: { month, day in
                             openEditor(startMonth: month, startDay: day, endMonth: month, endDay: day)
@@ -243,9 +242,9 @@ struct ContentView: View {
                         )
                     }
                 }
-                .sheet(isPresented: $showDayDetail) {
+                .sheet(item: $dayDetailContext) { ctx in
                     DayEventsPopover(
-                        date: dayDetailDate,
+                        date: ctx.date,
                         eventManager: eventManager,
                         onSaved: { reloadEvents() }
                     )
@@ -677,6 +676,11 @@ struct EventEditorContext: Identifiable {
     var existingEvent: EKEvent? = nil
     var startDate: Date? = nil
     var endDate: Date? = nil
+}
+
+struct DayDetailContext: Identifiable {
+    let id = UUID()
+    let date: Date
 }
 
 #Preview {
