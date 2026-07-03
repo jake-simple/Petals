@@ -13,11 +13,26 @@ final class EventManager {
     @ObservationIgnored
     nonisolated(unsafe) private var storeObserverToken: Any?
 
+    /// The calendars whose events are currently rendered. This is always a
+    /// mirror of the active set's membership — edit it through the calendar-set
+    /// methods below, not by assigning directly.
     var selectedCalendarIDs: Set<String> = [] {
         didSet {
             UserDefaults.standard.set(Array(selectedCalendarIDs), forKey: "selectedCalendarIDs")
             if oldValue != selectedCalendarIDs { loadedYear = nil }
         }
+    }
+
+    // MARK: - Calendar Sets
+
+    private static let setsKey = "calendarSets"
+    private static let activeSetKey = "activeCalendarSetID"
+
+    private(set) var calendarSets: [CalendarSet] = []
+    private(set) var activeCalendarSetID: String = CalendarSet.defaultID
+
+    var activeSet: CalendarSet? {
+        calendarSets.first { $0.id == activeCalendarSetID }
     }
 
     func requestAccess() async {
@@ -40,15 +55,116 @@ final class EventManager {
     func loadCalendars() {
         calendars = store.calendars(for: .event)
             .sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
-        restoreSelectedIDs()
+        restoreCalendarSets()
     }
 
-    private func restoreSelectedIDs() {
-        if let stored = UserDefaults.standard.array(forKey: "selectedCalendarIDs") as? [String] {
-            selectedCalendarIDs = Set(stored)
+    private func restoreCalendarSets() {
+        // Load saved sets; require the undeletable Default set to be present,
+        // otherwise migrate the legacy selection into a fresh Default set.
+        if let data = UserDefaults.standard.data(forKey: Self.setsKey),
+           let sets = try? JSONDecoder().decode([CalendarSet].self, from: data),
+           sets.contains(where: { $0.isDefault }) {
+            calendarSets = sets
         } else {
-            // First launch: none selected
-            selectedCalendarIDs = []
+            // First launch of this version: seed Default from the legacy
+            // `selectedCalendarIDs` so no one loses their selection.
+            let legacy = UserDefaults.standard.array(forKey: "selectedCalendarIDs") as? [String] ?? []
+            calendarSets = [CalendarSet(id: CalendarSet.defaultID,
+                                        name: String(localized: "Default"),
+                                        calendarIDs: legacy.sorted())]
+            persistSets()
+        }
+
+        // Restore the active set, falling back to Default if it's gone.
+        let storedActive = UserDefaults.standard.string(forKey: Self.activeSetKey)
+        if let storedActive, calendarSets.contains(where: { $0.id == storedActive }) {
+            activeCalendarSetID = storedActive
+        } else {
+            activeCalendarSetID = CalendarSet.defaultID
+            UserDefaults.standard.set(activeCalendarSetID, forKey: Self.activeSetKey)
+        }
+
+        applyActiveSetToSelection()
+    }
+
+    private func applyActiveSetToSelection() {
+        selectedCalendarIDs = Set(activeSet?.calendarIDs ?? [])
+    }
+
+    // MARK: - Calendar Set editing
+
+    /// Switch the single active set; the rendered selection follows.
+    func selectSet(id: String) {
+        guard calendarSets.contains(where: { $0.id == id }) else { return }
+        activeCalendarSetID = id
+        UserDefaults.standard.set(id, forKey: Self.activeSetKey)
+        applyActiveSetToSelection()
+    }
+
+    /// Toggle one calendar's membership in the currently active set (live edit).
+    func setCalendar(_ calendarID: String, enabled: Bool) {
+        updateActiveSet { ids in
+            if enabled { ids.insert(calendarID) } else { ids.remove(calendarID) }
+        }
+    }
+
+    /// Replace the active set's membership wholesale (Select All / None).
+    func setActiveSetCalendars(_ ids: Set<String>) {
+        updateActiveSet { $0 = ids }
+    }
+
+    private func updateActiveSet(_ mutate: (inout Set<String>) -> Void) {
+        guard let idx = calendarSets.firstIndex(where: { $0.id == activeCalendarSetID }) else { return }
+        var ids = Set(calendarSets[idx].calendarIDs)
+        mutate(&ids)
+        calendarSets[idx].calendarIDs = ids.sorted()
+        persistSets()
+        selectedCalendarIDs = ids
+    }
+
+    /// Snapshot a set of calendars into a new named set.
+    /// - Parameter activate: switch to it after creating (default true).
+    @discardableResult
+    func createSet(name: String, calendarIDs: Set<String>, activate: Bool = true) -> String {
+        let id = UUID().uuidString
+        calendarSets.append(CalendarSet(id: id, name: name, calendarIDs: calendarIDs.sorted()))
+        persistSets()
+        if activate { selectSet(id: id) }
+        return id
+    }
+
+    func renameSet(id: String, to name: String) {
+        guard let idx = calendarSets.firstIndex(where: { $0.id == id }) else { return }
+        calendarSets[idx].name = name
+        persistSets()
+    }
+
+    func deleteSet(id: String) {
+        guard id != CalendarSet.defaultID else { return }   // Default is undeletable
+        calendarSets.removeAll { $0.id == id }
+        persistSets()
+        if activeCalendarSetID == id {
+            selectSet(id: CalendarSet.defaultID)             // fall back to Default
+        }
+    }
+
+    func moveSets(fromOffsets: IndexSet, toOffset: Int) {
+        // Matches SwiftUI's Collection.move(fromOffsets:toOffset:) without
+        // importing SwiftUI into this logic layer.
+        let moving = fromOffsets.map { calendarSets[$0] }
+        var result = calendarSets
+        for index in fromOffsets.sorted(by: >) {
+            result.remove(at: index)
+        }
+        let insertionIndex = toOffset - fromOffsets.filter { $0 < toOffset }.count
+        result.insert(contentsOf: moving, at: insertionIndex)
+        calendarSets = result
+        persistSets()
+    }
+
+    private func persistSets() {
+        if let data = try? JSONEncoder().encode(calendarSets) {
+            UserDefaults.standard.set(data, forKey: Self.setsKey)
         }
     }
 

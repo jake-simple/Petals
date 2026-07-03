@@ -4,6 +4,10 @@ import EventKit
 struct CalendarFilterView: View {
     @Bindable var eventManager: EventManager
 
+    @State private var showingNewSetAlert = false
+    @State private var newSetName = ""
+    @State private var showingManage = false
+
     private var groupedCalendars: [(sourceTitle: String, sourceID: String, calendars: [EKCalendar])] {
         let grouped = Dictionary(grouping: eventManager.calendars) {
             $0.source?.sourceIdentifier ?? "unknown"
@@ -18,6 +22,10 @@ struct CalendarFilterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            setPicker
+
+            Divider()
+
             HStack {
                 Text("Calendars")
                     .font(.headline)
@@ -64,6 +72,45 @@ struct CalendarFilterView: View {
             }
         }
         .padding()
+        .alert("New Calendar Set", isPresented: $showingNewSetAlert) {
+            TextField("Set name", text: $newSetName)
+            Button("Save") {
+                let name = newSetName.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty else { return }
+                eventManager.createSet(name: name, calendarIDs: eventManager.selectedCalendarIDs)
+            }
+            Button("Cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $showingManage) {
+            CalendarSetManageView(eventManager: eventManager)
+        }
+    }
+
+    private var setPicker: some View {
+        Menu {
+            ForEach(eventManager.calendarSets) { set in
+                Button {
+                    eventManager.selectSet(id: set.id)
+                } label: {
+                    if set.id == eventManager.activeCalendarSetID {
+                        Label(set.name, systemImage: "checkmark")
+                    } else {
+                        Text(set.name)
+                    }
+                }
+            }
+            Divider()
+            Button("Save Current as New Set…") {
+                newSetName = ""
+                showingNewSetAlert = true
+            }
+            Button("Manage Sets…") { showingManage = true }
+        } label: {
+            Label(eventManager.activeSet?.name ?? String(localized: "Default"),
+                  systemImage: "rectangle.stack")
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var allCalendarIDs: Set<String> {
@@ -76,22 +123,18 @@ struct CalendarFilterView: View {
     }
 
     private func selectAll() {
-        eventManager.selectedCalendarIDs = allCalendarIDs
+        eventManager.setActiveSetCalendars(allCalendarIDs)
     }
 
     private func selectNone() {
-        eventManager.selectedCalendarIDs = []
+        eventManager.setActiveSetCalendars([])
     }
 
     private func binding(for calendar: EKCalendar) -> Binding<Bool> {
         Binding {
             eventManager.selectedCalendarIDs.contains(calendar.calendarIdentifier)
         } set: { isOn in
-            if isOn {
-                eventManager.selectedCalendarIDs.insert(calendar.calendarIdentifier)
-            } else {
-                eventManager.selectedCalendarIDs.remove(calendar.calendarIdentifier)
-            }
+            eventManager.setCalendar(calendar.calendarIdentifier, enabled: isOn)
         }
     }
 }
