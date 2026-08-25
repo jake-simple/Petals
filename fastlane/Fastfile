@@ -1,85 +1,32 @@
 default_platform(:mac)
 
-# App Store Connect API 키 — Spendy(DayMoney)와 동일한 팀 키 사용
-app_store_connect_api_key = app_store_connect_api_key(
-  key_id: "LDMZ45D4WV",
-  issuer_id: "18a54441-d89b-48cf-b3b6-c17f85fc41e5",
-  key_filepath: "./fastlane/AuthKey_LDMZ45D4WV.p8"
-)
+APP_IDENTIFIER = "com.onessa.Petals".freeze
+RELEASE_NOTES_LOCALES = %w[en-US ko].freeze
+
+APP_STORE_API_KEY = app_store_connect_api_key(
+  key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID", "LDMZ45D4WV"),
+  issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID", "18a54441-d89b-48cf-b3b6-c17f85fc41e5"),
+  key_filepath: ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH", "./fastlane/AuthKey_LDMZ45D4WV.p8")
+).freeze
+
+# Deliver also reads this as api_key_path, which conflicts with api_key above.
+ENV.delete("APP_STORE_CONNECT_API_KEY_PATH")
 
 platform :mac do
-  desc "빌드만 (.pkg 생성, 업로드 없음) — 서명/내보내기 검증용"
-  lane :build do
-    build_mac_app(
-      project: "Petals/Petals.xcodeproj",
-      scheme: "Petals",
-      configuration: "Release",
-      output_directory: "./build",
-      output_name: "Petals",
-      export_method: "app-store",
-      clean: true
-    )
+  desc "GitHub Actions: upload release notes and verify an Xcode Cloud build"
+  lane :prepare_review do |options|
+    prepare_review_submission(options)
   end
 
-  desc "macOS 바이너리를 빌드해 App Store Connect에 업로드"
-  lane :release do
-    build_mac_app(
-      project: "Petals/Petals.xcodeproj",
-      scheme: "Petals",
-      configuration: "Release",
-      output_directory: "./build",
-      output_name: "Petals",
-      export_method: "app-store",
-      clean: true
-    )
+  desc "GitHub Actions: submit an exact Xcode Cloud build for App Store review (requires confirm:true)"
+  lane :submit_review do |options|
+    confirm_review_submission!(options)
+    version, build_number = prepare_review_submission(options)
     upload_to_app_store(
-      skip_binary_upload: false,
-      skip_screenshots: false,
-      overwrite_screenshots: true,
-      skip_metadata: false,
-      force: true,
-      submit_for_review: false,
-      automatic_release: false,
-      run_precheck_before_submit: false,
-      platform: "osx",
-      pkg: "./build/Petals.pkg",
-      screenshots_path: "./fastlane/screenshots"
-    )
-  end
-
-  desc "메타데이터만 App Store Connect에 업로드 (바이너리/스크린샷 제외)"
-  lane :upload_metadata do
-    upload_to_app_store(
-      skip_binary_upload: true,
-      skip_screenshots: true,
-      skip_metadata: false,
-      force: true,
-      submit_for_review: false,
-      automatic_release: false,
-      run_precheck_before_submit: false,
-      platform: "osx"
-    )
-  end
-
-  desc "메타데이터 + 스크린샷 업로드 (바이너리 제외, 심사 제출 안 함)"
-  lane :upload_listing do
-    upload_to_app_store(
-      skip_binary_upload: true,
-      skip_screenshots: false,
-      overwrite_screenshots: true,
-      skip_metadata: false,
-      force: true,
-      submit_for_review: false,
-      automatic_release: false,
-      run_precheck_before_submit: false,
-      platform: "osx",
-      screenshots_path: "./fastlane/screenshots"
-    )
-  end
-
-  desc "업로드된 최신 빌드를 App Store 심사에 제출 (수동 출시)"
-  lane :submit_review do
-    upload_to_app_store(
+      api_key: APP_STORE_API_KEY,
+      app_identifier: APP_IDENTIFIER,
+      app_version: version,
+      build_number: build_number,
       skip_binary_upload: true,
       skip_screenshots: true,
       skip_metadata: true,
@@ -90,4 +37,90 @@ platform :mac do
       platform: "osx"
     )
   end
+end
+
+def review_submission_target(options)
+  version = (options || {})[:version].to_s.strip
+  build_number = (options || {})[:build_number].to_s.strip
+  errors = []
+  errors << "버전을 지정하세요. 예: version:1.1.0" if version.empty?
+  errors << "빌드 번호를 지정하세요. 예: build_number:10" if build_number.empty?
+  UI.user_error!(errors.join("\n")) unless errors.empty?
+  [version, build_number]
+end
+
+def confirm_review_submission!(options)
+  return if (options || {})[:confirm].to_s.casecmp("true").zero?
+
+  UI.user_error!("심사 제출에는 confirm:true가 필요합니다.")
+end
+
+def prepare_review_submission(options)
+  version, build_number = review_submission_target(options)
+  api_key = APP_STORE_API_KEY
+  upload_localized_release_notes(api_key: api_key, version: version)
+  verify_submission_build!(api_key: api_key, version: version, build_number: build_number)
+  [version, build_number]
+end
+
+def verify_submission_build!(api_key:, version:, build_number:)
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  build = Spaceship::ConnectAPI::Build.all(
+    app_id: app.id,
+    version: version,
+    build_number: build_number,
+    platform: Spaceship::ConnectAPI::Platform.map("osx")
+  ).first
+  UI.user_error!("macOS #{version} (#{build_number}) 빌드가 없습니다.") unless build
+  unless build.processing_state == Spaceship::ConnectAPI::Build::ProcessingState::VALID
+    UI.user_error!("macOS #{version} (#{build_number}) 상태: #{build.processing_state}")
+  end
+  UI.user_error!("macOS #{version} (#{build_number}) 빌드가 만료됐습니다.") if build.expired
+end
+
+def upload_localized_release_notes(api_key:, version:)
+  release_notes = load_release_notes
+  validate_release_notes!(release_notes)
+  Spaceship::ConnectAPI.token = Spaceship::ConnectAPI::Token.from(hash: api_key)
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  platform = Spaceship::ConnectAPI::Platform.map("osx")
+  app_version = find_or_create_app_store_version!(app: app, version: version, platform: platform)
+  localizations = app_version.get_app_store_version_localizations.to_h { |item| [item.locale, item] }
+  missing = RELEASE_NOTES_LOCALES - localizations.keys
+  UI.user_error!("App Store Connect에 없는 언어: #{missing.join(', ')}") unless missing.empty?
+  release_notes.each { |locale, note| localizations.fetch(locale).update(attributes: { whats_new: note }) }
+end
+
+def find_or_create_app_store_version!(app:, version:, platform:)
+  existing = app.get_app_store_versions(filter: { platform: platform }).find { |item| item.version_string == version }
+  return existing if existing
+  edit_version = app.get_edit_app_store_version(platform: platform)
+  if edit_version
+    return edit_version.update(attributes: { version_string: version }) if edit_version.app_version_state == "DEVELOPER_REJECTED"
+
+    UI.user_error!("편집 중인 버전 #{edit_version.version_string}이 있어 #{version}을 만들 수 없습니다.")
+  end
+  app.ensure_version!(version, platform: platform)
+  created = app.get_app_store_versions(filter: { platform: platform }).find { |item| item.version_string == version }
+  UI.user_error!("App Store Connect에 #{version} 버전을 만들지 못했습니다.") unless created
+  created
+end
+
+def load_release_notes
+  Dir.glob("#{File.expand_path('metadata', __dir__)}/*/release_notes.txt").to_h do |file|
+    [File.basename(File.dirname(file)), File.read(file).strip]
+  end
+end
+
+def validate_release_notes!(release_notes)
+  missing = RELEASE_NOTES_LOCALES - release_notes.keys
+  unexpected = release_notes.keys - RELEASE_NOTES_LOCALES
+  empty = release_notes.select { |_, note| note.empty? }.keys
+  return if missing.empty? && unexpected.empty? && empty.empty?
+  errors = []
+  errors << "누락된 언어: #{missing.join(', ')}" unless missing.empty?
+  errors << "지원하지 않는 언어: #{unexpected.join(', ')}" unless unexpected.empty?
+  errors << "비어 있는 릴리즈 노트: #{empty.join(', ')}" unless empty.empty?
+  UI.user_error!(errors.join("\n"))
 end
