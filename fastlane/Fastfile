@@ -90,6 +90,13 @@ def upload_localized_release_notes(api_key:, version:)
   missing = RELEASE_NOTES_LOCALES - localizations.keys
   UI.user_error!("App Store Connect에 없는 언어: #{missing.join(', ')}") unless missing.empty?
   release_notes.each { |locale, note| localizations.fetch(locale).update(attributes: { whats_new: note }) }
+
+  verification = app_version.get_app_store_version_localizations.to_h do |item|
+    [item.locale, item.whats_new]
+  end
+  mismatched = release_notes.keys.select { |locale| verification[locale] != release_notes[locale] }
+  UI.user_error!("릴리즈 노트 검증 실패: #{mismatched.join(', ')}") unless mismatched.empty?
+  UI.success("macOS #{version} 릴리즈 노트 2개 언어 원격 검증 완료")
 end
 
 def find_or_create_app_store_version!(app:, version:, platform:)
