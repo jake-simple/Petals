@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var noteFocusRequest = 0
     @State private var newNoteDate: Date?
     @State private var showNewNote = false
+    @State private var windowContentWidth: CGFloat = 1200
     @State private var calendarSize = CGSize(width: 1200, height: 800)
     @State private var includeExportDecorations = true
     @State private var isExporting = false
@@ -62,11 +63,9 @@ struct ContentView: View {
     @State private var dayDetailContext: DayDetailContext?
     @State private var editorContext: EventEditorContext?
     @State private var showCalendarFilter = false
-    @State private var showFontSizePicker = false
-    @State private var windowContentWidth: CGFloat = 1200
     @State private var eventSearchText = ScreenshotConfig.searchText
     @State private var eventSearchPresented = false
-    @FocusState private var eventSearchFocused: Bool
+    @State private var eventSearchFocusRequest = 0
 
     // Paging state
     @State private var monthsPerPage = ScreenshotConfig.zoom ?? 12  // 12, 3, 1
@@ -81,7 +80,6 @@ struct ContentView: View {
     @State private var selectedCanvasItemIDs: Set<PersistentIdentifier> = []
     @State private var showImagePicker = false
     @State private var showInspector = false
-    @State private var showThemePicker = false
     @State private var showStickerInput = false
     @State private var scrollMonitor: Any?
     @State private var inputScope = WindowInputScope()
@@ -387,14 +385,6 @@ struct ContentView: View {
             modeToggleToolbar
             toolbarContent
         }
-        .onChange(of: eventSearchPresented) { _, presented in
-            guard presented else { return }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(150))
-                guard eventSearchPresented else { return }
-                eventSearchFocused = true
-            }
-        }
         .sheet(item: $editorContext) { ctx in
             EventEditorSheet(
                 eventManager: eventManager,
@@ -582,7 +572,6 @@ struct ContentView: View {
                 }
                     .keyboardShortcut("t", modifiers: .command)
 
-                // Zoom level (months per page)
                 if windowContentWidth < 1250 {
                     zoomPicker.pickerStyle(.menu).labelsHidden().frame(width: 90)
                 } else {
@@ -618,20 +607,14 @@ struct ContentView: View {
                 if eventSearchPresented {
                     HStack(spacing: 6) {
                         Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                        TextField("Search event titles", text: $eventSearchText)
-                            .textFieldStyle(.plain)
-                            .focused($eventSearchFocused)
-                            .accessibilityIdentifier("eventTitleSearch")
-                            .onExitCommand {
-                                eventSearchText = ""
-                                eventSearchFocused = false
-                                eventSearchPresented = false
-                            }
+                        ToolbarEventSearchField(text: $eventSearchText, focusRequest: eventSearchFocusRequest) {
+                            eventSearchText = ""
+                            eventSearchPresented = false
+                        }
                         Button {
                             eventSearchText = ""
-                            eventSearchFocused = false
                             eventSearchPresented = false
-                        } label: { Image(systemName: "xmark.circle.fill") }
+                        } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear search")
                     }
@@ -639,14 +622,14 @@ struct ContentView: View {
                     .padding(.vertical, 5)
                     .frame(width: 220)
                 } else {
-                    Button { eventSearchPresented = true } label: {
+                    Button { eventSearchPresented = true; eventSearchFocusRequest += 1 } label: {
                         Label("Find", systemImage: "magnifyingglass")
                     }
                     .accessibilityIdentifier("eventSearchButton")
                 }
             }
             .background {
-                Button("Find") { eventSearchPresented = true; eventSearchFocused = true }
+                Button("Find") { eventSearchPresented = true; eventSearchFocusRequest += 1 }
                     .keyboardShortcut("f", modifiers: .command)
                     .hidden()
             }
@@ -663,54 +646,41 @@ struct ContentView: View {
                 }
                 .menuIndicator(.hidden)
                 .disabled(isExporting)
-                Button(action: { collapseTopArea.toggle() }) {
-                    Label("Top Area", systemImage: collapseTopArea ? "rectangle.tophalf.inset.filled" : "rectangle.topthird.inset.filled")
-                }
-                .help(collapseTopArea ? "상단 영역 보이기" : "상단 영역 숨기기")
-
                 Button(action: { showCalendarFilter.toggle() }) {
-                    Label("Calendars", systemImage: "calendar")
+                    Label("Sidebar", systemImage: "sidebar.right")
                 }
-
-                Button(action: { showFontSizePicker.toggle() }) {
-                    Label("Font Size", systemImage: "textformat.size")
-                }
-                .popover(isPresented: $showFontSizePicker) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(String(format: String(localized: "Font Size: %lldpt"), Int(currentFontSize)))
-                            .font(.headline)
-                        Slider(
-                            value: Binding(
-                                get: { currentFontSize },
-                                set: { setCurrentFontSize($0) }
-                            ),
-                            in: AppSettings.eventFontSizeRange,
-                            step: 1
-                        )
-                        .frame(width: 160)
-                    }
-                    .padding()
-                }
-
-                // Theme picker
-                Button(action: { showThemePicker.toggle() }) {
-                    Label("Theme", systemImage: "paintpalette")
-                }
-                .popover(isPresented: $showThemePicker) {
-                    ThemePickerView(
-                        themes: ThemeManager.shared.themes,
-                        selectedThemeID: Binding(
+                Menu {
+                    Toggle("Top Area", isOn: Binding(
+                        get: { !collapseTopArea }, set: { collapseTopArea = !$0 }))
+                    Menu("Theme") {
+                        Picker("Theme", selection: Binding(
                             get: { activePlanningBoard?.theme ?? currentDocument?.theme ?? "minimal-light" },
                             set: { activePlanningBoard?.theme = $0; activePlanningBoard?.updatedAt = Date(); savePlanningChanges() }
-                        )
-                    )
+                        )) {
+                            ForEach(ThemeManager.shared.themes, id: \.id) { theme in
+                                Text(LocalizedStringKey(theme.name)).tag(theme.id)
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    }
+                    Menu("Font Size") {
+                        Picker("Font Size", selection: Binding(
+                            get: { currentFontSize }, set: { setCurrentFontSize($0) }
+                        )) {
+                            ForEach(Int(AppSettings.eventFontSizeRange.lowerBound)...Int(AppSettings.eventFontSizeRange.upperBound), id: \.self) { size in
+                                Text("\(size) pt").tag(CGFloat(size))
+                            }
+                        }
+                        .pickerStyle(.inline)
+                    }
+                    Divider()
+                    Toggle(isOn: $isCanvasEditMode) {
+                        Label("Canvas", systemImage: "paintbrush")
+                    }
+                } label: {
+                    Label("View Options", systemImage: "slider.horizontal.3")
                 }
-
-                // Canvas edit mode toggle
-                Toggle(isOn: $isCanvasEditMode) {
-                    Label("Canvas", systemImage: "paintbrush")
-                }
-                .toggleStyle(.button)
+                .accessibilityIdentifier("calendarViewOptions")
         }
 
         if isCanvasEditMode {
@@ -1033,4 +1003,63 @@ struct DayDetailContext: Identifiable {
 #Preview {
     ContentView()
         .modelContainer(for: [YearDocument.self, CanvasItem.self, VisionBoard.self, VisionBoardItem.self], inMemory: true)
+}
+
+
+/// Toolbar controls live in a separate hosting hierarchy; focus the native field
+/// when it attaches rather than relying on the calendar's SwiftUI focus scope.
+private struct ToolbarEventSearchField: NSViewRepresentable {
+    @Binding var text: String
+    let focusRequest: Int
+    let onCancel: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeNSView(context: Context) -> SearchField {
+        let field = SearchField()
+        field.isBordered = false
+        field.drawsBackground = false
+        field.focusRingType = .none
+        field.placeholderString = String(localized: "Search event titles")
+        field.setAccessibilityIdentifier("eventTitleSearch")
+        field.delegate = context.coordinator
+        return field
+    }
+
+    func updateNSView(_ field: SearchField, context: Context) {
+        context.coordinator.parent = self
+        if field.stringValue != text { field.stringValue = text }
+        if context.coordinator.focusRequest != focusRequest {
+            context.coordinator.focusRequest = focusRequest
+            field.requestFocus()
+        }
+    }
+
+    final class SearchField: NSTextField {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil { requestFocus() }
+        }
+        func requestFocus() {
+            DispatchQueue.main.async { [weak self] in
+                guard let self, let window = self.window else { return }
+                window.makeFirstResponder(self)
+            }
+        }
+    }
+
+    final class Coordinator: NSObject, NSTextFieldDelegate {
+        var parent: ToolbarEventSearchField
+        var focusRequest: Int?
+        init(_ parent: ToolbarEventSearchField) { self.parent = parent }
+        func controlTextDidChange(_ notification: Notification) {
+            guard let field = notification.object as? NSTextField else { return }
+            parent.text = field.stringValue
+        }
+        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+            guard commandSelector == #selector(NSResponder.cancelOperation(_:)) else { return false }
+            parent.onCancel()
+            return true
+        }
+    }
 }

@@ -60,6 +60,9 @@
     "%lld" : {
 
     },
+    "%lld pt" : {
+
+    },
     "%lld–%lld" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -441,8 +444,24 @@
         }
       }
     },
+    "Classic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classic"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클래식"
+          }
+        }
+      }
+    },
     "Clear search" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -764,6 +783,23 @@
         }
       }
     },
+    "Dracula" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dracula"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "드라큘라"
+          }
+        }
+      }
+    },
     "Duplicate Board" : {
       "localizations" : {
         "en" : {
@@ -1043,7 +1079,6 @@
       }
     },
     "Find" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1495,6 +1530,57 @@
         }
       }
     },
+    "Midnight Blue" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Midnight Blue"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미드나이트 블루"
+          }
+        }
+      }
+    },
+    "Minimal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimal"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "미니멀"
+          }
+        }
+      }
+    },
+    "Monochrome" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monochrome"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모노크롬"
+          }
+        }
+      }
+    },
     "Multicolor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1664,6 +1750,23 @@
         }
       }
     },
+    "Nord" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nord"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "노르드"
+          }
+        }
+      }
+    },
     "Note" : {
       "localizations" : {
         "en" : {
@@ -1821,6 +1924,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "참석자"
+          }
+        }
+      }
+    },
+    "Pastel" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pastel"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "파스텔"
           }
         }
       }
@@ -2180,6 +2300,23 @@
         }
       }
     },
+    "Solarized" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solarized"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "솔라라이즈드"
+          }
+        }
+      }
+    },
     "Some selected calendars are unavailable on this Mac. Their selection is preserved." : {
       "localizations" : {
         "en" : {
@@ -2355,6 +2492,23 @@
         }
       }
     },
+    "Tokyo Night" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokyo Night"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "도쿄 나이트"
+          }
+        }
+      }
+    },
     "Top Area" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2499,6 +2653,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "가변"
+          }
+        }
+      }
+    },
+    "View Options" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보기"
           }
         }
       }
@@ -2730,6 +2900,7 @@
       }
     },
     "상단 영역 보이기" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2740,6 +2911,7 @@
       }
     },
     "상단 영역 숨기기" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

@@ -232,3 +232,13 @@ Replaced custom always-visible toolbar TextField with searchable(text:isPresente
 ## Always-collapsed search launch — 2026-11-03
 
 Native macOS searchable may expand according to available toolbar width; prior narrow-window evidence did not guarantee wide-window launch. Replaced width-dependent native presentation with explicit local collapsed state initialized false. Actual 1600pt fixture launch showed only eventSearchButton, click inserted the field, Korean input worked, and Escape cleared/collapsed. Automatic focus after expansion was not confirmed; the field was clicked to verify input. Debug build and diff checks pass.
+
+
+## Toolbar simplification trial — 2026-11-03
+
+Checkpoint commit before trial: 3257953. Year/quarter/month selector now always uses one menu. Primary controls retain search, export and sidebar; View menu contains top-area visibility, theme, discrete font sizes and canvas edit mode. Removed obsolete picker-popover state and width tracking. Actual 1100pt Mac runtime confirmed reduced toolbar, theme switch via View submenu, and conditional canvas tools. Debug build, localization JSON and diff checks pass. Trial changes are not committed.
+
+
+## Toolbar search focus fix — 2026-11-03
+
+X icon uses secondary gray. Replaced the toolbar text field with a small NSViewRepresentable NSTextField bridge: request native first responder after window attachment, with a focus request counter for Cmd+F. Removed ineffective toolbar SwiftUI focus state and delayed task. Actual Mac icon click focused eventTitleSearch; Korean text was entered without clicking the field. Escape collapsed/cleared, and Cmd+F reopened with native field focused. Debug build and diff checks pass.
