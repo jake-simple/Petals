@@ -207,3 +207,28 @@ Removed the separate theme-colored note focus rectangle. Note focus now updates 
 - Expanded notes show only the editor; collapsed notes retain their preview. Selected-date group uses a single accent background, with native editor background hidden.
 - Selecting a note focuses the inserted editor after date-navigation scrolling. Initial immediate focus was displaced into search; the cancellation-aware 150ms focus task resolves the reproduced ordering issue. Actual Mac verification confirmed editor AX focus and typing without another editor click.
 - Toolbar Export disclosure indicator is hidden; actual app click still opens the export menu. Latest Debug build and diff checks passed.
+
+
+## User-requested search fill override — 2026-11-03
+
+Supersedes earlier outline-only search requirement: matching event bars now use opaque yellow (#FFD84D) with black text regardless of calendar color. Nonmatches retain calendar colors; clearing restores original rendering. Removed multi-stroke outline. Updated rendered checks assert matching fills change, nonmatching fills stay identical, and clear restores exact output across 18 theme/scheme combinations. Full planning checks and Debug build pass. Actual Mac fixture search for 리뷰 confirmed differently colored matching calendars become yellow and return to their respective colors after clear.
+
+
+## Search border refinement — 2026-11-03
+
+At user request, matching yellow event bars also receive a 1.5pt dark gold (#6B4F00) inset border. Actual Mac fixture search confirmed the combined fill/border. Debug build, full planning checks including 18 search theme/scheme combinations, and diff checks pass.
+
+
+## Search contrast refinement — 2026-11-03
+
+Matching events retain yellow fill/dark border and now use semibold text. Nonmatching event bars and titles render at 30 percent of their normal opacity using a per-event GraphicsContext copy, leaving grid/dates unchanged. Clear restores exact original render. Actual Mac search/clear screenshots confirmed the result. Updated 18 theme/scheme rendered checks, full planning checks and Debug build pass.
+
+
+## Native toolbar search — 2026-11-03
+
+Replaced custom always-visible toolbar TextField with searchable(text:isPresented:placement:prompt:) on calendar content. Actual macOS runtime shows a search icon initially; click expands the native field, displays localized prompt and focuses it. Korean query highlights matching events, Escape clears and collapses, reopening starts empty. Debug build and diff checks passed. Presentation uses native platform behavior rather than iOS-only minimize modifiers.
+
+
+## Always-collapsed search launch — 2026-11-03
+
+Native macOS searchable may expand according to available toolbar width; prior narrow-window evidence did not guarantee wide-window launch. Replaced width-dependent native presentation with explicit local collapsed state initialized false. Actual 1600pt fixture launch showed only eventSearchButton, click inserted the field, Korean input worked, and Escape cleared/collapsed. Automatic focus after expansion was not confirmed; the field was clicked to verify input. Debug build and diff checks pass.

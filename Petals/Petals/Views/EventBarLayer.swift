@@ -36,7 +36,7 @@ struct EventBarLayer: View {
 
                 // Event bars (skip lanes beyond visible rows)
                 for segment in segments where segment.lane < rows {
-                    drawBar(segment, layout: layout, barHeight: barHeight, context: &context)
+                    drawBar(segment, layout: layout, barHeight: barHeight, context: context)
                 }
 
                 // Merge hidden segments into overflow counts
@@ -242,23 +242,17 @@ struct EventBarLayer: View {
     }
 
     private func drawBar(_ segment: EventSegment, layout: CalendarLayout,
-                         barHeight: CGFloat, context: inout GraphicsContext) {
+                         barHeight: CGFloat, context: GraphicsContext) {
+        var context = context
         let rect = barRect(for: segment, layout: layout, barHeight: barHeight)
         let color = Color(cgColor: segment.event.calendar.cgColor)
 
-        context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color.opacity(0.4)))
-
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !query.isEmpty, (segment.event.title ?? "").localizedStandardContains(query) {
-            // The two-tone outline stays distinct from both the theme background
-            // and the calendar's original fill without recoloring the event.
-            let foreground = theme.eventTextColor
-            let backing: Color = Color(hex: theme.backgroundColor).isLight ? .white : .black
-            let path = Path(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: 3)
-            context.stroke(path, with: .color(foreground.opacity(0.15)), lineWidth: 5)
-            context.stroke(path, with: .color(backing), lineWidth: 3)
-            context.stroke(path, with: .color(foreground), lineWidth: 1.5)
-        }
+        let isMatch = !query.isEmpty && (segment.event.title ?? "").localizedStandardContains(query)
+        if !query.isEmpty && !isMatch { context.opacity *= 0.3 }
+        let fill = isMatch ? Color(hex: "#FFD84D") : color.opacity(0.4)
+        let textColor = isMatch ? Color.black : theme.eventTextColor.opacity(0.78)
+        context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(fill))
 
         // Title text (clipped to bar)
         let title = segment.event.title ?? ""
@@ -268,8 +262,8 @@ struct EventBarLayer: View {
             ctx.clip(to: Path(rect))
             let text = ctx.resolve(
                 Text(title)
-                    .font(.system(size: fontSize))
-                    .foregroundStyle(theme.eventTextColor.opacity(0.78))
+                    .font(.system(size: fontSize, weight: isMatch ? .semibold : .regular))
+                    .foregroundStyle(textColor)
             )
             ctx.draw(text, at: CGPoint(x: rect.minX + 4, y: rect.midY), anchor: .leading)
         }

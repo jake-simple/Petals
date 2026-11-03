@@ -65,6 +65,7 @@ struct ContentView: View {
     @State private var showFontSizePicker = false
     @State private var windowContentWidth: CGFloat = 1200
     @State private var eventSearchText = ScreenshotConfig.searchText
+    @State private var eventSearchPresented = false
     @FocusState private var eventSearchFocused: Bool
 
     // Paging state
@@ -386,6 +387,14 @@ struct ContentView: View {
             modeToggleToolbar
             toolbarContent
         }
+        .onChange(of: eventSearchPresented) { _, presented in
+            guard presented else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(150))
+                guard eventSearchPresented else { return }
+                eventSearchFocused = true
+            }
+        }
         .sheet(item: $editorContext) { ctx in
             EventEditorSheet(
                 eventManager: eventManager,
@@ -605,31 +614,42 @@ struct ContentView: View {
         }
 
         ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 4) {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search event titles", text: $eventSearchText)
-                        .textFieldStyle(.plain)
-                        .focused($eventSearchFocused)
-                        .onExitCommand { eventSearchText = ""; eventSearchFocused = false }
-                        .accessibilityIdentifier("eventTitleSearch")
-                    if !eventSearchText.isEmpty {
+            Group {
+                if eventSearchPresented {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                        TextField("Search event titles", text: $eventSearchText)
+                            .textFieldStyle(.plain)
+                            .focused($eventSearchFocused)
+                            .accessibilityIdentifier("eventTitleSearch")
+                            .onExitCommand {
+                                eventSearchText = ""
+                                eventSearchFocused = false
+                                eventSearchPresented = false
+                            }
                         Button {
                             eventSearchText = ""
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                        }
+                            eventSearchFocused = false
+                            eventSearchPresented = false
+                        } label: { Image(systemName: "xmark.circle.fill") }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Clear search")
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .frame(width: 220)
+                } else {
+                    Button { eventSearchPresented = true } label: {
+                        Label("Find", systemImage: "magnifyingglass")
+                    }
+                    .accessibilityIdentifier("eventSearchButton")
                 }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .frame(width: 170)
-                .background {
-                    Button("Find") { eventSearchFocused = true }
-                        .keyboardShortcut("f", modifiers: .command)
-                        .hidden()
-                }
+            }
+            .background {
+                Button("Find") { eventSearchPresented = true; eventSearchFocused = true }
+                    .keyboardShortcut("f", modifiers: .command)
+                    .hidden()
+            }
         }
         ToolbarItemGroup(placement: .primaryAction) {
                 Menu {

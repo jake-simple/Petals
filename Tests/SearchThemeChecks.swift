@@ -57,19 +57,22 @@ struct SearchThemeChecks {
                 precondition(a == c, "Clearing must restore original image: \(theme.id)")
                 let beforePixels = NSBitmapImageRep(cgImage: before)
                 let afterPixels = NSBitmapImageRep(cgImage: highlighted)
-                // Interior fill away from text/borders remains exactly the original
-                // calendar color, for both matching and nonmatching events.
+                // Matching fill overrides calendar colors; nonmatches are dimmed.
                 for month in [1, 2] {
                     let origin = layout.cellOrigin(month: month, day: 9)
                     for dx in [3, 8, 12] {
                         let x = Int(origin.x) + dx
                         let y = Int(origin.y) + 6
-                        precondition(beforePixels.colorAt(x: x, y: y) == afterPixels.colorAt(x: x, y: y))
+                        if month == 1 {
+                            precondition(beforePixels.colorAt(x: x, y: y) != afterPixels.colorAt(x: x, y: y), "Matching fill must change: \(theme.id)")
+                        } else {
+                            precondition(beforePixels.colorAt(x: x, y: y) != afterPixels.colorAt(x: x, y: y), "Nonmatching fill must dim")
+                        }
                     }
                 }
                 count += 1
             }
         }
-        print("PASS: \(count) theme/scheme combinations: highlight visible, original fills unchanged, clear restores exact render")
+        print("PASS: \(count) theme/scheme combinations: highlight visible, matched fill overridden, nonmatching fills dimmed, clear restores exact render")
     }
 }

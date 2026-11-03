@@ -1,849 +1,8 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "OK" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OK"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "확인"
-          }
-        }
-      }
-    },
-    "Unable to Complete" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to Complete"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "작업을 완료하지 못했습니다"
-          }
-        }
-      }
-    },
-    "Some selected calendars are unavailable on this Mac. Their selection is preserved." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Some selected calendars are unavailable on this Mac. Their selection is preserved."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 Mac에서 찾을 수 없는 캘린더가 있습니다. 기존 선택은 유지됩니다."
-          }
-        }
-      }
-    },
-    "Include Decorations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Include Decorations"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "꾸미기 포함"
-          }
-        }
-      }
-    },
-    "Export PDF…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export PDF…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PDF 내보내기…"
-          }
-        }
-      }
-    },
-    "Export PNG…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export PNG…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PNG 내보내기…"
-          }
-        }
-      }
-    },
-    "Print…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Print…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "인쇄…"
-          }
-        }
-      }
-    },
-    "Export" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "내보내기"
-          }
-        }
-      }
-    },
-    "An original image is not downloaded yet. Try again after iCloud finishes downloading." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "An original image is not downloaded yet. Try again after iCloud finishes downloading."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "아직 내려받지 못한 원본 이미지가 있습니다. iCloud 다운로드가 끝난 뒤 다시 시도해 주세요."
-          }
-        }
-      }
-    },
-    "The calendar could not be rendered." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The calendar could not be rendered."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "달력 이미지를 만들 수 없습니다."
-          }
-        }
-      }
-    },
-    "iCloud sync could not start. Changes are saved on this Mac. Restart the app to retry." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud sync could not start. Changes are saved on this Mac. Restart the app to retry."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud 동기화를 시작하지 못했습니다. 변경 내용은 이 Mac에 저장됩니다. 앱을 다시 실행하면 재시도합니다."
-          }
-        }
-      }
-    },
-    "iCloud sync is temporarily unavailable. Changes remain saved on this Mac." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud sync is temporarily unavailable. Changes remain saved on this Mac."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일시적으로 iCloud 동기화를 사용할 수 없습니다. 변경 내용은 이 Mac에 보관됩니다."
-          }
-        }
-      }
-    },
-    "iCloud transfer completed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud transfer completed"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud 데이터 전송 완료"
-          }
-        }
-      }
-    },
-    "Waiting for iCloud" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waiting for iCloud"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud 대기 중"
-          }
-        }
-      }
-    },
-    "Last download" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last download"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "마지막 내려받기"
-          }
-        }
-      }
-    },
-    "Last upload" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last upload"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "마지막 업로드"
-          }
-        }
-      }
-    },
-    "Details" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Details"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "세부 정보"
-          }
-        }
-      }
-    },
-    "iCloud" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "iCloud"
-          }
-        }
-      }
-    },
-    "Board Settings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Board Settings"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "계획판 설정"
-          }
-        }
-      }
-    },
-    "Board name" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Board name"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "계획판 이름"
-          }
-        }
-      }
-    },
-    "Duplicate Board" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duplicate Board"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "계획판 복제"
-          }
-        }
-      }
-    },
-    "Delete Board" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete Board"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "계획판 삭제"
-          }
-        }
-      }
-    },
-    "Delete this board and its notes and decorations?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete this board and its notes and decorations?"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 계획판과 포함된 메모·꾸미기를 삭제할까요?"
-          }
-        }
-      }
-    },
-    "Calendar events will be kept." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar events will be kept."
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "캘린더 일정은 유지됩니다."
-          }
-        }
-      }
-    },
-    "New Board" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Board"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 계획판"
-          }
-        }
-      }
-    },
-    "New Board…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Board…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 계획판…"
-          }
-        }
-      }
-    },
-    "Board Settings…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Board Settings…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "계획판 설정…"
-          }
-        }
-      }
-    },
-    "Create" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "만들기"
-          }
-        }
-      }
-    },
-    "Unable to Save" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to Save"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "저장할 수 없음"
-          }
-        }
-      }
-    },
-    "%@ Copy" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ Copy"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ 복사본"
-          }
-        }
-      }
-    },
-    "Sidebar" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sidebar"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "사이드바"
-          }
-        }
-      }
-    },
-    "Search notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search notes"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메모 검색"
-          }
-        }
-      }
-    },
-    "Add Note" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Note"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메모 추가"
-          }
-        }
-      }
-    },
-    "No Notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Notes"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메모 없음"
-          }
-        }
-      }
-    },
-    "No Matching Notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Matching Notes"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "검색 결과 없음"
-          }
-        }
-      }
-    },
-    "New Note" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Note"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 메모"
-          }
-        }
-      }
-    },
-    "Note" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Note"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메모"
-          }
-        }
-      }
-    },
-    "Delete this note?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete this note?"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 메모를 삭제할까요?"
-          }
-        }
-      }
-    },
-    "Date" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "날짜"
-          }
-        }
-      }
-    },
-    "Show notes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show notes"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "메모 보기"
-          }
-        }
-      }
-    },
-    "Search event titles" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Search event titles"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "일정 제목 검색"
-          }
-        }
-      }
-    },
-    "Clear search" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clear search"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "검색 지우기"
-          }
-        }
-      }
-    },
-    "Find" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Find"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "찾기"
-          }
-        }
-      }
-    },
     "" : {
 
-    },
-    "Add Empty Set" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add Empty Set"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "빈 세트 추가"
-          }
-        }
-      }
-    },
-    "Default" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Default"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "기본"
-          }
-        }
-      }
-    },
-    "Done" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Done"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "완료"
-          }
-        }
-      }
-    },
-    "Manage Calendar Sets" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage Calendar Sets"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "캘린더 세트 관리"
-          }
-        }
-      }
-    },
-    "Manage Sets…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage Sets…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "세트 관리…"
-          }
-        }
-      }
-    },
-    "New Calendar Set" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Calendar Set"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 캘린더 세트"
-          }
-        }
-      }
-    },
-    "New Set" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New Set"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "새 세트"
-          }
-        }
-      }
-    },
-    "Save Current as New Set…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save Current as New Set…"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "현재 선택을 새 세트로 저장…"
-          }
-        }
-      }
-    },
-    "Set name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Set name"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "세트 이름"
-          }
-        }
-      }
     },
     " %@" : {
 
@@ -861,6 +20,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ – %2$@"
+          }
+        }
+      }
+    },
+    "%@ Copy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Copy"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ 복사본"
           }
         }
       }
@@ -977,6 +152,39 @@
         }
       }
     },
+    "Add Empty Set" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Empty Set"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "빈 세트 추가"
+          }
+        }
+      }
+    },
+    "Add Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Note"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모 추가"
+          }
+        }
+      }
+    },
     "Alignment" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1021,6 +229,22 @@
         }
       }
     },
+    "An original image is not downloaded yet. Try again after iCloud finishes downloading." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An original image is not downloaded yet. Try again after iCloud finishes downloading."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "아직 내려받지 못한 원본 이미지가 있습니다. iCloud 다운로드가 끝난 뒤 다시 시도해 주세요."
+          }
+        }
+      }
+    },
     "Arrows" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1054,6 +278,54 @@
         }
       }
     },
+    "Board name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Board name"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획판 이름"
+          }
+        }
+      }
+    },
+    "Board Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Board Settings"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획판 설정"
+          }
+        }
+      }
+    },
+    "Board Settings…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Board Settings…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획판 설정…"
+          }
+        }
+      }
+    },
     "Bold" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1083,6 +355,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "캘린더"
+          }
+        }
+      }
+    },
+    "Calendar events will be kept." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calendar events will be kept."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캘린더 일정은 유지됩니다."
           }
         }
       }
@@ -1149,6 +437,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "원"
+          }
+        }
+      }
+    },
+    "Clear search" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검색 지우기"
           }
         }
       }
@@ -1230,6 +535,22 @@
         }
       }
     },
+    "Create" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "만들기"
+          }
+        }
+      }
+    },
     "Dark Mode" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1237,6 +558,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "다크 모드"
+          }
+        }
+      }
+    },
+    "Date" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "날짜"
           }
         }
       }
@@ -1263,6 +600,23 @@
         }
       }
     },
+    "Default" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "기본"
+          }
+        }
+      }
+    },
     "Delete" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1270,6 +624,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "삭제"
+          }
+        }
+      }
+    },
+    "Delete Board" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Board"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획판 삭제"
           }
         }
       }
@@ -1285,6 +655,22 @@
         }
       }
     },
+    "Delete this board and its notes and decorations?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this board and its notes and decorations?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 계획판과 포함된 메모·꾸미기를 삭제할까요?"
+          }
+        }
+      }
+    },
     "Delete this event?" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1292,6 +678,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이 이벤트를 삭제하시겠습니까?"
+          }
+        }
+      }
+    },
+    "Delete this note?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete this note?"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 메모를 삭제할까요?"
+          }
+        }
+      }
+    },
+    "Details" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세부 정보"
           }
         }
       }
@@ -1329,6 +747,39 @@
         }
       }
     },
+    "Done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "완료"
+          }
+        }
+      }
+    },
+    "Duplicate Board" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duplicate Board"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계획판 복제"
+          }
+        }
+      }
+    },
     "Edit" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1362,6 +813,17 @@
         }
       }
     },
+    "End" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "종료"
+          }
+        }
+      }
+    },
     "End date must be after start date." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1375,17 +837,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "종료일은 시작일 이후여야 합니다."
-          }
-        }
-      }
-    },
-    "End" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "종료"
           }
         }
       }
@@ -1515,6 +966,54 @@
         }
       }
     },
+    "Export" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "내보내기"
+          }
+        }
+      }
+    },
+    "Export PDF…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export PDF…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PDF 내보내기…"
+          }
+        }
+      }
+    },
+    "Export PNG…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Export PNG…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PNG 내보내기…"
+          }
+        }
+      }
+    },
     "Feedback" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1539,6 +1038,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "채우기"
+          }
+        }
+      }
+    },
+    "Find" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Find"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "찾기"
           }
         }
       }
@@ -1670,6 +1186,70 @@
         }
       }
     },
+    "iCloud" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud"
+          }
+        }
+      }
+    },
+    "iCloud sync could not start. Changes are saved on this Mac. Restart the app to retry." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud sync could not start. Changes are saved on this Mac. Restart the app to retry."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 동기화를 시작하지 못했습니다. 변경 내용은 이 Mac에 저장됩니다. 앱을 다시 실행하면 재시도합니다."
+          }
+        }
+      }
+    },
+    "iCloud sync is temporarily unavailable. Changes remain saved on this Mac." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud sync is temporarily unavailable. Changes remain saved on this Mac."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일시적으로 iCloud 동기화를 사용할 수 없습니다. 변경 내용은 이 Mac에 보관됩니다."
+          }
+        }
+      }
+    },
+    "iCloud transfer completed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud transfer completed"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 데이터 전송 완료"
+          }
+        }
+      }
+    },
     "Image" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1677,6 +1257,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "이미지"
+          }
+        }
+      }
+    },
+    "Include Decorations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Include Decorations"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "꾸미기 포함"
           }
         }
       }
@@ -1739,6 +1335,38 @@
         }
       }
     },
+    "Last download" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last download"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 내려받기"
+          }
+        }
+      }
+    },
+    "Last upload" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last upload"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 업로드"
+          }
+        }
+      }
+    },
     "Left" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1785,6 +1413,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "나만의 한 해를 만드세요"
+          }
+        }
+      }
+    },
+    "Manage Calendar Sets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Calendar Sets"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캘린더 세트 관리"
+          }
+        }
+      }
+    },
+    "Manage Sets…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Sets…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세트 관리…"
           }
         }
       }
@@ -1855,6 +1517,55 @@
         }
       }
     },
+    "New Board" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Board"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 계획판"
+          }
+        }
+      }
+    },
+    "New Board…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Board…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 계획판…"
+          }
+        }
+      }
+    },
+    "New Calendar Set" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Calendar Set"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 캘린더 세트"
+          }
+        }
+      }
+    },
     "New Event" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1862,6 +1573,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "새 이벤트"
+          }
+        }
+      }
+    },
+    "New Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Note"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 메모"
+          }
+        }
+      }
+    },
+    "New Set" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Set"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 세트"
           }
         }
       }
@@ -1888,6 +1632,54 @@
         }
       }
     },
+    "No Matching Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Matching Notes"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "검색 결과 없음"
+          }
+        }
+      }
+    },
+    "No Notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Notes"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모 없음"
+          }
+        }
+      }
+    },
+    "Note" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Note"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모"
+          }
+        }
+      }
+    },
     "Notes" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1906,6 +1698,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "물체 및 도구"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "확인"
           }
         }
       }
@@ -2052,6 +1860,22 @@
         }
       }
     },
+    "Print…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Print…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "인쇄…"
+          }
+        }
+      }
+    },
     "Privacy & Security" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2148,6 +1972,55 @@
         }
       }
     },
+    "Save Current as New Set…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Current as New Set…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "현재 선택을 새 세트로 저장…"
+          }
+        }
+      }
+    },
+    "Search event titles" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search event titles"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일정 제목 검색"
+          }
+        }
+      }
+    },
+    "Search notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search notes"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모 검색"
+          }
+        }
+      }
+    },
     "Select All" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2188,6 +2061,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "맨 뒤로"
+          }
+        }
+      }
+    },
+    "Set name" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set name"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "세트 이름"
           }
         }
       }
@@ -2236,6 +2126,22 @@
         }
       }
     },
+    "Show notes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show notes"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "메모 보기"
+          }
+        }
+      }
+    },
     "Show Today Line" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2247,6 +2153,22 @@
         }
       }
     },
+    "Sidebar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sidebar"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사이드바"
+          }
+        }
+      }
+    },
     "Size" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2254,6 +2176,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "크기"
+          }
+        }
+      }
+    },
+    "Some selected calendars are unavailable on this Mac. Their selection is preserved." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some selected calendars are unavailable on this Mac. Their selection is preserved."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Mac에서 찾을 수 없는 캘린더가 있습니다. 기존 선택은 유지됩니다."
           }
         }
       }
@@ -2342,6 +2280,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "텍스트 포맷"
+          }
+        }
+      }
+    },
+    "The calendar could not be rendered." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The calendar could not be rendered."
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "달력 이미지를 만들 수 없습니다."
           }
         }
       }
@@ -2456,6 +2410,38 @@
         }
       }
     },
+    "Unable to Complete" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Complete"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작업을 완료하지 못했습니다"
+          }
+        }
+      }
+    },
+    "Unable to Save" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Save"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "저장할 수 없음"
+          }
+        }
+      }
+    },
     "Unlock Premium" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2513,6 +2499,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "가변"
+          }
+        }
+      }
+    },
+    "Waiting for iCloud" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for iCloud"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iCloud 대기 중"
           }
         }
       }
