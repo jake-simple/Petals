@@ -17,6 +17,7 @@ xcrun swiftc "${flags[@]}" -module-name PetalsMigrationFixture "${models[@]}" \
   "$src/Models/PlanningBoard.swift" "$src/Models/CalendarNote.swift" \
   "$src/Models/PlanningBoardMigration.swift" "$src/Models/PlanningBoardOperations.swift" \
   "$src/Models/PlanningBoardProjection.swift" "$src/Models/CanvasItemSnapshot.swift" \
+  "$src/Models/ImageSyncMigration.swift" \
   "$src/Models/CalendarSet.swift" \
   "$src/Helpers/ImageManager.swift" "$repo/Tests/PlanningPersistenceChecks.swift" -o "$build/persistence"
 "$build/persistence" "$build/legacy.store"

@@ -10,6 +10,7 @@ struct CalendarNotesSidebar: View {
     @Environment(\.modelContext) private var modelContext
     @State private var query = ""
     @State private var expandedID: String?
+    @FocusState private var focusedEditorID: String?
     @State private var errorMessage: String?
     @State private var pendingDeletion: CalendarNote?
 
@@ -44,32 +45,46 @@ struct CalendarNotesSidebar: View {
                                     }
                                     ForEach(group.notes) { note in
                                         VStack(alignment: .leading, spacing: 8) {
-                                            Button {
-                                                expandedID = expandedID == note.id ? nil : note.id
-                                                onSelect(note)
-                                            } label: {
-                                                Text(note.body.isEmpty ? String(localized: "New Note") : note.body)
-                                                    .lineLimit(expandedID == note.id ? 1 : 3)
-                                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                                    .contentShape(Rectangle())
+                                            if expandedID != note.id {
+                                                Button {
+                                                    expandedID = note.id
+                                                    onSelect(note)
+                                                } label: {
+                                                    Text(note.body.isEmpty ? String(localized: "New Note") : note.body)
+                                                        .lineLimit(3)
+                                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                                        .contentShape(Rectangle())
+                                                }
+                                                .buttonStyle(.plain)
                                             }
-                                            .buttonStyle(.plain)
                                             if expandedID == note.id {
                                                 TextEditor(text: Binding(get: { note.body }, set: {
                                                     note.body = $0
                                                     note.modifiedAt = Date()
                                                 }))
+                                                .focused($focusedEditorID, equals: note.id)
+                                                .task(id: focusRequest) {
+                                                    // Let the date-navigation scroll finish before focusing
+                                                    // the newly inserted native text editor.
+                                                    do { try await Task.sleep(for: .milliseconds(150)) }
+                                                    catch { return }
+                                                    focusedEditorID = note.id
+                                                }
+                                                .scrollContentBackground(.hidden)
+                                                .font(.system(size: 14))
+                                                .lineSpacing(4)
                                                 .frame(minHeight: 100, maxHeight: 220)
                                                 .accessibilityLabel("Note")
                                                 HStack {
                                                     Button("Delete", role: .destructive) { pendingDeletion = note }
                                                     Spacer()
-                                                    Button("Done") { save(); expandedID = nil }
+                                                    Button("Done") { save(); focusedEditorID = nil; expandedID = nil }
                                                 }
                                             }
                                         }
                                         .padding(10)
-                                        .background(.quaternary, in: RoundedRectangle(cornerRadius: 8))
+                                        .background(group.key == focusedDateKey ? Color.clear : Color.primary.opacity(0.06),
+                                                    in: RoundedRectangle(cornerRadius: 8))
                                     }
                                 }
                                 .padding(4)
@@ -94,6 +109,7 @@ struct CalendarNotesSidebar: View {
             }
         }
         .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onChange(of: focusRequest) { query = "" }
         .onDisappear { save() }
         .confirmationDialog("Delete this note?", isPresented: Binding(get: { pendingDeletion != nil }, set: { if !$0 { pendingDeletion = nil } })) {
@@ -130,7 +146,18 @@ struct NewCalendarNoteView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("New Note").font(.headline)
             DatePicker("Date", selection: $date, displayedComponents: .date)
-            TextEditor(text: $text).frame(height: 150).accessibilityLabel("Note")
+            TextEditor(text: $text)
+                .font(.system(size: 14))
+                .lineSpacing(4)
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .frame(height: 150)
+                .background(.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 10))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+                }
+                .accessibilityLabel("Note")
             HStack {
                 Spacer()
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction)

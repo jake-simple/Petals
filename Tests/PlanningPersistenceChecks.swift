@@ -1,11 +1,12 @@
 import Foundation
+import AppKit
 import SwiftData
 
 /// Standalone integration check; uses an isolated SQLite store and preference suite.
 @main
 struct PlanningPersistenceChecks {
     @MainActor
-    static func main() throws {
+    static func main() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -105,6 +106,26 @@ struct PlanningPersistenceChecks {
         let countAfter = try context.fetchCount(FetchDescriptor<PlanningBoard>())
         precondition(countAfter == countBefore, "Read projection must not delete original records")
         precondition(a.canvasItems?.count == 1 && b.canvasItems?.count == 1)
+        let recoveryName = "petals-recovery-check-" + UUID().uuidString + ".png"
+        let recoveryURL = ImageManager.imagesDirectory.appendingPathComponent(recoveryName)
+        defer { try? FileManager.default.removeItem(at: recoveryURL) }
+        let recoveryItem = CanvasItem(type: .image)
+        recoveryItem.imageFileName = recoveryName
+        context.insert(recoveryItem)
+        try context.save()
+        try await ImageSyncMigration.migrate(in: context)
+        precondition(recoveryItem.originalImageData == nil, "Missing originals must remain retryable")
+        let recoveryBitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2, pixelsHigh: 2,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        for x in 0..<2 { for y in 0..<2 { recoveryBitmap.setColor(.red, atX: x, y: y) } }
+        let recoveryData = recoveryBitmap.representation(using: .png, properties: [:])!
+        try recoveryData.write(to: recoveryURL, options: .atomic)
+        try await ImageSyncMigration.migrate(in: context)
+        precondition(recoveryItem.originalImageData == recoveryData, "Later available original must migrate")
+        try await ImageSyncMigration.migrate(in: context)
+        precondition(recoveryItem.originalImageData == recoveryData && FileManager.default.fileExists(atPath: recoveryURL.path))
+        print("PASS: missing original remains retryable; later file recovers; repeated migration preserves original file and data")
         print("PASS: non-destructive duplicate projection preserves both original rows and all decoration content; tombstone hides logical board")
         print("PASS: board duplication/isolation/deletion and external original-image persistence")
         print("PASS: legacy set/document migration, decoration/theme preservation, idempotency, Korean/English note persistence, civil date, reopened store")

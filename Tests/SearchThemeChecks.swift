@@ -38,13 +38,20 @@ struct SearchThemeChecks {
                             onEventTap: { _, _ in }, onEmptyTap: { _, _ in }, onNewEvent: { _, _ in },
                             onDragCreate: { _, _, _, _ in })
                     }.frame(width: size.width, height: size.height).environment(\.colorScheme, scheme)
-                    return ImageRenderer(content: view).cgImage!
+                    // Render synchronously into an owned sRGB bitmap so equality checks
+                    // compare a fixed pixel format, not renderer-owned provider storage.
+                    let bitmap = CGContext(data: nil, width: Int(size.width), height: Int(size.height),
+                        bitsPerComponent: 8, bytesPerRow: Int(size.width) * 4,
+                        space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+                    ImageRenderer(content: view).render { _, draw in draw(bitmap) }
+                    return bitmap.makeImage()!
                 }
                 let before = render("")
-                let highlighted = render("trip")
-                let cleared = render("  ")
                 let a = before.dataProvider!.data! as Data
+                let highlighted = render("trip")
                 let b = highlighted.dataProvider!.data! as Data
+                let cleared = render("  ")
                 let c = cleared.dataProvider!.data! as Data
                 precondition(a != b, "Match must visibly highlight: \(theme.id)")
                 precondition(a == c, "Clearing must restore original image: \(theme.id)")

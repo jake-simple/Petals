@@ -126,3 +126,84 @@ Canvas images use iCloud Drive with a local-directory fallback. Existing CloudKi
 - Asked user to unlock the Mac; response pending. Do not request accessibility permission again as though it is missing. Do not try to unlock the OS or bypass the frontmost-target guard.
 - Temporary direct AX helper: /tmp/PetalsAX; guarded input helper: /tmp/PetalsInput; target fixture process 72664 at last check (revalidate before use). Current target /tmp/PetalsValidationJourney.app, screenshot mode/in-memory only, Korean; source has a later consistency-only weekday display change not in this binary. For final journeys launch the latest build in a new isolated bundle.
 - /tmp/capture-petals-pid.swift now prints target window bounds as well as saving a 2x image. Last target bounds (730,391,1100,688); requery before coordinate actions.
+
+
+## Verification continuation — 2026-11-03 (/Users/miniling/Petals)
+
+- Pulled main fast-forward from d333571 to d7b458d; no local source edits were present before pull.
+- Xcode 27.0 Debug and Release unsigned builds pass. Logs: /tmp/petals-current-build.log, /tmp/petals-current-release.log. AppIntents metadata extraction notice remains.
+- Regression checks pass 514 assertions in each of Asia/Seoul, America/Los_Angeles and UTC (/tmp/petals-regressions-current.log).
+- Planning persistence checks pass, including actual old compiled schema migration, duplicate projection, board isolation/deletion and original-image persistence.
+- First planning run FAILED exact rendered-byte equality after search clear for solarized-light (/tmp/petals-planning-current.log). A separate diagnostic later observed 22 differing bytes for tokyo-night/dark; subsequent diagnostic runs did not reproduce it. Cause is unresolved: do not dismiss it as harmless renderer noise or mark the test consistently green. Production source and assertion were not weakened.
+- Full planning rerun passed all persistence checks, 18 theme/scheme cases and six PDF/PNG decoration/period combinations (/tmp/petals-planning-recheck.log).
+- Actual native UI journeys succeeded in an isolated ad-hoc app, com.onessa.Petals.currentvalidation, using PETALS_SHOT=1 and an in-memory store: planning board create/rename/duplicate/delete; bilingual note create/edit/delete; deleting a copied note preserves the original; note search/no-results/reset; navigation from another year back to note year; 300-note search and navigation from January to April; event search Escape reset.
+- PDF and PNG save panels produced real files, retained at /tmp/Petals-current-ui-export.pdf (one page) and /tmp/Petals-current-ui-export.png (2340 x 1980). Print dialog displayed one page and was cancelled without paper output.
+- Korean and English 1100pt fixture windows were visually inspected. English tokyo-night capture shows search outline, hidden-match counts and readable notes. Toolbar/inspector remained light, so this does NOT establish native OS-dark appearance coverage.
+- After English capture, automation timed out and the English test process relaunched without fixture environment. Subsequent UI was not used as fixture evidence. Both identified temporary validation processes were stopped. No installed production app was targeted.
+- Still open: intermittent exact-render comparison failure; complete theme-selection/calendar-selection persistence and mode-switch UI coverage; native OS-dark runtime; physical second-device/production CloudKit verification. Prior single-Mac Development transport evidence was not rerun and is not production evidence.
+- An untracked Petals/Petals.xcodeproj/xcshareddata directory appeared during this session and was left untouched. No commit or push performed.
+
+
+## Search comparison and Mac interaction follow-up — 2026-11-03
+
+Changes:
+- SearchThemeChecks now renders synchronously into an owned, explicit 8-bit sRGB CGContext before comparing exact bytes. The prior ImageRenderer.cgImage/provider path produced intermittent equality failures and, under extended diagnostic repetition, nil provider data. Capturing provider data earlier alone still failed. Fixed bitmap rendering passed 100 repetitions of all 18 theme/scheme cases (1,800 combinations) without relaxing equality or color assertions. This identifies the unstable test rendering path; the precise internal SwiftUI cause is not established and no search product behavior was changed.
+- Actual interaction reproduced a separate AppKit constraint/layout crash when switching from calendar with an open inspector to whiteboard. Closing the native inspector without animation before replacing the content on the next main-queue turn fixes the reproduced path. Latest build passed the transition twice with 300 fixture notes, including reopening the inspector between transitions, and calendar return.
+- ScreenshotWindowSizer applies sizing once per attached window, avoiding repeated native window mutations during SwiftUI updates. This change alone did not fix the mode-switch crash; do not attribute the crash resolution to it.
+
+Additional real Mac evidence:
+- Normal persistent mode in the separate com.onessa.Petals.currentvalidation bundle: created QA Persistent board; selected one actual read-only holiday calendar; selected Nord theme. Quit/relaunch preserved board selection, calendar checkbox and selected theme.
+- Created bilingual dated note and two calendar text decorations through copy/paste. Quit/relaunch preserved the note marker/body and both text decorations.
+- Whiteboard text add and copy/paste produced two items; quit/relaunch preserved both. Calendar/whiteboard round trips succeeded in normal persistent mode.
+- Switched actual macOS appearance Light -> Dark, inspected calendar/native toolbar/notes, restored Light. User-created black decoration text remains black, as stored.
+- Latest fixture build: selected each of nine theme presets and observed selected state; quarter view inspected at 1100pt; original PNG imported through native file panel and visibly rendered in whiteboard.
+- Earlier native PDF/PNG save, print panel, board/note CRUD, duplicate isolation, 300-note search/navigation, English/Korean narrow render checks remain documented above.
+
+Final checks after mode-switch fix: Debug/Release builds pass; full planning script passes; 514 regression assertions pass in each of three timezones; git diff --check passes. Logs: /tmp/petals-mode-fix-build.log, /tmp/petals-final-release3.log, /tmp/petals-final-planning2.log, /tmp/petals-final-regression3.log, /tmp/petals-bitmap-stress.log.
+
+Coverage boundaries: this is not exhaustive real-use coverage of every changed line. Native event create/edit/delete (especially recurrence), multiwindow input/drag/resize/rotation and offline image recovery still need complete interactive journeys. Actual compiled legacy migration and image persistence were exercised by standalone real-source tests, not a full old-app-to-new-app GUI journey. A second physical Mac is unavailable; production CloudKit propagation/schema and App Store workflows remain unverified. No commit/push/deployment performed.
+
+
+## User-adjusted sync verification scope — 2026-11-03
+
+The user requested code review and functional checks only for synchronization. Physical second-device and Production CloudKit validation are excluded from this task's completion criteria. No new CloudKit transport run is required or claimed.
+Reviewed model defaults/optional inverse relationships, original-image external storage, stable legacy board IDs, non-destructive duplicate projection, deletion tombstones, missing-calendar reference retention, foreground image migration retries, and explicit local-only/error status. Local planning checks exercise migration, duplicate handling, persistence/reopen and original payload preservation. These establish local mechanisms, not remote delivery. Earlier Development transport evidence remains historical supporting evidence.
+
+
+## Final scope clarification and remaining-check closure — 2026-11-03
+
+User scope: newly added planning boards, per-board calendar/theme/decorations, dated notes, in-place title search/hidden matches, PDF/PNG/print, legacy migration and synced original preservation. General EventKit CRUD/recurrence and pre-existing freeform editing/multiwindow behavior are excluded except directly affected integration paths. Sync acceptance is code review plus local functional checks, not physical-device/Production propagation.
+
+Completed within that scope:
+- Native Mac journeys recorded above cover board and note CRUD, copy independence, search/reset/date navigation, actual calendar/theme selection, mode transitions, native PDF/PNG saving and print preview, English/Korean compact UI, and actual OS Dark appearance restored to Light.
+- Actual quit/relaunch preserved planning-board selection/theme/calendar references, bilingual note, calendar decorations and whiteboard text copies in the separate validation bundle.
+- New ImageSyncMigration recovery regression invokes the actual async implementation with an isolated local SwiftData store and UUID-named valid PNG fixture: first pass with absent original leaves data nil; after the PNG appears, retry stores exact bytes; another pass retains bytes and original file. Fixture file is removed afterward. This simulates later availability, not iCloud network loss/download timing.
+- Actual old compiled SwiftData model fixture -> current SQLite migration, repeated migration, external-image persistence/reopen, non-destructive duplicate projection and tombstone behavior pass. These are executable storage checks on this Mac, not a manual old-app GUI upgrade.
+- Sync code review covers compatible defaults/optional inverse relationships, stable IDs, non-destructive logical projection, calendar resolution retaining unavailable references, image-original migration, and local-only/error status. No new remote transport operation was performed.
+
+Search test correction uses synchronous explicit sRGB bitmap rendering; exact clear equality and original-fill assertions remain. 1,800 theme/scheme combinations passed. The precise SwiftUI-internal cause of the prior provider inconsistency is not proven; this resolves the unstable comparison path without changing product search semantics.
+
+No App Store submission, Production schema change, physical cross-device proof, paper printing, or broad pre-existing calendar/editor regression is claimed. Remaining GUI/network boundaries above are evidence limits, not additional completion requirements silently added to the user's scoped request.
+
+
+## Toolbar search background fix — 2026-11-03
+
+Removed the custom quaternary background inside the native toolbar search item; it was visibly stacking with the system capsule background. Debug build passed. Launched the updated isolated app and visually confirmed a single search background, then entered Korean text and cleared it via the clear button successfully.
+
+
+## Notes inspector top alignment — 2026-11-03
+
+Reproduced empty Notes tab vertically centering the complete inspector stack, including tab picker and search. Notes sidebar and inspector content now fill available height with top alignment. Debug build and diff checks pass. Launched updated validation app and visually confirmed tabs/search stay at the top for both no notes and no search results.
+
+
+## Note selection and marker refinement — 2026-11-03
+
+Removed the separate theme-colored note focus rectangle. Note focus now updates EventBarLayer selectedCell, reusing the accent-colored date selection and replacing the previous selected date. Markers move to bottom-right; triangle legs increase from 5pt to 8pt within a 14pt hit region. Debug build passes. Actual fixture interaction confirmed purple selected-date border after clicking a note; triangle size was reduced from an initially oversized 14pt prototype to final 8pt.
+
+
+## Final note editor refinements — 2026-11-03
+
+- New-note input uses a subtle background and thin rounded border. Explicit 14pt font and 4pt line spacing improve Korean/English text rendering in both editors.
+- Expanded notes show only the editor; collapsed notes retain their preview. Selected-date group uses a single accent background, with native editor background hidden.
+- Selecting a note focuses the inserted editor after date-navigation scrolling. Initial immediate focus was displaced into search; the cancellation-aware 150ms focus task resolves the reproduced ordering issue. Actual Mac verification confirmed editor AX focus and typing without another editor click.
+- Toolbar Export disclosure indicator is hidden; actual app click still opens the export menu. Latest Debug build and diff checks passed.

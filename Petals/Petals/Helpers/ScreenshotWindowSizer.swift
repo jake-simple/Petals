@@ -48,7 +48,9 @@ struct ScreenshotWindowSizer: NSViewRepresentable {
     private func applyIfNeeded(_ view: NSView) {
         guard ScreenshotConfig.isActive else { return }
         DispatchQueue.main.async {
-            guard let window = view.window else { return }
+            guard let view = view as? WindowAttachmentView, let window = view.window,
+                  view.sizedWindow !== window else { return }
+            view.sizedWindow = window
             window.isRestorable = false
             window.setFrameAutosaveName("")
             window.styleMask.remove(.fullScreen)
@@ -66,6 +68,7 @@ struct ScreenshotWindowSizer: NSViewRepresentable {
 }
 
 private final class WindowAttachmentView: NSView {
+    weak var sizedWindow: NSWindow?
     var onAttachment: (() -> Void)?
 
     override func viewDidMoveToWindow() {

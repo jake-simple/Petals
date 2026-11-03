@@ -10,6 +10,7 @@ struct EventBarLayer: View {
     let theme: Theme
     var startMonth: Int = 1
     var monthsShown: Int = 12
+    var focusedNoteDateKey: Int? = nil
     var searchText: String = ""
     var searchMatchCounts: [Int: [Int: Int]] = [:]
     let onEventTap: (EKEvent, CGRect) -> Void
@@ -208,6 +209,13 @@ struct EventBarLayer: View {
                             dragEnd = nil
                         }
                 )
+        }
+        .onChange(of: focusedNoteDateKey, initial: true) { _, key in
+            guard let key, key / 10000 == year else {
+                selectedCell = nil
+                return
+            }
+            selectedCell = (month: key / 100 % 100, day: key % 100)
         }
     }
 

@@ -205,6 +205,7 @@ struct ContentView: View {
                     .id(activePlanningBoard?.id)
                 }
             }
+            .frame(maxHeight: .infinity, alignment: .top)
             .inspectorColumnWidth(min: 260, ideal: 320, max: 460)
         }
         .frame(minWidth: 900, minHeight: 600)
@@ -246,7 +247,16 @@ struct ContentView: View {
     private var modeToggleToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
             Button {
-                showVisionBoard.toggle()
+                // Dismiss the native inspector before replacing its hosting subtree.
+                // Updating both in one layout pass can recursively invalidate AppKit constraints.
+                if !showVisionBoard && showCalendarFilter {
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { showCalendarFilter = false }
+                    DispatchQueue.main.async { showVisionBoard = true }
+                } else {
+                    showVisionBoard.toggle()
+                }
             } label: {
                 Image(systemName: showVisionBoard ? "calendar" : "sparkles.rectangle.stack")
             }
@@ -284,6 +294,7 @@ struct ContentView: View {
                         theme: theme,
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
+                        focusedNoteDateKey: focusedNoteDateKey,
                         searchText: eventSearchText,
                         searchMatchCounts: EventLayoutEngine.matchingDayCounts(events: eventManager.events, year: currentYear, query: eventSearchText),
                         onEventTap: { event, rect in
@@ -314,7 +325,7 @@ struct ContentView: View {
                     .allowsHitTesting(!isCanvasEditMode)
 
                     CalendarNoteMarkers(year: currentYear, startMonth: startMonth, monthsShown: monthsPerPage,
-                        notes: boardNotes, theme: theme, focusedDateKey: focusedNoteDateKey, onSelect: showNotes)
+                        notes: boardNotes, theme: theme, onSelect: showNotes)
                         .allowsHitTesting(!isCanvasEditMode)
 
                     // Z3: 지난 날짜 흐림 — 그리드·이벤트 바 위에 덮어 전부 흐리게
@@ -613,7 +624,6 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
                 .frame(width: 170)
                 .background {
                     Button("Find") { eventSearchFocused = true }
@@ -631,6 +641,7 @@ struct ContentView: View {
                 } label: {
                     Label("Export", systemImage: "square.and.arrow.up")
                 }
+                .menuIndicator(.hidden)
                 .disabled(isExporting)
                 Button(action: { collapseTopArea.toggle() }) {
                     Label("Top Area", systemImage: collapseTopArea ? "rectangle.tophalf.inset.filled" : "rectangle.topthird.inset.filled")
