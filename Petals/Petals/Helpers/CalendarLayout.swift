@@ -8,6 +8,15 @@ struct CalendarLayout: Sendable {
     /// 셀 우측 가장자리에서 날짜 숫자까지의 여백.
     static let dayLabelInset: CGFloat = 5
 
+    /// Preserve at least one event lane and the overflow footer in short annual windows.
+    static func topInset(height: CGFloat, monthsShown: Int, fontSize: CGFloat, collapsed: Bool) -> CGFloat {
+        guard !collapsed else { return 16 }
+        let preferred = height * 0.18
+        guard monthsShown == 12 else { return preferred }
+        let minimumGridHeight = 12 * (18 + fontSize + 2 + max(10, fontSize) + 1)
+        return max(16, min(preferred, height - minimumGridHeight - 16))
+    }
+
     let monthsShown: Int
     let startMonth: Int
     let year: Int

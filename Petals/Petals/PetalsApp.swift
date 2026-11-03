@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import CoreData
 
 @main
 struct PetalsApp: App {
@@ -13,6 +14,8 @@ struct PetalsApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             YearDocument.self,
+            PlanningBoard.self,
+            CalendarNote.self,
             CanvasItem.self,
             VisionBoard.self,
             VisionBoardItem.self,
@@ -33,6 +36,7 @@ struct PetalsApp: App {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
             // CloudKit 실패 시 로컬 전용으로 폴백
+            SyncStatus.shared.localOnlyReason = error.localizedDescription
             print("CloudKit ModelContainer failed: \(error). Falling back to local-only.")
             let localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
             do {
@@ -47,6 +51,9 @@ struct PetalsApp: App {
         Window("Petals", id: Self.mainWindowID) {
             ContentView()
                 .environment(clipboardManager)
+                .onReceive(NotificationCenter.default.publisher(for: NSPersistentCloudKitContainer.eventChangedNotification)) {
+                    SyncStatus.shared.receive($0)
+                }
                 .task {
                     if ScreenshotConfig.isActive {
                         ScreenshotConfig.seedDemoBoards(in: sharedModelContainer.mainContext)

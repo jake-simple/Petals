@@ -168,6 +168,14 @@ struct CalendarGridView: View {
 
         let endMonth = startMonth + monthsShown - 1
         let weekdayTable = Self.weekdays(forYear: year)
+        // Keep the whole annual grid consistent; do not show weekdays only on
+        // single-digit dates when two-digit dates cannot fit them.
+        let widestDayLabel = weekdaySymbols.map { symbol in
+            let text = Self.dayNumberText(28, fontSize: eventFontSize)
+                + Text(" \(symbol)").font(.system(size: eventFontSize))
+            return context.resolve(text).measure(in: CGSize(width: .infinity, height: perMonthLabelHeight)).width
+        }.max() ?? 0
+        let showsWeekday = widestDayLabel + 4 <= cellWidth
 
         for month in startMonth...endMonth {
             let days = layout.daysInMonth(month)
@@ -189,7 +197,12 @@ struct CalendarGridView: View {
                 let label = Self.dayNumberText(day, fontSize: eventFontSize).foregroundStyle(numColor)
                     + Text(" \(sym)").font(.system(size: eventFontSize)).foregroundStyle(wdColor)
                 let resolved = context.resolve(label)
-                context.draw(resolved, at: CGPoint(x: colX + cellWidth - CalendarLayout.dayLabelInset, y: rowY + perMonthLabelHeight * 0.5), anchor: .trailing)
+                if showsWeekday {
+                    context.draw(resolved, at: CGPoint(x: colX + cellWidth - CalendarLayout.dayLabelInset, y: rowY + perMonthLabelHeight * 0.5), anchor: .trailing)
+                } else {
+                    let number = context.resolve(Self.dayNumberText(day, fontSize: min(eventFontSize, max(6, cellWidth * 0.55))).foregroundStyle(numColor))
+                    context.draw(number, at: CGPoint(x: colX + cellWidth * 0.5, y: rowY + perMonthLabelHeight * 0.5))
+                }
             }
 
             // Weekend + inactive cells

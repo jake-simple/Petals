@@ -20,6 +20,10 @@ enum ScreenshotConfig {
 
     static var isKorean: Bool { lang == "ko" }
 
+    static var noteCount: Int { isActive ? min(1000, max(0, Int(env["PETALS_SHOT_NOTES"] ?? "0") ?? 0)) : 0 }
+    static var searchText: String { isActive ? env["PETALS_SHOT_SEARCH"] ?? "" : "" }
+
+
     /// Theme id override, e.g. "tokyo-night". Falls back to the document theme.
     static var theme: String? {
         guard let value = env["PETALS_SHOT_THEME"], !value.isEmpty else { return nil }

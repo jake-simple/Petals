@@ -6,6 +6,7 @@ struct CanvasLayer: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ClipboardManager.self) private var clipboardManager
     var yearDocument: YearDocument?
+    var documents: [YearDocument] = []
     var zoomLevel: Int = 12
     var pageIndex: Int = 0
     @Binding var selectedItemIDs: Set<PersistentIdentifier>
@@ -17,7 +18,7 @@ struct CanvasLayer: View {
     @State private var multiDragOffset: CGSize = .zero
 
     private var sortedItems: [CanvasItem] {
-        (yearDocument?.canvasItems(for: zoomLevel, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }
+        PlanningBoardProjection.canvasItems(in: documents.isEmpty ? yearDocument.map { [$0] } ?? [] : documents, zoom: zoomLevel, page: pageIndex)
     }
 
     private var selectedItems: [CanvasItem] {
@@ -200,7 +201,7 @@ struct CanvasLayer: View {
 
     private func deleteItem(_ item: CanvasItem) {
         let fileName = item.imageFileName
-        yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
+        item.yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
         modelContext.delete(item)
         selectedItemIDs.remove(item.persistentModelID)
         do {
@@ -267,7 +268,7 @@ struct CanvasLayer: View {
                                   pageIndex: pageIndex)
             snap.applyContent(to: item)
             // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-            if let original = snap.imageFileName {
+            if snap.originalImageData == nil, let original = snap.imageFileName {
                 guard let copied = ImageManager.copyImageFile(fileName: original) else { continue }
                 item.imageFileName = copied
             }
@@ -286,7 +287,7 @@ struct CanvasLayer: View {
             Task { @MainActor in
                 guard let result = await ImageManager.importImage(from: data),
                       let doc = yearDocument else { return }
-                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: doc.nextZIndex)
                 item.zoomLevel = zoomLevel
                 item.pageIndex = pageIndex
                 doc.appendItem(item)
@@ -311,7 +312,7 @@ struct CanvasLayer: View {
                 guard let data = await provider.loadImageData(),
                       let result = await ImageManager.importImage(from: data),
                       let doc = yearDocument else { return }
-                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+                let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: doc.nextZIndex)
                 item.zoomLevel = zoomLevel
                 item.pageIndex = pageIndex
                 doc.appendItem(item)

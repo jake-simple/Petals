@@ -59,6 +59,18 @@ struct SettingsView: View {
 
     private var generalTab: some View {
         Form {
+            Section("iCloud") {
+                Text(SyncStatus.shared.message)
+                if let date = SyncStatus.shared.lastImport {
+                    LabeledContent("Last download") { Text(date, style: .relative) }
+                }
+                if let date = SyncStatus.shared.lastExport {
+                    LabeledContent("Last upload") { Text(date, style: .relative) }
+                }
+                if let error = SyncStatus.shared.localOnlyReason ?? SyncStatus.shared.lastError {
+                    DisclosureGroup("Details") { Text(error).font(.caption).textSelection(.enabled) }
+                }
+            }
             Section(String(localized: "Feedback")) {
                 Link(destination: URL(string: "mailto:jake@onessa.app")!) {
                     Label("jake@onessa.app", systemImage: "envelope")

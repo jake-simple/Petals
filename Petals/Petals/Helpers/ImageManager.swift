@@ -27,7 +27,7 @@ nonisolated enum ImageManager {
     }()
 
     /// 파일 URL에서 import. security-scoped resource 접근도 내부에서 관리.
-    static func importImage(from url: URL) async -> (fileName: String, thumbnail: Data)? {
+    static func importImage(from url: URL) async -> (fileName: String, thumbnail: Data, original: Data)? {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         return await Task.detached(priority: .userInitiated) {
@@ -37,14 +37,14 @@ nonisolated enum ImageManager {
     }
 
     /// 원본 데이터(NSImage가 지원하는 포맷)에서 import.
-    static func importImage(from data: Data) async -> (fileName: String, thumbnail: Data)? {
+    static func importImage(from data: Data) async -> (fileName: String, thumbnail: Data, original: Data)? {
         await Task.detached(priority: .userInitiated) {
             guard let image = NSImage(data: data) else { return nil }
             return processImport(from: image)
         }.value
     }
 
-    private static func processImport(from image: NSImage) -> (fileName: String, thumbnail: Data)? {
+    private static func processImport(from image: NSImage) -> (fileName: String, thumbnail: Data, original: Data)? {
         let resized = resize(image, max: maxDimension)
         let fileName = "\(UUID().uuidString).jpg"
         guard let data = jpegData(from: resized, quality: 0.85) else { return nil }
@@ -54,7 +54,7 @@ nonisolated enum ImageManager {
         do {
             try data.write(to: imagesDirectory.appendingPathComponent(fileName), options: .atomic)
         } catch { return nil }
-        return (fileName, thumbData)
+        return (fileName, thumbData, data)
     }
 
     static func copyImageFile(fileName: String) -> String? {
@@ -91,6 +91,18 @@ nonisolated enum ImageManager {
             }
             // iCloud에서 아직 다운로드되지 않은 경우 다운로드 요청
             try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return nil
+        }.value
+    }
+
+    static func originalData(fileName: String) async -> Data? {
+        await Task.detached(priority: .utility) {
+            let primary = imagesDirectory.appendingPathComponent(fileName)
+            if let data = try? Data(contentsOf: primary) { return data }
+            let local = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("Images").appendingPathComponent(fileName)
+            if let data = try? Data(contentsOf: local) { return data }
+            try? FileManager.default.startDownloadingUbiquitousItem(at: primary)
             return nil
         }.value
     }

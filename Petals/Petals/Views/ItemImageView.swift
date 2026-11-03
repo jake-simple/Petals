@@ -3,11 +3,13 @@ import SwiftUI
 struct ItemImageView: View {
     let fileName: String?
     let thumbnailData: Data?
+    var originalData: Data? = nil
 
     @State private var loadedImage: NSImage?
     @State private var thumbnailImage: NSImage?
 
     private var displayImage: NSImage? {
+        if let originalData, let original = NSImage(data: originalData) { return original }
         if let loadedImage { return loadedImage }
         if let fileName, let cached = ImageManager.cachedImage(fileName: fileName) { return cached }
         return thumbnailImage

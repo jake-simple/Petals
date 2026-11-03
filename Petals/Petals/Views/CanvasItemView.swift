@@ -7,7 +7,7 @@ struct CanvasItemView: View {
 
     var body: some View {
         switch CanvasItemType(rawValue: item.type) {
-        case .image: ItemImageView(fileName: item.imageFileName, thumbnailData: item.thumbnailData)
+        case .image: ItemImageView(fileName: item.imageFileName, thumbnailData: item.thumbnailData, originalData: item.originalImageData)
         case .text: textContent
         case .sticker: stickerContent
         case .shape: shapeContent

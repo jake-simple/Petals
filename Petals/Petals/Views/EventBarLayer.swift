@@ -10,11 +10,14 @@ struct EventBarLayer: View {
     let theme: Theme
     var startMonth: Int = 1
     var monthsShown: Int = 12
+    var searchText: String = ""
+    var searchMatchCounts: [Int: [Int: Int]] = [:]
     let onEventTap: (EKEvent, CGRect) -> Void
     let onEmptyTap: (Int, Int) -> Void  // (month, day) — 더블탭: 그날 일정 시트
     let onNewEvent: (Int, Int) -> Void  // (month, day) — 우클릭 메뉴: 새 이벤트
     let onDragCreate: (Int, Int, Int, Int) -> Void  // (startMonth, startDay, endMonth, endDay)
     var onEventDelete: ((EKEvent, EKSpan) -> Void)?
+    var onAddNote: ((Int, Int) -> Void)?
 
     @State private var dragStart: (month: Int, day: Int)?
     @State private var dragEnd: (month: Int, day: Int)?
@@ -48,14 +51,25 @@ struct EventBarLayer: View {
                     }
                 }
 
+                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                var visibleMatchCounts: [Int: [Int: Int]] = [:]
+                if !query.isEmpty {
+                    for segment in segments where segment.lane < rows && (segment.event.title ?? "").localizedStandardContains(query) {
+                        for day in segment.startDay...segment.endDay {
+                            visibleMatchCounts[segment.month, default: [:]][day, default: 0] += 1
+                        }
+                    }
+                }
+
                 // Overflow badges (+N)
                 for (month, days) in badgeCounts {
                     for (day, count) in days {
                         let origin = layout.cellOrigin(month: month, day: day)
+                        let hasHiddenMatch = (searchMatchCounts[month]?[day] ?? 0) > (visibleMatchCounts[month]?[day] ?? 0)
                         let text = context.resolve(
                             Text("+\(count)")
-                                .font(.system(size: eventFontSize - 2, weight: .medium))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: eventFontSize - 2, weight: hasHiddenMatch ? .bold : .medium))
+                                .foregroundStyle(theme.eventTextColor.opacity(hasHiddenMatch ? 1 : 0.65))
                         )
                         if layout.weekdayMode {
                             // 분기/월별: 날짜 숫자 바로 왼쪽
@@ -64,8 +78,9 @@ struct EventBarLayer: View {
                             let badgeX = origin.x + layout.cellWidth - CalendarLayout.dayLabelInset - dayWidth - 4
                             context.draw(text, at: CGPoint(x: badgeX, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .trailing)
                         } else {
-                            // 연별: 날짜 라벨 영역 좌측 끝
-                            context.draw(text, at: CGPoint(x: origin.x + CalendarLayout.dayLabelInset, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .leading)
+                            // Annual cells are too narrow to share the date-label strip.
+                            // Reserve a footer independent of the search state.
+                            context.draw(text, at: CGPoint(x: origin.x + 3, y: origin.y + layout.cellHeight - overflowFooterHeight * 0.5), anchor: .leading)
                         }
                     }
                 }
@@ -117,6 +132,12 @@ struct EventBarLayer: View {
                 }
                 .contextMenu {
                     if let loc = hoverLocation {
+                        if let cell = layout.cellAt(loc) {
+                            Button { onAddNote?(cell.month, cell.day) } label: {
+                                Label("Add Note", systemImage: "note.text.badge.plus")
+                            }
+                            Divider()
+                        }
                         if let segment = hitTest(at: loc, layout: layout, barHeight: eventBarHeight(layout: layout)) {
                             Button(role: .destructive) {
                                 onEventDelete?(segment.event, .thisEvent)
@@ -190,9 +211,12 @@ struct EventBarLayer: View {
         }
     }
 
+    private var overflowFooterHeight: CGFloat { max(10, eventFontSize) }
+
     private func visibleEventRows(layout: CalendarLayout) -> Int {
         let barHeight = eventFontSize + 2
-        return max(1, min(Int(layout.cellHeight / barHeight), maxEventRows))
+        let availableHeight = layout.cellHeight - (layout.weekdayMode ? 0 : overflowFooterHeight)
+        return max(layout.weekdayMode ? 1 : 0, min(Int(availableHeight / barHeight), maxEventRows))
     }
 
     private func eventBarHeight(layout: CalendarLayout) -> CGFloat {
@@ -215,6 +239,18 @@ struct EventBarLayer: View {
         let color = Color(cgColor: segment.event.calendar.cgColor)
 
         context.fill(Path(roundedRect: rect, cornerRadius: 3), with: .color(color.opacity(0.4)))
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !query.isEmpty, (segment.event.title ?? "").localizedStandardContains(query) {
+            // The two-tone outline stays distinct from both the theme background
+            // and the calendar's original fill without recoloring the event.
+            let foreground = theme.eventTextColor
+            let backing: Color = Color(hex: theme.backgroundColor).isLight ? .white : .black
+            let path = Path(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: 3)
+            context.stroke(path, with: .color(foreground.opacity(0.15)), lineWidth: 5)
+            context.stroke(path, with: .color(backing), lineWidth: 3)
+            context.stroke(path, with: .color(foreground), lineWidth: 1.5)
+        }
 
         // Title text (clipped to bar)
         let title = segment.event.title ?? ""

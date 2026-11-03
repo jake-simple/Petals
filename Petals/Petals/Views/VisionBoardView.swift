@@ -564,7 +564,7 @@ struct VisionBoardView: View {
         Task {
             guard let result = await ImageManager.importImage(from: url) else { return }
             let center = visibleCenter(in: viewSize)
-            let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+            let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: board.nextZIndex)
             modelContext.insert(item)
             board.appendItem(item)
             selectedItemIDs = [item.persistentModelID]
@@ -577,7 +577,7 @@ struct VisionBoardView: View {
                 guard let data = await provider.loadImageData(),
                       let result = await ImageManager.importImage(from: data) else { return }
                 let center = visibleCenter(in: viewSize)
-                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: board.nextZIndex)
                 modelContext.insert(item)
                 board.appendItem(item)
                 selectedItemIDs = [item.persistentModelID]
@@ -634,7 +634,7 @@ struct VisionBoardView: View {
             nextZ += 1
             snap.applyContent(to: item)
             // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-            if let original = snap.imageFileName {
+            if snap.originalImageData == nil, let original = snap.imageFileName {
                 guard let copied = ImageManager.copyImageFile(fileName: original) else { continue }
                 item.imageFileName = copied
             }
@@ -653,7 +653,7 @@ struct VisionBoardView: View {
         if let image = clipboardManager.systemImage(), let data = image.tiffRepresentation {
             Task { @MainActor in
                 guard let result = await ImageManager.importImage(from: data) else { return }
-                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, zIndex: board.nextZIndex)
+                let item = VisionBoardItem.newImage(at: center, fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: board.nextZIndex)
                 modelContext.insert(item)
                 board.appendItem(item)
                 selectedItemIDs = [item.persistentModelID]

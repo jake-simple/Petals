@@ -12,7 +12,12 @@ struct ScreenshotWindowSizer: NSViewRepresentable {
     /// ~1150px, so a compact window maps roughly 1:1 onto the poster instead of
     /// being downscaled — keeping event text legible. Sizing to the whole screen
     /// (on a large display) shrinks that text below readability in the poster.
-    static let targetWidth: CGFloat = 1600
+    static var targetWidth: CGFloat {
+        guard ScreenshotConfig.isActive,
+              let raw = ProcessInfo.processInfo.environment["PETALS_SHOT_WIDTH"],
+              let width = Double(raw) else { return 1600 }
+        return CGFloat(min(1600, max(900, width)))
+    }
 
     /// Compact 16:10 window: `targetWidth`, clamped to the screen's visible area.
     static func contentSize(for screen: NSScreen) -> NSSize {
@@ -28,7 +33,10 @@ struct ScreenshotWindowSizer: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
+        let view = WindowAttachmentView()
+        view.onAttachment = { [weak view] in
+            if let view { applyIfNeeded(view) }
+        }
         applyIfNeeded(view)
         return view
     }
@@ -54,5 +62,14 @@ struct ScreenshotWindowSizer: NSViewRepresentable {
             )
             window.setFrameOrigin(origin)
         }
+    }
+}
+
+private final class WindowAttachmentView: NSView {
+    var onAttachment: (() -> Void)?
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window != nil { onAttachment?() }
     }
 }

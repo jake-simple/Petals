@@ -22,6 +22,7 @@ final class VisionBoardItem {
     // 이미지
     var imageFileName: String?
     var thumbnailData: Data?
+    @Attribute(.externalStorage) var originalImageData: Data?
     var cornerRadius: Double?
 
     // 텍스트
@@ -64,13 +65,14 @@ final class VisionBoardItem {
     // MARK: - Factory methods
 
     /// 캔버스 공간의 중심점을 받아 이미지 아이템 생성
-    static func newImage(at center: CGPoint, fileName: String, thumbnail: Data, zIndex: Int) -> VisionBoardItem {
+    static func newImage(at center: CGPoint, fileName: String, thumbnail: Data, original: Data? = nil, zIndex: Int) -> VisionBoardItem {
         let w: Double = 300
         let h: Double = 300
         let item = VisionBoardItem(type: .image, x: center.x - w / 2, y: center.y - h / 2,
                                    width: w, height: h, zIndex: zIndex)
         item.imageFileName = fileName
         item.thumbnailData = thumbnail
+        item.originalImageData = original
         return item
     }
 

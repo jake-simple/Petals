@@ -98,6 +98,21 @@ enum EventLayoutEngine {
         return result
     }
 
+    /// Counts all matching events, including events omitted by the lane limit.
+    static func matchingDayCounts(events: [EKEvent], year: Int, query: String) -> [Int: [Int: Int]] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [:] }
+        var result: [Int: [Int: Int]] = [:]
+        for event in events where (event.title ?? "").localizedStandardContains(trimmed) {
+            for span in daySpans(for: event, year: year, calendar: .current) {
+                for day in span.startDay...span.endDay {
+                    result[span.month, default: [:]][day, default: 0] += 1
+                }
+            }
+        }
+        return result
+    }
+
     /// 월별 셀당 overflow 카운트 (maxLanes 초과 이벤트 수)
     static func overflowCounts(events: [EKEvent], year: Int, maxLanes: Int) -> [Int: [Int: Int]] {
         // [month: [day: overflowCount]]

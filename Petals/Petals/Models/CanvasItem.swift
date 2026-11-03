@@ -18,6 +18,7 @@ final class CanvasItem {
     // 이미지
     var imageFileName: String?
     var thumbnailData: Data?
+    @Attribute(.externalStorage) var originalImageData: Data?
     var cornerRadius: Double?
 
     // 텍스트
@@ -70,11 +71,12 @@ final class CanvasItem {
 
     // MARK: - Factory methods
 
-    static func newImage(fileName: String, thumbnail: Data, zIndex: Int) -> CanvasItem {
+    static func newImage(fileName: String, thumbnail: Data, original: Data? = nil, zIndex: Int) -> CanvasItem {
         let item = CanvasItem(type: .image, relativeX: 0.3, relativeY: 0.3,
                               relativeWidth: 0.15, relativeHeight: 0.2, zIndex: zIndex)
         item.imageFileName = fileName
         item.thumbnailData = thumbnail
+        item.originalImageData = original
         return item
     }
 

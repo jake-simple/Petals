@@ -3,6 +3,8 @@ import SwiftData
 
 @Model
 final class YearDocument {
+    /// Empty only for pre-planning-board documents awaiting migration.
+    var boardID: String = ""
     var year: Int = 0
     var theme: String = "minimal-light"
     @Relationship(deleteRule: .cascade, inverse: \CanvasItem.yearDocument)

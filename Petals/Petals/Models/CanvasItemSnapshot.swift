@@ -5,6 +5,7 @@ protocol CanvasContentProperties: AnyObject {
     var aspectRatio: Double? { get set }
     var imageFileName: String? { get set }
     var thumbnailData: Data? { get set }
+    var originalImageData: Data? { get set }
     var text: String? { get set }
     var fontSize: Double? { get set }
     var fontName: String? { get set }
@@ -34,6 +35,7 @@ struct CanvasItemSnapshot {
     let aspectRatio: Double?
     let imageFileName: String?
     let thumbnailData: Data?
+    let originalImageData: Data?
     let text: String?
     let fontSize: Double?
     let fontName: String?
@@ -67,6 +69,7 @@ struct CanvasItemSnapshot {
         self.aspectRatio = item.aspectRatio
         self.imageFileName = item.imageFileName
         self.thumbnailData = item.thumbnailData
+        self.originalImageData = item.originalImageData
         self.text = item.text
         self.fontSize = item.fontSize
         self.fontName = item.fontName
@@ -99,6 +102,7 @@ struct CanvasItemSnapshot {
         self.aspectRatio = item.aspectRatio
         self.imageFileName = item.imageFileName
         self.thumbnailData = item.thumbnailData
+        self.originalImageData = item.originalImageData
         self.text = item.text
         self.fontSize = item.fontSize
         self.fontName = item.fontName
@@ -123,6 +127,7 @@ struct CanvasItemSnapshot {
         item.aspectRatio = aspectRatio
         item.imageFileName = imageFileName
         item.thumbnailData = thumbnailData
+        item.originalImageData = originalImageData
         item.text = text
         item.fontSize = fontSize
         item.fontName = fontName

@@ -11,6 +11,37 @@ struct ContentView: View {
         : Calendar.current.component(.year, from: Date())
     @State private var eventManager = EventManager()
     @State private var currentDocument: YearDocument?
+    @Query(sort: \PlanningBoard.createdAt) private var allPlanningBoards: [PlanningBoard]
+    @AppStorage("activePlanningBoardID") private var activePlanningBoardID = ""
+    @State private var showNewBoard = false
+    @State private var showBoardSettings = false
+    @State private var newBoardName = ""
+    @State private var planningError: String?
+    @Query private var allCalendarNotes: [CalendarNote]
+    @Query private var syncedYearDocuments: [YearDocument]
+    @State private var sidebarTab = 0
+    @State private var focusedNoteDateKey: Int?
+    @State private var noteFocusRequest = 0
+    @State private var newNoteDate: Date?
+    @State private var showNewNote = false
+    @State private var calendarSize = CGSize(width: 1200, height: 800)
+    @State private var includeExportDecorations = true
+    @State private var isExporting = false
+
+    private var boardNotes: [CalendarNote] {
+        allCalendarNotes.filter { $0.boardID == activePlanningBoard?.id }
+    }
+
+
+    private var planningBoards: [PlanningBoard] { PlanningBoardProjection.visibleBoards(allPlanningBoards) }
+    private var boardYearDocuments: [YearDocument] {
+        syncedYearDocuments.filter { $0.boardID == activePlanningBoard?.id && $0.year == currentYear }
+    }
+
+    private var activePlanningBoard: PlanningBoard? {
+        planningBoards.first { $0.id == activePlanningBoardID } ?? planningBoards.first
+    }
+
 
     @AppStorage("showTodayLine") private var showTodayLine = AppSettings.showTodayLineDefault
     @AppStorage("dimPastDates") private var dimPastDates = AppSettings.dimPastDatesDefault
@@ -32,6 +63,9 @@ struct ContentView: View {
     @State private var editorContext: EventEditorContext?
     @State private var showCalendarFilter = false
     @State private var showFontSizePicker = false
+    @State private var windowContentWidth: CGFloat = 1200
+    @State private var eventSearchText = ScreenshotConfig.searchText
+    @FocusState private var eventSearchFocused: Bool
 
     // Paging state
     @State private var monthsPerPage = ScreenshotConfig.zoom ?? 12  // 12, 3, 1
@@ -53,9 +87,10 @@ struct ContentView: View {
     @State private var accumulatedScrollX: CGFloat = 0
     @State private var fetchTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.scenePhase) private var scenePhase
 
     private var theme: Theme {
-        let themeID = ScreenshotConfig.theme ?? currentDocument?.theme ?? "minimal-light"
+        let themeID = ScreenshotConfig.theme ?? activePlanningBoard?.theme ?? currentDocument?.theme ?? "minimal-light"
         return ThemeManager.shared.theme(for: themeID).resolved(for: colorScheme)
     }
 
@@ -78,7 +113,7 @@ struct ContentView: View {
 
     private var selectedCanvasItems: [CanvasItem] {
         guard !selectedCanvasItemIDs.isEmpty else { return [] }
-        return (currentDocument?.canvasItems ?? []).filter { selectedCanvasItemIDs.contains($0.persistentModelID) }
+        return PlanningBoardProjection.canvasItems(in: boardYearDocuments).filter { selectedCanvasItemIDs.contains($0.persistentModelID) }
     }
 
     private var startMonth: Int { pageIndex * monthsPerPage + 1 }
@@ -121,10 +156,59 @@ struct ContentView: View {
             }
         }
         .navigationTitle(showVisionBoard ? "화이트보드" : "캘린더")
-        .inspector(isPresented: $showCalendarFilter) {
-            CalendarFilterView(eventManager: eventManager)
-                .inspectorColumnWidth(min: 220, ideal: 280, max: 400)
+        .alert("New Board", isPresented: $showNewBoard) {
+            TextField("Board name", text: $newBoardName)
+            Button("Create") { createPlanningBoard() }
+                .disabled(newBoardName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            Button("Cancel", role: .cancel) { }
         }
+        .alert("Unable to Complete", isPresented: Binding(get: { planningError != nil }, set: { if !$0 { planningError = nil } })) {
+            Button("OK") { planningError = nil }
+        } message: { Text(planningError ?? "") }
+        .sheet(isPresented: $showNewNote) {
+            NewCalendarNoteView(initialDate: newNoteDate ?? Date()) { date, body in
+                guard let board = activePlanningBoard else { return }
+                modelContext.insert(CalendarNote(boardID: board.id, date: date, body: body))
+                savePlanningChanges()
+                let parts = Calendar.current.dateComponents([.year, .month, .day], from: date)
+                currentYear = parts.year ?? currentYear
+                pageIndex = ((parts.month ?? 1) - 1) / monthsPerPage
+                showNotes(month: parts.month ?? 1, day: parts.day ?? 1)
+            }
+        }
+        .sheet(isPresented: $showBoardSettings) {
+            if let board = activePlanningBoard {
+                PlanningBoardSettingsView(board: board, canDelete: planningBoards.count > 1,
+                    onRename: { board.name = $0; board.updatedAt = Date(); savePlanningChanges() },
+                    onDuplicate: { duplicatePlanningBoard(board) },
+                    onDelete: { deletePlanningBoard(board) })
+            }
+        }
+        .inspector(isPresented: Binding(
+            get: { showCalendarFilter && !showVisionBoard },
+            set: { showCalendarFilter = $0 }
+        )) {
+            VStack(spacing: 0) {
+                Picker("Sidebar", selection: $sidebarTab) {
+                    Text("Calendars").tag(0)
+                    Text("Notes").tag(1)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(12)
+                if sidebarTab == 0 {
+                    CalendarFilterView(eventManager: eventManager)
+                } else {
+                    CalendarNotesSidebar(notes: boardNotes, focusedDateKey: focusedNoteDateKey,
+                        focusRequest: noteFocusRequest, onSelect: selectCalendarNote,
+                        onAdd: { newNoteDate = suggestedNoteDate; showNewNote = true })
+                    .id(activePlanningBoard?.id)
+                }
+            }
+            .inspectorColumnWidth(min: 260, ideal: 320, max: 460)
+        }
+        .frame(minWidth: 900, minHeight: 600)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { windowContentWidth = $0 }
         .overlay(alignment: .bottom) {
             if clipboardManager.showCopyToast {
                 Text("복사됨")
@@ -170,7 +254,7 @@ struct ContentView: View {
         }
     }
 
-    private var calendarBody: some View {
+    private var calendarPresentation: some View {
         GeometryReader { geo in
         ZStack {
             // Board background covers entire window
@@ -200,6 +284,8 @@ struct ContentView: View {
                         theme: theme,
                         startMonth: startMonth,
                         monthsShown: monthsPerPage,
+                        searchText: eventSearchText,
+                        searchMatchCounts: EventLayoutEngine.matchingDayCounts(events: eventManager.events, year: currentYear, query: eventSearchText),
                         onEventTap: { event, rect in
                             selectedEvent = event
                             eventPopoverAnchor = rect
@@ -219,9 +305,17 @@ struct ContentView: View {
                         onEventDelete: { event, span in
                             try? eventManager.deleteEvent(event, span: span)
                             reloadEvents()
+                        },
+                        onAddNote: { month, day in
+                            newNoteDate = Calendar.current.date(from: DateComponents(year: currentYear, month: month, day: day))
+                            showNewNote = true
                         }
                     )
                     .allowsHitTesting(!isCanvasEditMode)
+
+                    CalendarNoteMarkers(year: currentYear, startMonth: startMonth, monthsShown: monthsPerPage,
+                        notes: boardNotes, theme: theme, focusedDateKey: focusedNoteDateKey, onSelect: showNotes)
+                        .allowsHitTesting(!isCanvasEditMode)
 
                     // Z3: 지난 날짜 흐림 — 그리드·이벤트 바 위에 덮어 전부 흐리게
                     if dimPastDates {
@@ -254,7 +348,7 @@ struct ContentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 6))
             .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
             .padding(.horizontal, 16)
-            .padding(.top, collapseTopArea ? 16 : geo.size.height * 0.18)
+            .padding(.top, CalendarLayout.topInset(height: geo.size.height, monthsShown: monthsPerPage, fontSize: CGFloat(currentFontSize), collapsed: collapseTopArea))
             .padding(.bottom, 16)
             .allowsHitTesting(!isCanvasEditMode)
             // Canvas layer (편집/표시 모드 동일한 좌표계)
@@ -262,6 +356,7 @@ struct ContentView: View {
                 if isCanvasEditMode {
                     CanvasLayer(
                         yearDocument: currentDocument,
+                        documents: boardYearDocuments,
                         zoomLevel: monthsPerPage,
                         pageIndex: pageIndex,
                         selectedItemIDs: $selectedCanvasItemIDs,
@@ -273,8 +368,9 @@ struct ContentView: View {
             }
         }
         } // GeometryReader
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { calendarSize = $0 }
         .background(WindowInputScopeReader(scope: inputScope))
-        .frame(minWidth: 900, minHeight: 600)
+        .frame(minWidth: 580, minHeight: 600)
         .toolbar {
             modeToggleToolbar
             toolbarContent
@@ -299,10 +395,18 @@ struct ContentView: View {
                 recomputeLayout()
             } else {
                 await eventManager.requestAccess()
+                activatePlanningBoard()
                 reloadEvents()
+                do { try await ImageSyncMigration.migrate(in: modelContext) }
+                catch { planningError = error.localizedDescription }
             }
         }
+    }
+
+    private var calendarLifecycle: some View {
+        calendarPresentation
         .onAppear {
+            preparePlanningBoards()
             loadDocument(for: currentYear)
             if let existing = scrollMonitor { NSEvent.removeMonitor(existing) }
             scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
@@ -328,17 +432,40 @@ struct ContentView: View {
                 scrollMonitor = nil
             }
         }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active, !ScreenshotConfig.isActive else { return }
+            Task { @MainActor in
+                do { try await ImageSyncMigration.migrate(in: modelContext) }
+                catch { planningError = error.localizedDescription }
+            }
+        }
+        .onChange(of: activePlanningBoardID) { activatePlanningBoard() }
+        .onChange(of: activePlanningBoard?.recordID) { activatePlanningBoard() }
+        .onChange(of: activePlanningBoard?.calendarSelectionData) {
+            eventManager.planningBoard = activePlanningBoard
+            eventManager.applyPlanningBoardSelection()
+            savePlanningChanges()
+        }
+        .onChange(of: planningBoards.map(\.id)) {
+            if !planningBoards.contains(where: { $0.id == activePlanningBoardID }), let first = planningBoards.first {
+                activePlanningBoardID = first.id
+            }
+            activatePlanningBoard()
+        }
+    }
+
+    private var calendarBody: some View {
+        calendarLifecycle
         .onChange(of: currentYear) { _, newYear in
             loadDocument(for: newYear)
             reloadEvents()
             selectedCanvasItemIDs.removeAll()
         }
-        .onChange(of: monthsPerPage) { _, newValue in
-            let now = Date()
-            currentYear = Calendar.current.component(.year, from: now)
-            let month = Calendar.current.component(.month, from: now)
-            pageIndex = (month - 1) / newValue
-            selectedCanvasItemIDs.removeAll()
+        .onChange(of: monthsPerPage) { oldValue, newValue in
+            changeZoom(from: oldValue, to: newValue)
+        }
+        .onChange(of: syncedYearDocuments.map(\.persistentModelID)) {
+            loadDocument(for: currentYear)
         }
         .onChange(of: pageIndex) {
             selectedCanvasItemIDs.removeAll()
@@ -377,7 +504,7 @@ struct ContentView: View {
     @ViewBuilder
     private var canvasDisplayLayer: some View {
         GeometryReader { proxy in
-            ForEach((currentDocument?.canvasItems(for: monthsPerPage, pageIndex: pageIndex) ?? []).sorted { $0.zIndex < $1.zIndex }) { item in
+            ForEach(PlanningBoardProjection.canvasItems(in: boardYearDocuments, zoom: monthsPerPage, page: pageIndex)) { item in
                 let itemW = item.relativeWidth * proxy.size.width
                 let itemH: CGFloat = if let ar = item.aspectRatio, ar > 0 { itemW / ar } else { item.relativeHeight * proxy.size.height }
                 let pct = item.cornerRadius ?? 0
@@ -400,8 +527,27 @@ struct ContentView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            HStack(spacing: 8) {
+        ToolbarItemGroup(placement: .navigation) {
+                Menu {
+                    ForEach(planningBoards) { board in
+                        Button {
+                            activePlanningBoardID = board.id
+                        } label: {
+                            if board.id == activePlanningBoard?.id {
+                                Label(board.name, systemImage: "checkmark")
+                            } else { Text(board.name) }
+                        }
+                    }
+                    Divider()
+                    Button("New Board…") { newBoardName = ""; showNewBoard = true }
+                    Button("Board Settings…") { showBoardSettings = true }
+                        .disabled(activePlanningBoard == nil)
+                } label: {
+                    Text(activePlanningBoard?.name ?? String(localized: "Default"))
+                        .lineLimit(1)
+                }
+                .accessibilityIdentifier("planningBoardPicker")
+                .frame(maxWidth: 160)
                 Button(action: { currentYear -= 1 }) { Image(systemName: "chevron.left") }
                     .keyboardShortcut(.leftArrow, modifiers: .command)
                 Text(String(currentYear))
@@ -416,16 +562,12 @@ struct ContentView: View {
                 }
                     .keyboardShortcut("t", modifiers: .command)
 
-                Divider().frame(height: 16)
-
                 // Zoom level (months per page)
-                Picker("Zoom", selection: $monthsPerPage) {
-                    Text("연별").tag(12)
-                    Text("분기").tag(3)
-                    Text("월별").tag(1)
+                if windowContentWidth < 1250 {
+                    zoomPicker.pickerStyle(.menu).labelsHidden().frame(width: 90)
+                } else {
+                    zoomPicker.pickerStyle(.segmented).frame(width: 180)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 180)
 
                 if monthsPerPage < 12 {
                     // Page navigation
@@ -449,11 +591,47 @@ struct ContentView: View {
                     }
                     .disabled(pageIndex >= maxPageIndex)
                 }
-            }
         }
 
         ToolbarItem(placement: .primaryAction) {
-            HStack(spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField("Search event titles", text: $eventSearchText)
+                        .textFieldStyle(.plain)
+                        .focused($eventSearchFocused)
+                        .onExitCommand { eventSearchText = ""; eventSearchFocused = false }
+                        .accessibilityIdentifier("eventTitleSearch")
+                    if !eventSearchText.isEmpty {
+                        Button {
+                            eventSearchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Clear search")
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 6))
+                .frame(width: 170)
+                .background {
+                    Button("Find") { eventSearchFocused = true }
+                        .keyboardShortcut("f", modifiers: .command)
+                        .hidden()
+                }
+        }
+        ToolbarItemGroup(placement: .primaryAction) {
+                Menu {
+                    Toggle("Include Decorations", isOn: $includeExportDecorations)
+                    Divider()
+                    Button("Export PDF…") { exportCalendar(.pdf) }
+                    Button("Export PNG…") { exportCalendar(.png) }
+                    Button("Print…") { exportCalendar(.print) }
+                } label: {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
+                .disabled(isExporting)
                 Button(action: { collapseTopArea.toggle() }) {
                     Label("Top Area", systemImage: collapseTopArea ? "rectangle.tophalf.inset.filled" : "rectangle.topthird.inset.filled")
                 }
@@ -483,8 +661,6 @@ struct ContentView: View {
                     .padding()
                 }
 
-                Divider()
-
                 // Theme picker
                 Button(action: { showThemePicker.toggle() }) {
                     Label("Theme", systemImage: "paintpalette")
@@ -493,8 +669,8 @@ struct ContentView: View {
                     ThemePickerView(
                         themes: ThemeManager.shared.themes,
                         selectedThemeID: Binding(
-                            get: { currentDocument?.theme ?? "minimal-light" },
-                            set: { currentDocument?.theme = $0 }
+                            get: { activePlanningBoard?.theme ?? currentDocument?.theme ?? "minimal-light" },
+                            set: { activePlanningBoard?.theme = $0; activePlanningBoard?.updatedAt = Date(); savePlanningChanges() }
                         )
                     )
                 }
@@ -504,7 +680,6 @@ struct ContentView: View {
                     Label("Canvas", systemImage: "paintbrush")
                 }
                 .toggleStyle(.button)
-            }
         }
 
         if isCanvasEditMode {
@@ -513,6 +688,14 @@ struct ContentView: View {
                     canvasToolButtons
                 }
             }
+        }
+    }
+
+    private var zoomPicker: some View {
+        Picker("Zoom", selection: $monthsPerPage) {
+            Text("연별").tag(12)
+            Text("분기").tag(3)
+            Text("월별").tag(1)
         }
     }
 
@@ -611,14 +794,138 @@ struct ContentView: View {
     }
 
     private func loadDocument(for year: Int) {
-        let descriptor = FetchDescriptor<YearDocument>(predicate: #Predicate { $0.year == year })
+        guard let boardID = activePlanningBoard?.id else { currentDocument = nil; return }
+        let descriptor = FetchDescriptor<YearDocument>(predicate: #Predicate { $0.year == year && $0.boardID == boardID })
         if let doc = (try? modelContext.fetch(descriptor))?.first {
             currentDocument = doc
         } else {
             let doc = YearDocument(year: year)
+            doc.boardID = boardID
             modelContext.insert(doc)
             currentDocument = doc
         }
+    }
+
+    private func changeZoom(from oldValue: Int, to newValue: Int) {
+        var month = pageIndex * oldValue + 1
+        if let key = focusedNoteDateKey, key / 10000 == currentYear {
+            month = key / 100 % 100
+        }
+        pageIndex = (min(12, max(1, month)) - 1) / newValue
+        selectedCanvasItemIDs.removeAll()
+    }
+
+    private func exportCalendar(_ format: CalendarExporter.Format) {
+        guard !isExporting else { return }
+        isExporting = true
+        let items = includeExportDecorations
+            ? PlanningBoardProjection.canvasItems(in: boardYearDocuments, zoom: monthsPerPage, page: pageIndex) : []
+        let output = CalendarExportView(year: currentYear, startMonth: startMonth, monthsShown: monthsPerPage,
+            theme: theme, showTodayLine: showTodayLine, dimPastDates: dimPastDates,
+            collapseTopArea: collapseTopArea, eventFontSize: CGFloat(currentFontSize), maxEventRows: maxEventRows,
+            segments: visibleSegments, overflows: visibleOverflows, items: items, size: calendarSize)
+        let name = "Petals-\(currentYear)-\(startMonth)-\(startMonth + monthsPerPage - 1)"
+        Task { @MainActor in
+            defer { isExporting = false }
+            do { try await CalendarExporter.export(output, format: format, name: name) }
+            catch { planningError = error.localizedDescription }
+        }
+    }
+
+    private var suggestedNoteDate: Date {
+        if let key = focusedNoteDateKey,
+           let date = Calendar.current.date(from: DateComponents(year: key / 10000, month: key / 100 % 100, day: key % 100)) {
+            return date
+        }
+        let now = Date()
+        let parts = Calendar.current.dateComponents([.year, .month], from: now)
+        if parts.year == currentYear, let month = parts.month,
+           month >= startMonth && month < startMonth + monthsPerPage { return now }
+        return Calendar.current.date(from: DateComponents(year: currentYear, month: startMonth, day: 1)) ?? now
+    }
+
+    private func showNotes(month: Int, day: Int) {
+        focusedNoteDateKey = currentYear * 10000 + month * 100 + day
+        noteFocusRequest += 1
+        sidebarTab = 1
+        showCalendarFilter = true
+    }
+
+    private func selectCalendarNote(_ note: CalendarNote) {
+        currentYear = note.year
+        pageIndex = (note.month - 1) / monthsPerPage
+        focusedNoteDateKey = note.dateKey
+    }
+
+    private func preparePlanningBoards() {
+        do {
+            if ScreenshotConfig.isActive {
+                if planningBoards.isEmpty {
+                    let board = PlanningBoard(name: String(localized: "Default"))
+                    modelContext.insert(board)
+                    for index in 0..<ScreenshotConfig.noteCount {
+                        let date = Calendar.current.date(from: DateComponents(year: currentYear, month: 1, day: 1))!
+                            .addingTimeInterval(Double(index / 3) * 86400)
+                        let body = ScreenshotConfig.isKorean
+                            ? "여행 준비 \(index + 1)\n숙소 예약과 준비물을 확인하세요."
+                            : "Trip planning \(index + 1)\nCheck reservations and the packing list."
+                        modelContext.insert(CalendarNote(boardID: board.id, date: date, body: body))
+                    }
+                    if ScreenshotConfig.noteCount > 0 { sidebarTab = 1; showCalendarFilter = true }
+                    try modelContext.save()
+                    activePlanningBoardID = board.id
+                }
+            } else {
+                activePlanningBoardID = try PlanningBoardMigration.migrate(in: modelContext, calendars: eventManager.calendars)
+            }
+            activatePlanningBoard()
+        } catch { planningError = error.localizedDescription }
+    }
+
+    private func activatePlanningBoard() {
+        focusedNoteDateKey = nil
+        eventManager.planningBoard = activePlanningBoard
+        if !ScreenshotConfig.isActive { eventManager.applyPlanningBoardSelection() }
+        loadDocument(for: currentYear)
+        selectedCanvasItemIDs.removeAll()
+    }
+
+    private func savePlanningChanges() {
+        do { try modelContext.save() }
+        catch { planningError = error.localizedDescription }
+    }
+
+    private func createPlanningBoard() {
+        let name = newBoardName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let board = PlanningBoard(name: name)
+        modelContext.insert(board)
+        do {
+            try modelContext.save()
+            activePlanningBoardID = board.id
+            sidebarTab = 0
+            showCalendarFilter = true
+        } catch { planningError = error.localizedDescription }
+    }
+
+    private func duplicatePlanningBoard(_ board: PlanningBoard) {
+        do {
+            try modelContext.save()
+            let name = String(format: String(localized: "%@ Copy"), board.name)
+            let copy = try PlanningBoardOperations.duplicate(board, name: name, in: modelContext)
+            activePlanningBoardID = copy.id
+        } catch {
+            modelContext.rollback()
+            planningError = error.localizedDescription
+        }
+    }
+
+    private func deletePlanningBoard(_ board: PlanningBoard) {
+        guard let next = planningBoards.first(where: { $0.id != board.id }) else { return }
+        do {
+            try PlanningBoardOperations.delete(board, in: modelContext)
+            activePlanningBoardID = next.id
+        } catch { planningError = error.localizedDescription }
     }
 
     private func importImage(from url: URL) {
@@ -627,7 +934,7 @@ struct ContentView: View {
         let targetPage = pageIndex
         Task {
             guard let result = await ImageManager.importImage(from: url) else { return }
-            let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
+            let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, original: result.original, zIndex: doc.nextZIndex)
             item.zoomLevel = targetZoom
             item.pageIndex = targetPage
             doc.appendItem(item)
@@ -649,21 +956,21 @@ struct ContentView: View {
     private func bringSelectedToFront() {
         guard let doc = currentDocument else { return }
         for item in selectedCanvasItems {
-            item.zIndex = doc.nextZIndex
+            item.zIndex = (PlanningBoardProjection.canvasItems(in: boardYearDocuments).map(\.zIndex).max() ?? doc.nextZIndex) + 1
         }
     }
 
     private func sendSelectedToBack() {
         guard let doc = currentDocument else { return }
         for item in selectedCanvasItems {
-            item.zIndex = doc.minZIndex
+            item.zIndex = (PlanningBoardProjection.canvasItems(in: boardYearDocuments).map(\.zIndex).min() ?? doc.minZIndex) - 1
         }
     }
 
     private func deleteSelectedCanvasItems() {
         let fileNames = selectedCanvasItems.compactMap(\.imageFileName)
         for item in selectedCanvasItems {
-            currentDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
+            item.yearDocument?.removeItem { $0.persistentModelID == item.persistentModelID }
             modelContext.delete(item)
         }
         selectedCanvasItemIDs.removeAll()
