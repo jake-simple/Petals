@@ -267,8 +267,8 @@ struct CanvasLayer: View {
                                   pageIndex: pageIndex)
             snap.applyContent(to: item)
             // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-            if let original = snap.imageFileName,
-               let copied = ImageManager.copyImageFile(fileName: original) {
+            if let original = snap.imageFileName {
+                guard let copied = ImageManager.copyImageFile(fileName: original) else { continue }
                 item.imageFileName = copied
             }
             item.zIndex = nextZ

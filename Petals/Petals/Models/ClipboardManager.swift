@@ -77,13 +77,17 @@ struct CanvasKeyCommands: ViewModifier {
     var onPaste: () -> Void
 
     @State private var keyMonitor: Any?
+    @State private var inputScope = WindowInputScope()
 
     func body(content: Content) -> some View {
         content
+            .background(WindowInputScopeReader(scope: inputScope))
             .onReceive(NotificationCenter.default.publisher(for: .performCopy)) { _ in
+                guard inputScope.isKeyWindow else { return }
                 onCopy()
             }
             .onReceive(NotificationCenter.default.publisher(for: .performPaste)) { _ in
+                guard inputScope.isKeyWindow else { return }
                 onPaste()
             }
             .onAppear { installKeyMonitor() }
@@ -93,11 +97,9 @@ struct CanvasKeyCommands: ViewModifier {
     private func installKeyMonitor() {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard inputScope.isKeyWindow else { return event }
+            if NSApp.keyWindow?.firstResponder is NSText { return event }
             if event.keyCode == 51 || event.keyCode == 117 {
-                // 텍스트 편집 중이면 글자 삭제가 우선되도록 이벤트를 그대로 통과시킨다.
-                if let responder = NSApp.keyWindow?.firstResponder, responder is NSText {
-                    return event
-                }
                 guard !selectedItemIDs.isEmpty else { return event }
                 onDelete()
                 return nil

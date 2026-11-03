@@ -2,6 +2,7 @@ import Foundation
 
 /// CanvasItem과 VisionBoardItem의 콘텐츠 프로퍼티를 통합하는 프로토콜
 protocol CanvasContentProperties: AnyObject {
+    var aspectRatio: Double? { get set }
     var imageFileName: String? { get set }
     var thumbnailData: Data? { get set }
     var text: String? { get set }
@@ -30,6 +31,7 @@ struct CanvasItemSnapshot {
     let relativeHeight: Double
     let rotation: Double
     let opacity: Double
+    let aspectRatio: Double?
     let imageFileName: String?
     let thumbnailData: Data?
     let text: String?
@@ -62,6 +64,7 @@ struct CanvasItemSnapshot {
         self.relativeHeight = item.relativeHeight
         self.rotation = item.rotation
         self.opacity = item.opacity
+        self.aspectRatio = item.aspectRatio
         self.imageFileName = item.imageFileName
         self.thumbnailData = item.thumbnailData
         self.text = item.text
@@ -78,9 +81,11 @@ struct CanvasItemSnapshot {
         self.strokeWidth = item.strokeWidth
         self.cornerRadius = item.cornerRadius
         self.absoluteWidth = item.relativeWidth * containerSize.width
-        self.absoluteHeight = item.relativeHeight * containerSize.height
-        self.absoluteX = nil
-        self.absoluteY = nil
+        self.absoluteHeight = if let ratio = item.aspectRatio, ratio > 0 {
+            item.relativeWidth * containerSize.width / ratio
+        } else { item.relativeHeight * containerSize.height }
+        self.absoluteX = item.relativeX * containerSize.width
+        self.absoluteY = item.relativeY * containerSize.height
     }
 
     init(from item: VisionBoardItem) {
@@ -91,6 +96,7 @@ struct CanvasItemSnapshot {
         self.relativeHeight = 0.1
         self.rotation = item.rotation
         self.opacity = item.opacity
+        self.aspectRatio = item.aspectRatio
         self.imageFileName = item.imageFileName
         self.thumbnailData = item.thumbnailData
         self.text = item.text
@@ -107,13 +113,14 @@ struct CanvasItemSnapshot {
         self.strokeWidth = item.strokeWidth
         self.cornerRadius = item.cornerRadius
         self.absoluteWidth = item.width
-        self.absoluteHeight = item.height
+        self.absoluteHeight = if let ratio = item.aspectRatio, ratio > 0 { item.width / ratio } else { item.height }
         self.absoluteX = item.x
         self.absoluteY = item.y
     }
 
     /// 스냅샷의 콘텐츠 프로퍼티를 대상 아이템에 적용
     func applyContent(to item: some CanvasContentProperties) {
+        item.aspectRatio = aspectRatio
         item.imageFileName = imageFileName
         item.thumbnailData = thumbnailData
         item.text = text

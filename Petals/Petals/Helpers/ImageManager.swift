@@ -49,12 +49,11 @@ nonisolated enum ImageManager {
         let fileName = "\(UUID().uuidString).jpg"
         guard let data = jpegData(from: resized, quality: 0.85) else { return nil }
 
-        do {
-            try data.write(to: imagesDirectory.appendingPathComponent(fileName))
-        } catch { return nil }
-
         let thumb = resize(image, max: thumbDimension)
         guard let thumbData = jpegData(from: thumb, quality: thumbQuality) else { return nil }
+        do {
+            try data.write(to: imagesDirectory.appendingPathComponent(fileName), options: .atomic)
+        } catch { return nil }
         return (fileName, thumbData)
     }
 

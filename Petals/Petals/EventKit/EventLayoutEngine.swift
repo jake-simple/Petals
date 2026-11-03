@@ -18,7 +18,7 @@ enum EventLayoutEngine {
 
     private static func daySpans(for event: EKEvent, year: Int, calendar cal: Calendar) -> [DaySpan] {
         guard let startDate = event.startDate, let rawEnd = event.endDate else { return [] }
-        let endDate = rawEnd >= startDate ? rawEnd : startDate
+        let endDate = rawEnd > startDate ? max(startDate, rawEnd.addingTimeInterval(-0.001)) : startDate
 
         let sc = cal.dateComponents([.year, .month, .day], from: startDate)
         let ec = cal.dateComponents([.year, .month, .day], from: endDate)
@@ -85,7 +85,7 @@ enum EventLayoutEngine {
                 // eventIdentifier 미존재 시 ObjectIdentifier로 고유 ID 보장 (저장되지 않은 EKEvent 대비)
                 let eventKey = seg.event.eventIdentifier ?? String(UInt(bitPattern: ObjectIdentifier(seg.event).hashValue))
                 result.append(EventSegment(
-                    id: "\(eventKey)_\(month)",
+                    id: "\(eventKey)_\(seg.event.startDate.timeIntervalSinceReferenceDate)_\(month)",
                     event: seg.event,
                     month: month,
                     startDay: seg.startDay,
@@ -112,12 +112,14 @@ enum EventLayoutEngine {
             }
         }
 
-        var result: [Int: [Int: Int]] = [:]
-        for (month, days) in dayCounts {
-            for (day, count) in days where count > maxLanes {
-                result[month, default: [:]][day] = count - maxLanes
+        for segment in layout(events: events, year: year, maxLanes: maxLanes) {
+            for day in segment.startDay...segment.endDay {
+                dayCounts[segment.month]?[day, default: 0] -= 1
             }
         }
-        return result
+        return dayCounts.reduce(into: [:]) { result, entry in
+            let hidden = entry.value.filter { $0.value > 0 }
+            if !hidden.isEmpty { result[entry.key] = hidden }
+        }
     }
 }

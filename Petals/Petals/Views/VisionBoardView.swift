@@ -37,6 +37,7 @@ struct VisionBoardView: View {
 
     // 스크롤 모니터
     @State private var scrollMonitor: Any?
+    @State private var inputScope = WindowInputScope()
 
     // 줌 범위 및 스텝
     private let minScale: CGFloat = 0.25
@@ -224,6 +225,7 @@ struct VisionBoardView: View {
                 teardownScrollMonitor()
             }
         }
+        .background(WindowInputScopeReader(scope: inputScope))
         .frame(minWidth: 900, minHeight: 600)
         .toolbar { visionBoardToolbar }
         .fileImporter(isPresented: $showImagePicker, allowedContentTypes: [.image]) { result in
@@ -340,6 +342,7 @@ struct VisionBoardView: View {
     private func setupScrollMonitor() {
         teardownScrollMonitor()
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: [.scrollWheel, .magnify]) { event in
+            guard inputScope.contains(event) else { return event }
             if event.type == .magnify {
                 // 트랙패드 핀치 줌 — 입력 레이트로 부드러운 업데이트
                 if event.phase == .began {
@@ -631,8 +634,8 @@ struct VisionBoardView: View {
             nextZ += 1
             snap.applyContent(to: item)
             // 이미지 복사 시 파일을 복제하여 독립 참조 유지
-            if let original = snap.imageFileName,
-               let copied = ImageManager.copyImageFile(fileName: original) {
+            if let original = snap.imageFileName {
+                guard let copied = ImageManager.copyImageFile(fileName: original) else { continue }
                 item.imageFileName = copied
             }
             modelContext.insert(item)

@@ -78,6 +78,8 @@ struct CalendarLayout: Sendable {
 
     /// (월, 일) → 시각적 (행, 열). 범위를 벗어나면 nil.
     func gridPosition(month: Int, day: Int) -> (row: Int, col: Int)? {
+        guard month >= startMonth, month < startMonth + monthsShown,
+              (1...12).contains(month), day >= 1, day <= daysInMonth(month) else { return nil }
         if weekdayMode {
             guard let info = months.first(where: { $0.month == month }) else { return nil }
             let idx = info.firstWeekdayIndex + (day - 1)
@@ -106,7 +108,10 @@ struct CalendarLayout: Sendable {
     }
 
     func cellAt(_ point: CGPoint) -> (month: Int, day: Int)? {
-        guard point.x >= monthLabelWidth, point.y >= headerHeight else { return nil }
+        guard cellWidth.isFinite, rowHeight.isFinite, cellWidth > 0, rowHeight > 0,
+              point.x.isFinite, point.y.isFinite,
+              point.x >= monthLabelWidth, point.x < size.width,
+              point.y >= headerHeight, point.y < size.height else { return nil }
         let col = Int((point.x - monthLabelWidth) / cellWidth)
         let visualRow = Int((point.y - headerHeight) / rowHeight)
         guard col >= 0, col < daysPerRow, visualRow >= 0, visualRow < totalRows else { return nil }
@@ -121,7 +126,7 @@ struct CalendarLayout: Sendable {
         } else {
             let month = startMonth + visualRow
             let day = col + 1
-            guard month >= 1, month <= 12, day >= 1, day <= 31 else { return nil }
+            guard month >= 1, month <= 12, day >= 1, day <= daysInMonth(month) else { return nil }
             return (month: month, day: day)
         }
     }

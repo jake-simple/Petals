@@ -56,7 +56,7 @@ struct EventEditorSheet: View {
                 }
 
                 Picker("Calendar", selection: $selectedCalendarID) {
-                    let grouped = Dictionary(grouping: eventManager.calendars) { $0.source.title }
+                    let grouped = Dictionary(grouping: eventManager.calendars.filter(\.allowsContentModifications)) { $0.source?.title ?? String(localized: "Other") }
                     let sortedSources = grouped.keys.sorted()
                     ForEach(sortedSources, id: \.self) { source in
                         Section(source) {
@@ -133,6 +133,9 @@ struct EventEditorSheet: View {
             startDate = event.startDate ?? Date()
             endDate = event.endDate ?? Date()
             isAllDay = event.isAllDay
+            if isAllDay, endDate > startDate {
+                endDate = Calendar.current.startOfDay(for: max(startDate, endDate.addingTimeInterval(-1)))
+            }
             notes = event.notes ?? ""
             location = event.location ?? ""
             url = event.url?.absoluteString ?? ""
@@ -200,6 +203,16 @@ struct EventEditorSheet: View {
             return
         }
 
+        let calendar = Calendar.current
+        let savedStart = isAllDay ? calendar.startOfDay(for: startDate) : startDate
+        let savedEnd = isAllDay
+            ? calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate)) ?? endDate
+            : endDate
+        guard savedEnd > savedStart else {
+            errorMessage = String(localized: "End date must be after start date.")
+            return
+        }
+
         let trimmedLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
         let locationValue = trimmedLocation.isEmpty ? nil : trimmedLocation
@@ -208,8 +221,8 @@ struct EventEditorSheet: View {
         do {
             if let event = existingEvent {
                 event.title = title
-                event.startDate = startDate
-                event.endDate = endDate
+                event.startDate = savedStart
+                event.endDate = savedEnd
                 event.isAllDay = isAllDay
                 event.notes = notes.isEmpty ? nil : notes
                 event.location = locationValue
@@ -219,8 +232,8 @@ struct EventEditorSheet: View {
             } else {
                 try eventManager.createEvent(
                     title: title,
-                    startDate: startDate,
-                    endDate: endDate,
+                    startDate: savedStart,
+                    endDate: savedEnd,
                     calendar: cal,
                     notes: notes.isEmpty ? nil : notes,
                     isAllDay: isAllDay,

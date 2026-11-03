@@ -24,13 +24,15 @@ struct ItemImageView: View {
             }
         }
         .task(id: fileName) {
-            // 같은 fileName 이면 thumbnail 도 동일하므로 함께 키잉. Data 비교는 불안정해서 피함.
+            loadedImage = nil
             thumbnailImage = thumbnailData.flatMap { NSImage(data: $0) }
             guard let fileName else {
                 loadedImage = nil
                 return
             }
-            loadedImage = await ImageManager.loadImage(fileName: fileName)
+            let image = await ImageManager.loadImage(fileName: fileName)
+            guard !Task.isCancelled else { return }
+            loadedImage = image
         }
     }
 }

@@ -9,6 +9,13 @@ final class EventManager {
     private(set) var events: [EKEvent] = []
     private(set) var isAuthorized = false
     private var loadedYear: Int?
+    private var fetchGeneration = 0
+    private(set) var storeRevision = 0
+
+    private func invalidateEvents() {
+        loadedYear = nil
+        fetchGeneration += 1
+    }
     private var hasRequestedAccess = false
     @ObservationIgnored
     nonisolated(unsafe) private var storeObserverToken: Any?
@@ -19,7 +26,7 @@ final class EventManager {
     var selectedCalendarIDs: Set<String> = [] {
         didSet {
             UserDefaults.standard.set(Array(selectedCalendarIDs), forKey: "selectedCalendarIDs")
-            if oldValue != selectedCalendarIDs { loadedYear = nil }
+            if oldValue != selectedCalendarIDs { invalidateEvents() }
         }
     }
 
@@ -169,6 +176,9 @@ final class EventManager {
     }
 
     func fetchEvents(for year: Int) async {
+        guard !Task.isCancelled else { return }
+        fetchGeneration += 1
+        let generation = fetchGeneration
         if loadedYear == year { return }
         let cal = Calendar.current
         guard let start = cal.date(from: DateComponents(year: year, month: 1, day: 1)),
@@ -185,6 +195,7 @@ final class EventManager {
         let fetched = await Task.detached { [store] in
             store.events(matching: predicate)
         }.value
+        guard !Task.isCancelled, generation == fetchGeneration else { return }
         events = fetched
         loadedYear = year
     }
@@ -202,14 +213,17 @@ final class EventManager {
         event.location = location
         event.url = url
         try store.save(event, span: .thisEvent)
+        invalidateEvents()
     }
 
     func updateEvent(_ event: EKEvent, span: EKSpan = .thisEvent) throws {
         try store.save(event, span: span)
+        invalidateEvents()
     }
 
     func deleteEvent(_ event: EKEvent, span: EKSpan = .thisEvent) throws {
         try store.remove(event, span: span)
+        invalidateEvents()
     }
 
     var defaultCalendar: EKCalendar? {
@@ -222,8 +236,8 @@ final class EventManager {
         let cal = Calendar.current
         guard let start = cal.startOfDay(for: date) as Date?,
               let end = cal.date(byAdding: .day, value: 1, to: start) else { return [] }
-        let cals = selectedCalendarIDs.isEmpty ? nil : calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
-        guard cals == nil || !cals!.isEmpty else { return [] }
+        let cals = calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
+        guard !cals.isEmpty else { return [] }
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: cals)
         return store.events(matching: predicate)
     }
@@ -251,10 +265,12 @@ final class EventManager {
                 components.month = month
                 components.day = day
                 guard let targetDate = cal.date(from: components),
+                      cal.component(.month, from: targetDate) == month,
+                      cal.component(.day, from: targetDate) == day,
                       let start = cal.date(bySettingHour: 0, minute: 0, second: 0, of: targetDate),
                       let end = cal.date(byAdding: .day, value: 1, to: start) else { continue }
-                let cals = selectedCalendarIDs.isEmpty ? nil : calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
-                guard cals == nil || !cals!.isEmpty else { continue }
+                let cals = calendars.filter { selectedCalendarIDs.contains($0.calendarIdentifier) }
+                guard !cals.isEmpty else { continue }
                 let predicate = store.predicateForEvents(withStart: start, end: end, calendars: cals)
                 let fetched = store.events(matching: predicate)
                 if !fetched.isEmpty {
@@ -263,7 +279,7 @@ final class EventManager {
             }
 
             if !batchResults.isEmpty {
-                await onBatchComplete(batchResults.sorted { $0.year > $1.year })
+                onBatchComplete(batchResults.sorted { $0.year > $1.year })
             }
         }
     }
@@ -350,8 +366,10 @@ final class EventManager {
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.loadedYear = nil
-                self?.loadCalendars()
+                guard let self else { return }
+                self.invalidateEvents()
+                self.loadCalendars()
+                self.storeRevision += 1
             }
         }
     }

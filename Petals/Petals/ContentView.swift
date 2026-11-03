@@ -49,6 +49,7 @@ struct ContentView: View {
     @State private var showThemePicker = false
     @State private var showStickerInput = false
     @State private var scrollMonitor: Any?
+    @State private var inputScope = WindowInputScope()
     @State private var accumulatedScrollX: CGFloat = 0
     @State private var fetchTask: Task<Void, Never>?
     @Environment(\.colorScheme) private var colorScheme
@@ -272,6 +273,7 @@ struct ContentView: View {
             }
         }
         } // GeometryReader
+        .background(WindowInputScopeReader(scope: inputScope))
         .frame(minWidth: 900, minHeight: 600)
         .toolbar {
             modeToggleToolbar
@@ -304,7 +306,7 @@ struct ContentView: View {
             loadDocument(for: currentYear)
             if let existing = scrollMonitor { NSEvent.removeMonitor(existing) }
             scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
-                guard !showVisionBoard else { return event }
+                guard !showVisionBoard, inputScope.contains(event) else { return event }
                 if event.phase == .began {
                     accumulatedScrollX = 0
                 }
@@ -348,6 +350,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: eventManager.selectedCalendarIDs) {
+            reloadEvents()
+        }
+        .onChange(of: eventManager.storeRevision) {
             reloadEvents()
         }
         .onChange(of: maxEventRows) {
@@ -617,14 +622,18 @@ struct ContentView: View {
     }
 
     private func importImage(from url: URL) {
+        guard let doc = currentDocument else { return }
+        let targetZoom = monthsPerPage
+        let targetPage = pageIndex
         Task {
-            guard let result = await ImageManager.importImage(from: url),
-                  let doc = currentDocument else { return }
+            guard let result = await ImageManager.importImage(from: url) else { return }
             let item = CanvasItem.newImage(fileName: result.fileName, thumbnail: result.thumbnail, zIndex: doc.nextZIndex)
-            item.zoomLevel = monthsPerPage
-            item.pageIndex = pageIndex
+            item.zoomLevel = targetZoom
+            item.pageIndex = targetPage
             doc.appendItem(item)
-            selectedCanvasItemIDs = [item.persistentModelID]
+            if currentDocument === doc, monthsPerPage == targetZoom, pageIndex == targetPage {
+                selectedCanvasItemIDs = [item.persistentModelID]
+            }
         }
     }
 

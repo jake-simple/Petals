@@ -232,7 +232,7 @@ struct EventBarLayer: View {
     }
 
     private func hitTest(at point: CGPoint, layout: CalendarLayout, barHeight: CGFloat) -> EventSegment? {
-        for segment in segments.reversed() {
+        for segment in segments.reversed() where segment.lane < visibleEventRows(layout: layout) {
             if barRect(for: segment, layout: layout, barHeight: barHeight).contains(point) {
                 return segment
             }

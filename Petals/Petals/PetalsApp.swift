@@ -62,11 +62,19 @@ struct PetalsApp: App {
             PetalsWindowCommands()
             CommandGroup(replacing: .pasteboard) {
                 Button("복사") {
-                    NotificationCenter.default.post(name: .performCopy, object: nil)
+                    if NSApp.keyWindow?.firstResponder is NSText {
+                        NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
+                    } else {
+                        NotificationCenter.default.post(name: .performCopy, object: nil)
+                    }
                 }
                 .keyboardShortcut("c", modifiers: .command)
                 Button("붙여넣기") {
-                    NotificationCenter.default.post(name: .performPaste, object: nil)
+                    if NSApp.keyWindow?.firstResponder is NSText {
+                        NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
+                    } else {
+                        NotificationCenter.default.post(name: .performPaste, object: nil)
+                    }
                 }
                 .keyboardShortcut("v", modifiers: .command)
             }
@@ -84,11 +92,19 @@ struct PetalsApp: App {
         .commands {
             CommandGroup(replacing: .pasteboard) {
                 Button("복사") {
-                    NotificationCenter.default.post(name: .performCopy, object: nil)
+                    if NSApp.keyWindow?.firstResponder is NSText {
+                        NSApp.sendAction(#selector(NSText.copy(_:)), to: nil, from: nil)
+                    } else {
+                        NotificationCenter.default.post(name: .performCopy, object: nil)
+                    }
                 }
                 .keyboardShortcut("c", modifiers: .command)
                 Button("붙여넣기") {
-                    NotificationCenter.default.post(name: .performPaste, object: nil)
+                    if NSApp.keyWindow?.firstResponder is NSText {
+                        NSApp.sendAction(#selector(NSText.paste(_:)), to: nil, from: nil)
+                    } else {
+                        NotificationCenter.default.post(name: .performPaste, object: nil)
+                    }
                 }
                 .keyboardShortcut("v", modifiers: .command)
             }

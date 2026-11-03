@@ -158,6 +158,7 @@ struct EventDetailPopover: View {
 
     private func formattedDateRange(start: Date, end: Date) -> String {
         if event.isAllDay {
+            let end = end > start ? max(start, end.addingTimeInterval(-1)) : start
             if Calendar.current.isDate(start, inSameDayAs: end) {
                 return start.formatted(date: .long, time: .omitted)
             } else {
