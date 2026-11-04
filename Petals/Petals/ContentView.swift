@@ -575,7 +575,7 @@ struct ContentView: View {
                 if windowContentWidth < 1250 {
                     zoomPicker.pickerStyle(.menu).labelsHidden().frame(width: 90)
                 } else {
-                    zoomPicker.pickerStyle(.segmented).frame(width: 180)
+                    zoomPicker.pickerStyle(.segmented)
                 }
 
                 if monthsPerPage < 12 {
