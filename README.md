@@ -27,7 +27,7 @@ Petals는 EventKit 캘린더 연동 위에 자유 배치 캔버스를 결합한 
 
 ### 공통
 - **키보드 단축키** — 새 이벤트, 오늘로 이동, 연도 이동, 복사/붙여넣기, 실행 취소/다시 실행, 이벤트 폰트 크기 조절 등.
-- **다국어** — 한국어 / 영어.
+- **다국어** — 한국어 / 영어 / 독일어 / 스페인어 / 프랑스어 / 일본어 / 포르투갈어(브라질).
 - **CloudKit 동기화** — SwiftData 기반 자동 동기화. 실패 시 로컬 전용으로 폴백.
 
 ## 기술 스택
@@ -74,7 +74,7 @@ Petals/Petals/Petals/
 ├── Helpers/                 캘린더 레이아웃, 이미지 관리, 툴바 구성
 ├── Settings/                AppSettings, SettingsView
 ├── Theme/                   테마 정의
-└── Localizable.xcstrings    한국어·영어 번역
+└── Localizable.xcstrings    7개 언어 번역
 ```
 
 ## 빌드 및 실행

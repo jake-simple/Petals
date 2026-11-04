@@ -91,6 +91,11 @@
 			knownRegions = (
 				en,
 				ko,
+				de,
+				es,
+				fr,
+				ja,
+				"pt-BR",
 				Base,
 			);
 			mainGroup = E679347F2F3C5C12008CC642;
@@ -254,21 +259,22 @@
 				CODE_SIGN_ENTITLEMENTS = Petals/Petals.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = Z7AP9KFFPF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "Petals needs access to your calendars to display events on the annual calendar.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Petals needs access to your calendars to display, create, and edit events on the annual calendar.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Petals needs access to your calendars to display, create, and edit events on the annual calendar.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 onessa";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.onessa.Petals;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -289,21 +295,22 @@
 				CODE_SIGN_ENTITLEMENTS = Petals/Petals.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = Z7AP9KFFPF;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "Petals needs access to your calendars to display events on the annual calendar.";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Petals needs access to your calendars to display, create, and edit events on the annual calendar.";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Petals needs access to your calendars to display, create, and edit events on the annual calendar.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 onessa";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.2;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.onessa.Petals;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

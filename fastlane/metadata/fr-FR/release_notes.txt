@@ -1,0 +1,4 @@
+• Désormais disponible en allemand, espagnol, français, japonais et portugais du Brésil.
+• Nouveaux tableaux, notes par date et recherche d’événements.
+• Export des calendriers en PDF ou PNG et impression.
+• Amélioration de la synchronisation iCloud et de l’utilisation du calendrier.

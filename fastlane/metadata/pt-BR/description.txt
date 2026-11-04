@@ -1,0 +1,17 @@
+Seu ano inteiro em uma tela. Conheça o Petals.
+
+O Petals é um calendário anual para macOS que mostra os doze meses em uma única janela, sem rolagem. Coloque imagens, texto, adesivos e formas livremente sobre o calendário e crie seu próprio ano visual.
+
+Recursos
+• Visão anual com opções de 12 meses, 3 meses e 1 mês.
+• Calendários: Exiba calendários do iCloud, Google e Exchange como barras coloridas.
+• Eventos: Arraste sobre uma data para criar um evento e abra-o para visualizar, editar ou excluir.
+• Quadros: Salve a seleção de calendários, o tema, as notas e as decorações de cada projeto.
+• Busca e notas: Busque títulos de eventos e adicione notas a datas específicas.
+• Tela: Mova, redimensione, gire e reorganize imagens, texto, adesivos e formas. Ajuste a opacidade.
+• Quadro branco: Uma tela infinita sem calendário para desenvolver suas ideias.
+• Exportação e impressão: Exporte o período atual em PDF ou PNG, ou imprima.
+• Temas: Escolha cores para o fundo, a grade e os destaques.
+• iCloud: Sincronize automaticamente seus quadros e decorações entre seus Macs.
+
+Planeje seu ano com uma visão completa e personalize seu calendário com o Petals.

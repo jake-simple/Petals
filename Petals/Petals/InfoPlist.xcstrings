@@ -1,47 +1,196 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "CFBundleName" : {
-      "comment" : "Bundle name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Petals"
-          }
-        }
-      }
-    },
-    "NSCalendarsUsageDescription" : {
-      "comment" : "Privacy - Calendars Usage Description",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Petals needs access to your calendars to display events on the annual calendar."
+  "sourceLanguage": "en",
+  "strings": {
+    "CFBundleName": {
+      "comment": "Bundle name",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Petals이 연간 캘린더에 이벤트를 표시하기 위해 캘린더 접근 권한이 필요합니다."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals"
           }
         }
       }
     },
-    "NSHumanReadableCopyright" : {
-      "comment" : "Copyright (human-readable)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : ""
+    "NSCalendarsUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals needs access to your calendars to display, create, and edit events on the annual calendar."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals에서 연간 캘린더의 일정을 표시하고 생성·편집하려면 캘린더 접근 권한이 필요합니다."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals benötigt Zugriff auf deine Kalender, um Ereignisse im Jahreskalender anzuzeigen, zu erstellen und zu bearbeiten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals necesita acceder a tus calendarios para mostrar, crear y editar eventos en el calendario anual."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals a besoin d’accéder à vos calendriers pour afficher, créer et modifier des événements dans le calendrier annuel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "年間カレンダーで予定を表示・作成・編集するために、Petalsがカレンダーにアクセスする必要があります。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Petals precisa acessar seus calendários para exibir, criar e editar eventos no calendário anual."
+          }
+        }
+      }
+    },
+    "NSHumanReadableCopyright": {
+      "comment": "Copyright (human-readable)",
+      "extractionState": "extracted_with_value",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "© 2026 onessa"
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals needs access to your calendars to display, create, and edit events on the annual calendar."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals에서 연간 캘린더의 일정을 표시하고 생성·편집하려면 캘린더 접근 권한이 필요합니다."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals benötigt Zugriff auf deine Kalender, um Ereignisse im Jahreskalender anzuzeigen, zu erstellen und zu bearbeiten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals necesita acceder a tus calendarios para mostrar, crear y editar eventos en el calendario anual."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Petals a besoin d’accéder à vos calendriers pour afficher, créer et modifier des événements dans le calendrier annuel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "年間カレンダーで予定を表示・作成・編集するために、Petalsがカレンダーにアクセスする必要があります。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Petals precisa acessar seus calendários para exibir, criar e editar eventos no calendário anual."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

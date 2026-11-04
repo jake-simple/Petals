@@ -1,3 +1,4 @@
-- Calendar Sets: save your favorite calendar combinations and switch between them in one tap
-- "On This Day" now loads faster, with cleaner layout and typography
-- Fixed an issue where double-clicking a date right after first launch could open today's events by mistake
+• Added German, Spanish, French, Japanese, and Brazilian Portuguese.
+• Added planning boards, dated notes, and event search.
+• Export calendars as PDF or PNG, or print them.
+• Improved iCloud sync and calendar controls.

@@ -24,7 +24,7 @@ struct SettingsView: View {
                 }
                 .tag(SettingsTab.display)
         }
-        .frame(width: 450, height: 380)
+        .frame(width: 530, height: 420)
     }
 
     private var displayTab: some View {
@@ -37,17 +37,17 @@ struct SettingsView: View {
                     Text("이벤트 글자 크기")
                         .font(.subheadline)
                     HStack {
-                        Text("연별").frame(width: 36, alignment: .leading)
+                        Text("연별").frame(minWidth: 60, alignment: .leading)
                         Slider(value: $eventFontSizeYearly, in: AppSettings.eventFontSizeRange, step: 1)
                         Text("\(Int(eventFontSizeYearly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("분기").frame(width: 36, alignment: .leading)
+                        Text("분기").frame(minWidth: 60, alignment: .leading)
                         Slider(value: $eventFontSizeQuarterly, in: AppSettings.eventFontSizeRange, step: 1)
                         Text("\(Int(eventFontSizeQuarterly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
                     }
                     HStack {
-                        Text("월별").frame(width: 36, alignment: .leading)
+                        Text("월별").frame(minWidth: 60, alignment: .leading)
                         Slider(value: $eventFontSizeMonthly, in: AppSettings.eventFontSizeRange, step: 1)
                         Text("\(Int(eventFontSizeMonthly))pt").frame(width: 32, alignment: .trailing).foregroundStyle(.secondary)
                     }

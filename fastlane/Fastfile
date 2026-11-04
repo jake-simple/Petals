@@ -1,7 +1,7 @@
 default_platform(:mac)
 
 APP_IDENTIFIER = "com.onessa.Petals".freeze
-RELEASE_NOTES_LOCALES = %w[en-US ko].freeze
+RELEASE_NOTES_LOCALES = %w[en-US ko de-DE es-ES fr-FR ja pt-BR].freeze
 
 APP_STORE_API_KEY = app_store_connect_api_key(
   key_id: ENV.fetch("APP_STORE_CONNECT_KEY_ID", "LDMZ45D4WV"),
@@ -32,7 +32,7 @@ platform :mac do
       skip_metadata: true,
       force: true,
       submit_for_review: true,
-      automatic_release: false,
+      automatic_release: true,
       run_precheck_before_submit: false,
       platform: "osx"
     )
@@ -96,7 +96,7 @@ def upload_localized_release_notes(api_key:, version:)
   end
   mismatched = release_notes.keys.select { |locale| verification[locale] != release_notes[locale] }
   UI.user_error!("릴리즈 노트 검증 실패: #{mismatched.join(', ')}") unless mismatched.empty?
-  UI.success("macOS #{version} 릴리즈 노트 2개 언어 원격 검증 완료")
+  UI.success("macOS #{version} 릴리즈 노트 #{RELEASE_NOTES_LOCALES.length}개 언어 원격 검증 완료")
 end
 
 def find_or_create_app_store_version!(app:, version:, platform:)

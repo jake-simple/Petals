@@ -101,7 +101,7 @@ struct InspectorPanel: View {
     }
 
     private var currentFontLabel: String {
-        let name = item.fontName.flatMap { NSFont(name: $0, size: 12)?.displayName } ?? "System"
+        let name = item.fontName.flatMap { NSFont(name: $0, size: 12)?.displayName } ?? String(localized: "System Default")
         let size = Int(item.fontSize ?? 16)
         return "\(name), \(size)pt"
     }
