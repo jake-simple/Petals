@@ -1,4 +1,5 @@
-• Added German, Spanish, French, Japanese, and Brazilian Portuguese.
 • Added planning boards, dated notes, and event search.
 • Export calendars as PDF or PNG, or print them.
 • Improved iCloud sync and calendar controls.
+• Toggle past-date dimming in View Options.
+• Improved search highlights for past events and kept event text at its normal weight.

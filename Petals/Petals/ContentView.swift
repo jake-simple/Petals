@@ -284,7 +284,7 @@ struct ContentView: View {
                     .allowsHitTesting(false)
 
                     // Z2: Event bars
-                    EventBarLayer(
+                    let eventLayer = EventBarLayer(
                         year: currentYear,
                         segments: visibleSegments,
                         overflows: visibleOverflows,
@@ -321,7 +321,8 @@ struct ContentView: View {
                             showNewNote = true
                         }
                     )
-                    .allowsHitTesting(!isCanvasEditMode)
+                    eventLayer
+                        .allowsHitTesting(!isCanvasEditMode)
 
                     CalendarNoteMarkers(year: currentYear, startMonth: startMonth, monthsShown: monthsPerPage,
                         notes: boardNotes, theme: theme, onSelect: showNotes)
@@ -334,6 +335,10 @@ struct ContentView: View {
                             startMonth: startMonth, monthsShown: monthsPerPage
                         )
                         .allowsHitTesting(false)
+
+                        if !eventSearchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            eventLayer.searchHighlights
+                        }
                     }
                 }
                 .popover(isPresented: $showEventDetail, attachmentAnchor: .rect(.rect(eventPopoverAnchor))) {
@@ -652,6 +657,8 @@ struct ContentView: View {
                 Menu {
                     Toggle("Top Area", isOn: Binding(
                         get: { !collapseTopArea }, set: { collapseTopArea = !$0 }))
+                    Toggle("Dim Past Dates", isOn: $dimPastDates)
+                        .accessibilityIdentifier("dimPastDatesToggle")
                     Menu("Theme") {
                         Picker("Theme", selection: Binding(
                             get: { activePlanningBoard?.theme ?? currentDocument?.theme ?? "minimal-light" },

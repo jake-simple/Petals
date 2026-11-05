@@ -30,93 +30,7 @@ struct EventBarLayer: View {
         GeometryReader { proxy in
             let layout = CalendarLayout(size: proxy.size, monthsShown: monthsShown, startMonth: startMonth, year: year)
 
-            Canvas { context, size in
-                let barHeight = eventBarHeight(layout: layout)
-                let rows = visibleEventRows(layout: layout)
-
-                // Event bars (skip lanes beyond visible rows)
-                for segment in segments where segment.lane < rows {
-                    drawBar(segment, layout: layout, barHeight: barHeight, context: context)
-                }
-
-                // Merge hidden segments into overflow counts
-                var badgeCounts: [Int: [Int: Int]] = [:]
-                for segment in segments where segment.lane >= rows {
-                    for day in segment.startDay...segment.endDay {
-                        badgeCounts[segment.month, default: [:]][day, default: 0] += 1
-                    }
-                }
-                for (month, days) in overflows {
-                    for (day, count) in days {
-                        badgeCounts[month, default: [:]][day, default: 0] += count
-                    }
-                }
-
-                let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                var visibleMatchCounts: [Int: [Int: Int]] = [:]
-                if !query.isEmpty {
-                    for segment in segments where segment.lane < rows && (segment.event.title ?? "").localizedStandardContains(query) {
-                        for day in segment.startDay...segment.endDay {
-                            visibleMatchCounts[segment.month, default: [:]][day, default: 0] += 1
-                        }
-                    }
-                }
-
-                // Overflow badges (+N)
-                for (month, days) in badgeCounts {
-                    for (day, count) in days {
-                        let origin = layout.cellOrigin(month: month, day: day)
-                        let hasHiddenMatch = (searchMatchCounts[month]?[day] ?? 0) > (visibleMatchCounts[month]?[day] ?? 0)
-                        let text = context.resolve(
-                            Text("+\(count)")
-                                .font(.system(size: eventFontSize - 2, weight: hasHiddenMatch ? .bold : .medium))
-                                .foregroundStyle(theme.eventTextColor.opacity(hasHiddenMatch ? 1 : 0.65))
-                        )
-                        if layout.weekdayMode {
-                            // 분기/월별: 날짜 숫자 바로 왼쪽
-                            let dayText = context.resolve(CalendarGridView.dayNumberText(day, fontSize: eventFontSize))
-                            let dayWidth = dayText.measure(in: CGSize(width: layout.cellWidth, height: layout.perMonthLabelHeight)).width
-                            let badgeX = origin.x + layout.cellWidth - CalendarLayout.dayLabelInset - dayWidth - 4
-                            context.draw(text, at: CGPoint(x: badgeX, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .trailing)
-                        } else {
-                            // Annual cells are too narrow to share the date-label strip.
-                            // Reserve a footer independent of the search state.
-                            context.draw(text, at: CGPoint(x: origin.x + 3, y: origin.y + layout.cellHeight - overflowFooterHeight * 0.5), anchor: .leading)
-                        }
-                    }
-                }
-
-                // Selected cell border (includes day label area)
-                if let sel = selectedCell, dragStart == nil {
-                    let rect = layout.fullCellRect(month: sel.month, day: sel.day)
-                    context.stroke(Path(rect.insetBy(dx: 1, dy: 1)), with: .color(.accentColor), lineWidth: 2)
-                }
-
-                // Drag selection highlight (includes day label area)
-                if let start = dragStart, let end = dragEnd,
-                   start.month != end.month || start.day != end.day {
-                    let isStartFirst = start.month < end.month || (start.month == end.month && start.day <= end.day)
-                    let first = isStartFirst ? start : end
-                    let last = isStartFirst ? end : start
-
-                    for m in first.month...last.month where m >= 1 && m <= 12 {
-                        let dim = layout.daysInMonth(m)
-                        let sDay = (m == first.month) ? first.day : 1
-                        let eDay = (m == last.month) ? min(last.day, dim) : dim
-                        guard sDay <= eDay else { continue }
-
-                        for run in layout.rowRuns(month: m, startDay: sDay, endDay: eDay) {
-                            let origin = layout.cellOrigin(month: m, day: run.startDay)
-                            let width = CGFloat(run.endDay - run.startDay + 1) * layout.cellWidth
-                            let rect = CGRect(x: origin.x, y: origin.y - layout.perMonthLabelHeight,
-                                              width: width, height: layout.rowHeight)
-                            context.fill(Path(rect), with: .color(.accentColor.opacity(0.2)))
-                            context.stroke(Path(rect), with: .color(.accentColor), lineWidth: 1)
-                        }
-                    }
-                }
-            }
-            .allowsHitTesting(false)
+            eventCanvas(layout: layout, highlightsOnly: false)
 
             // Interaction overlay
             Color.clear
@@ -219,6 +133,109 @@ struct EventBarLayer: View {
         }
     }
 
+    /// Redraw search matches above the past-date veil without adding hit targets.
+    var searchHighlights: some View {
+        GeometryReader { proxy in
+            let layout = CalendarLayout(size: proxy.size, monthsShown: monthsShown, startMonth: startMonth, year: year)
+            eventCanvas(layout: layout, highlightsOnly: true)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func eventCanvas(layout: CalendarLayout, highlightsOnly: Bool) -> some View {
+        Canvas { context, size in
+            let barHeight = eventBarHeight(layout: layout)
+            let rows = visibleEventRows(layout: layout)
+
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Event bars (skip lanes beyond visible rows)
+            for segment in segments where segment.lane < rows {
+                if highlightsOnly && (query.isEmpty || !(segment.event.title ?? "").localizedStandardContains(query)) { continue }
+                drawBar(segment, layout: layout, barHeight: barHeight, context: context)
+            }
+
+            // Merge hidden segments into overflow counts
+            var badgeCounts: [Int: [Int: Int]] = [:]
+            for segment in segments where segment.lane >= rows {
+                for day in segment.startDay...segment.endDay {
+                    badgeCounts[segment.month, default: [:]][day, default: 0] += 1
+                }
+            }
+            for (month, days) in overflows {
+                for (day, count) in days {
+                    badgeCounts[month, default: [:]][day, default: 0] += count
+                }
+            }
+
+            var visibleMatchCounts: [Int: [Int: Int]] = [:]
+            if !query.isEmpty {
+                for segment in segments where segment.lane < rows && (segment.event.title ?? "").localizedStandardContains(query) {
+                    for day in segment.startDay...segment.endDay {
+                        visibleMatchCounts[segment.month, default: [:]][day, default: 0] += 1
+                    }
+                }
+            }
+
+            // Overflow badges (+N)
+            for (month, days) in badgeCounts {
+                for (day, count) in days {
+                    let origin = layout.cellOrigin(month: month, day: day)
+                    let hasHiddenMatch = (searchMatchCounts[month]?[day] ?? 0) > (visibleMatchCounts[month]?[day] ?? 0)
+                    if highlightsOnly && !hasHiddenMatch { continue }
+                    let text = context.resolve(
+                        Text("+\(count)")
+                            .font(.system(size: eventFontSize - 2, weight: hasHiddenMatch ? .bold : .medium))
+                            .foregroundStyle(theme.eventTextColor.opacity(hasHiddenMatch ? 1 : 0.65))
+                    )
+                    if layout.weekdayMode {
+                        // 분기/월별: 날짜 숫자 바로 왼쪽
+                        let dayText = context.resolve(CalendarGridView.dayNumberText(day, fontSize: eventFontSize))
+                        let dayWidth = dayText.measure(in: CGSize(width: layout.cellWidth, height: layout.perMonthLabelHeight)).width
+                        let badgeX = origin.x + layout.cellWidth - CalendarLayout.dayLabelInset - dayWidth - 4
+                        context.draw(text, at: CGPoint(x: badgeX, y: origin.y - layout.perMonthLabelHeight * 0.5), anchor: .trailing)
+                    } else {
+                        // Annual cells are too narrow to share the date-label strip.
+                        // Reserve a footer independent of the search state.
+                        context.draw(text, at: CGPoint(x: origin.x + 3, y: origin.y + layout.cellHeight - overflowFooterHeight * 0.5), anchor: .leading)
+                    }
+                }
+            }
+
+            // Selected cell border (includes day label area)
+            if !highlightsOnly, let sel = selectedCell, dragStart == nil {
+                let rect = layout.fullCellRect(month: sel.month, day: sel.day)
+                context.stroke(Path(rect.insetBy(dx: 1, dy: 1)), with: .color(.accentColor), lineWidth: 2)
+            }
+
+            // Drag selection highlight (includes day label area)
+            if !highlightsOnly, let start = dragStart, let end = dragEnd,
+               start.month != end.month || start.day != end.day {
+                let isStartFirst = start.month < end.month || (start.month == end.month && start.day <= end.day)
+                let first = isStartFirst ? start : end
+                let last = isStartFirst ? end : start
+
+                for m in first.month...last.month where m >= 1 && m <= 12 {
+                    let dim = layout.daysInMonth(m)
+                    let sDay = (m == first.month) ? first.day : 1
+                    let eDay = (m == last.month) ? min(last.day, dim) : dim
+                    guard sDay <= eDay else { continue }
+
+                    for run in layout.rowRuns(month: m, startDay: sDay, endDay: eDay) {
+                        let origin = layout.cellOrigin(month: m, day: run.startDay)
+                        let width = CGFloat(run.endDay - run.startDay + 1) * layout.cellWidth
+                        let rect = CGRect(x: origin.x, y: origin.y - layout.perMonthLabelHeight,
+                                          width: width, height: layout.rowHeight)
+                        context.fill(Path(rect), with: .color(.accentColor.opacity(0.2)))
+                        context.stroke(Path(rect), with: .color(.accentColor), lineWidth: 1)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
     private var overflowFooterHeight: CGFloat { max(10, eventFontSize) }
 
     private func visibleEventRows(layout: CalendarLayout) -> Int {
@@ -262,7 +279,7 @@ struct EventBarLayer: View {
             ctx.clip(to: Path(rect))
             let text = ctx.resolve(
                 Text(title)
-                    .font(.system(size: fontSize, weight: isMatch ? .semibold : .regular))
+                    .font(.system(size: fontSize, weight: .regular))
                     .foregroundStyle(textColor)
             )
             ctx.draw(text, at: CGPoint(x: rect.minX + 4, y: rect.midY), anchor: .leading)

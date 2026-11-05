@@ -1,4 +1,5 @@
-• Jetzt auch auf Deutsch, Spanisch, Französisch, Japanisch und Portugiesisch (Brasilien) verfügbar.
 • Neue Pinnwände, datumsbezogene Notizen und Suche nach Ereignissen.
 • Kalender als PDF oder PNG exportieren und drucken.
 • Verbesserte iCloud-Synchronisierung und Kalenderbedienung.
+• Das Abblenden vergangener Tage lässt sich in den Ansichtsoptionen umschalten.
+• Suchtreffer für vergangene Ereignisse bleiben deutlich sichtbar und behalten ihre normale Schriftstärke.
